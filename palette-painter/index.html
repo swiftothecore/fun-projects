@@ -1,0 +1,3013 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="color-scheme" content="dark light" />
+  <title>Palette Painter</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Figtree:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    /* ── Tokens ─────────────────────────────────────────────── */
+    :root {
+      --bg:           #100e0b;
+      --bg-2:         #1a1714;
+      --card:         #1c1915;
+      --card-hover:   #221f1a;
+      --surface:      rgba(255,255,255,0.04);
+      --surface-2:    rgba(255,255,255,0.07);
+      --border:       rgba(245,238,224,0.07);
+      --border-hi:    rgba(245,238,224,0.13);
+      --text:         #f5f0e6;
+      --muted:        rgba(245,240,230,0.55);
+      --faint:        rgba(245,240,230,0.32);
+      --accent:       #e8a020;
+      --accent-glow:  rgba(232,160,32,0.18);
+      --accent-dim:   rgba(232,160,32,0.10);
+      --good:         #4ade80;
+      --good-dim:     rgba(74,222,128,0.12);
+      --warn:         #fbbf24;
+      --warn-dim:     rgba(251,191,36,0.10);
+      --shadow:       0 24px 64px rgba(0,0,0,0.55);
+      --shadow-sm:    0 6px 20px rgba(0,0,0,0.32);
+      --r-xl:         24px;
+      --r-lg:         16px;
+      --r-md:         12px;
+      --r-sm:         8px;
+      --r-pill:       999px;
+    }
+
+    /* ── Reset ───────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; }
+    html { height: 100%; }
+
+    body {
+      margin: 0;
+      min-height: 100%;
+      font-family: 'Figtree', ui-sans-serif, system-ui, sans-serif;
+      font-size: 15px;
+      line-height: 1.6;
+      color: var(--text);
+      background-color: var(--bg);
+      color-scheme: dark;
+    }
+
+    body
+
+    /* ── Subtle grain overlay ───────────────────────────────── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0.028;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+      background-size: 200px 200px;
+      z-index: 999;
+    }
+
+    /* ── Layout shell ───────────────────────────────────────── */
+    .app {
+      max-width: 1480px;
+      margin: 0 auto;
+      padding: 32px 24px 56px;
+    }
+
+    /* ── Header ─────────────────────────────────────────────── */
+    .header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 24px;
+      margin-bottom: 32px;
+    }
+
+    .header-left { max-width: 680px; }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+      padding: 5px 11px;
+      border: 1px solid var(--border-hi);
+      border-radius: var(--r-pill);
+      background: var(--surface);
+      color: var(--accent);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.10em;
+      text-transform: uppercase;
+    }
+
+    .eyebrow::before {
+      content: '';
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
+      flex-shrink: 0;
+    }
+
+    .title {
+      margin: 0 0 0px;
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      font-size: clamp(2.6rem, 5vw, 5rem);
+      font-weight: 700;
+      line-height: 0.66;
+      letter-spacing: -0.03em;
+      color: var(--text);
+    }
+
+    .subtitle {
+      margin: 0;
+      font-size: 0.97rem;
+      color: var(--muted);
+      line-height: 1.65;
+    }
+
+    
+
+    /* ── Main grid ──────────────────────────────────────────── */
+    .main-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.08fr) minmax(0, 0.92fr);
+      gap: 20px;
+      align-items: start;
+      margin-bottom: 20px;
+    }
+
+    /* ── Cards ──────────────────────────────────────────────── */
+    .card {
+      position: relative;
+      border: 1px solid var(--border);
+      border-radius: var(--r-xl);
+      background: var(--card);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    /* Glossy top edge */
+    .card::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      pointer-events: none;
+      background: linear-gradient(175deg, rgba(255,255,255,0.055) 0%, transparent 28%);
+    }
+
+    .card-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 20px 22px 0;
+    }
+
+    .card-title { display: flex; flex-direction: column; gap: 4px; }
+
+    .card-title strong {
+      font-size: 0.97rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+    }
+
+    .card-title span {
+      color: var(--muted);
+      font-size: 12.5px;
+      line-height: 1.5;
+    }
+
+    .card-title code {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11.5px;
+      background: var(--surface-2);
+      padding: 1px 5px;
+      border-radius: 4px;
+    }
+
+    .card-body { padding: 18px 22px 22px; }
+
+    /* ── Badge ──────────────────────────────────────────────── */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border: 1px solid var(--border-hi);
+      border-radius: var(--r-pill);
+      background: var(--surface);
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    /* ── Textarea ───────────────────────────────────────────── */
+    label {
+      display: block;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 280px;
+      resize: vertical;
+      overflow: auto;
+      scrollbar-gutter: stable;
+      padding: 14px 16px;
+      border: 1px solid var(--border);
+      border-radius: var(--r-lg);
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'JetBrains Mono', ui-monospace, monospace;
+      font-size: 13.5px;
+      line-height: 1.75;
+      outline: none;
+      transition: border-color 160ms ease, box-shadow 160ms ease;
+    }
+
+    textarea
+
+    textarea
+
+    textarea
+
+    textarea
+
+    textarea
+
+    textarea::-webkit-resizer {
+      background: transparent;
+    }
+
+    textarea::placeholder { color: var(--faint); }
+
+    textarea:focus {
+      border-color: rgba(232,160,32,0.6);
+      box-shadow: 0 0 0 3px var(--accent-dim);
+    }
+
+    textarea.is-cleaned {
+      border-color: rgba(74,222,128,0.5);
+      box-shadow: 0 0 0 3px var(--good-dim);
+    }
+
+    /* ── Filename field ─────────────────────────────────────── */
+    .filename-field {
+      margin-top: 14px;
+      display: grid;
+      gap: 6px;
+    }
+
+    .filename-field label { margin: 0; }
+
+    .filename-input-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .filename-input {
+      flex: 1 1 0;
+      min-width: 0;
+      padding: 11px 14px;
+      border: 1px solid var(--border);
+      border-radius: var(--r-md);
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      outline: none;
+      transition: border-color 160ms ease, box-shadow 160ms ease;
+    }
+
+    .filename-input::placeholder { color: var(--faint); }
+
+    .filename-input:focus {
+      border-color: rgba(232,160,32,0.6);
+      box-shadow: 0 0 0 3px var(--accent-dim);
+    }
+
+    .filename-hint {
+      margin: 0;
+      color: var(--faint);
+      font-size: 11.5px;
+    }
+
+    /* Bookmark save button */
+    .filename-save-btn {
+      flex-shrink: 0;
+      width: 42px;
+      height: 42px;
+      border-radius: var(--r-md);
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 160ms ease;
+    }
+
+    .filename-save-btn svg { width: 17px; height: 17px; }
+
+    .filename-save-btn:hover:not(:disabled) {
+      border-color: rgba(232,160,32,0.55);
+      background: var(--accent-dim);
+      transform: translateY(-1px);
+    }
+
+    .filename-save-btn:disabled {
+      opacity: 0.32;
+      cursor: not-allowed;
+    }
+
+    .filename-save-btn.download-ready {
+      border-color: rgba(232,160,32,0.4);
+      background: var(--accent-dim);
+    }
+
+    /* ── Buttons ─────────────────────────────────────────────── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      padding: 11px 17px;
+      border: 1px solid transparent;
+      border-radius: var(--r-md);
+      font-family: 'Figtree', sans-serif;
+      font-size: 13.5px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 130ms ease, box-shadow 130ms ease, filter 130ms ease, background 130ms ease, border-color 130ms ease;
+      letter-spacing: -0.01em;
+    }
+
+    .btn svg {
+      width: 15px;
+      height: 15px;
+      flex-shrink: 0;
+    }
+
+    .btn svg.stroke-icon {
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    /* Primary */
+    .btn:not(.secondary):not(.ghost) {
+      background: var(--accent);
+      color: #0e0d0b;
+      box-shadow: 0 4px 16px rgba(232,160,32,0.28);
+    }
+
+    .btn:not(.secondary):not(.ghost):hover {
+      transform: translateY(-1px);
+      filter: brightness(1.06);
+      box-shadow: 0 8px 24px rgba(232,160,32,0.32);
+    }
+
+    /* Secondary */
+    .btn.secondary {
+      background: var(--surface);
+      border-color: var(--border);
+      color: var(--text);
+    }
+
+    .btn.secondary:hover {
+      background: var(--surface-2);
+      border-color: var(--border-hi);
+      transform: translateY(-1px);
+    }
+
+    .btn.secondary.download-ready {
+      background: var(--accent-dim);
+      border-color: rgba(232,160,32,0.35);
+      color: var(--text);
+    }
+
+    .btn.secondary.copied {
+      border-color: rgba(74,222,128,0.45);
+      background: var(--good-dim);
+      color: var(--good);
+    }
+
+    /* Ghost */
+    .btn.ghost {
+      background: transparent;
+      border-color: var(--border);
+      color: var(--muted);
+    }
+
+    .btn.ghost:hover {
+      border-color: var(--border-hi);
+      color: var(--text);
+      background: var(--surface);
+    }
+
+    .btn.ghost.active {
+      border-color: rgba(74,222,128,0.45);
+      background: var(--good-dim);
+      color: var(--good);
+    }
+
+    .btn.icon-only {
+      padding: 10px;
+      width: 40px;
+      min-width: 40px;
+    }
+
+    .btn.icon-only span { display: none; }
+
+    .btn:active { transform: translateY(0); }
+
+    .btn:disabled {
+      opacity: 0.40;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+      filter: none;
+    }
+
+    /* ── Button row ─────────────────────────────────────────── */
+    .button-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 14px;
+      align-items: center;
+    }
+
+    /* ── Status ─────────────────────────────────────────────── */
+    .meta {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      margin-top: 14px;
+      padding: 11px 14px;
+      border-radius: var(--r-md);
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--muted);
+      font-size: 13.5px;
+      line-height: 1.5;
+    }
+
+    .meta strong { color: var(--text); }
+    .meta[data-tone="good"]    { border-color: rgba(74,222,128,0.3);  background: var(--good-dim); }
+    .meta[data-tone="warn"]    { border-color: rgba(251,191,36,0.3);  background: var(--warn-dim); }
+    .meta[data-tone="neutral"] { background: var(--surface); }
+
+    /* ── Progress bar ───────────────────────────────────────── */
+    .progress {
+      margin-top: 10px;
+      height: 5px;
+      border-radius: var(--r-pill);
+      background: var(--border);
+      overflow: hidden;
+    }
+
+    .progress > span {
+      display: block;
+      height: 100%;
+      width: 0%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--accent), #f5c842);
+      transition: width 220ms cubic-bezier(0.4,0,0.2,1);
+    }
+
+    /* ── Colour chips ────────────────────────────────────────── */
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+      margin-top: 14px;
+      min-height: 32px;
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--r-pill);
+      background: var(--surface);
+      color: var(--text);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      cursor: pointer;
+      transition: transform 130ms ease, border-color 130ms ease, background 130ms ease, box-shadow 130ms ease;
+    }
+
+    .chip:hover {
+      transform: translateY(-1px);
+      border-color: var(--border-hi);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .chip:active { transform: translateY(0); }
+
+    .chip.copied {
+      border-color: rgba(74,222,128,0.5);
+      background: var(--good-dim);
+    }
+
+    .swatch {
+      width: 13px;
+      height: 13px;
+      border-radius: 50%;
+      border: 1px solid rgba(255,255,255,0.2);
+      flex-shrink: 0;
+      box-shadow: inset 0 0 0 1px rgba(0,0,0,0.08);
+    }
+
+    /* ── Hints ───────────────────────────────────────────────── */
+    .hint {
+      margin: 12px 0 0;
+      color: var(--faint);
+      font-size: 12.5px;
+      line-height: 1.55;
+    }
+
+    .footer-note {
+      margin: 10px 0 0;
+      color: var(--faint);
+      font-size: 12px;
+    }
+
+    /* ── Preview card ────────────────────────────────────────── */
+    .preview-tools {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .preview-body { padding: 18px 22px 22px; }
+
+    .artboard {
+      position: relative;
+      border-radius: var(--r-lg);
+      overflow: hidden;
+      border: 1px solid var(--border);
+      background: var(--bg);
+    }
+
+    /* Checkerboard for transparency */
+    .artboard-inner {
+      border-radius: calc(var(--r-lg) - 1px);
+      background-image:
+        linear-gradient(45deg, rgba(255,255,255,0.04) 25%, transparent 25%),
+        linear-gradient(-45deg, rgba(255,255,255,0.04) 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, rgba(255,255,255,0.04) 75%),
+        linear-gradient(-45deg, transparent 75%, rgba(255,255,255,0.04) 75%);
+      background-size: 20px 20px;
+      background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+      padding: 14px;
+      overflow: auto;
+    }
+
+    .artboard-inner svg {
+      display: block;
+      width: 100%;
+      height: auto;
+      max-height: 78vh;
+      filter: drop-shadow(0 16px 40px rgba(0,0,0,0.30));
+      border-radius: 8px;
+    }
+
+    /* ── Gallery sections ────────────────────────────────────── */
+    .gallery-section {
+      margin-top: 20px;
+    }
+
+    .gallery-head-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .gallery-download-all { white-space: nowrap; }
+    .gallery-download-all svg { width: 15px; height: 15px; flex-shrink: 0; }
+
+    .gallery-empty {
+      padding: 20px;
+      border: 1px dashed var(--border-hi);
+      border-radius: var(--r-md);
+      color: var(--muted);
+      font-size: 13.5px;
+      margin-bottom: 4px;
+    }
+
+    .gallery-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(210px, 260px));
+      justify-content: start;
+      gap: 14px;
+    }
+
+    /* ── Gallery item card ───────────────────────────────────── */
+    .gallery-item {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      border: 1px solid var(--border);
+      border-radius: var(--r-lg);
+      overflow: hidden;
+      background: var(--bg-2);
+      box-shadow: var(--shadow-sm);
+      isolation: isolate;
+      cursor: grab;
+      user-select: none;
+      transition: transform 130ms ease, box-shadow 130ms ease, outline-color 130ms ease;
+      will-change: transform;
+    }
+
+    .gallery-item:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
+    .gallery-item:active { cursor: grabbing; }
+
+    .gallery-item.is-dragging {
+      opacity: 0.65;
+      transform: scale(0.97);
+    }
+
+    .gallery-item.drag-over {
+      outline: 2px solid rgba(232,160,32,0.55);
+      outline-offset: -2px;
+    }
+
+    .gallery-item.drop-before::before,
+    .gallery-item.drop-after::after {
+      content: '';
+      position: absolute;
+      top: 10px;
+      bottom: 10px;
+      width: 3px;
+      border-radius: var(--r-pill);
+      background: var(--accent);
+      box-shadow: 0 0 8px rgba(232,160,32,0.55);
+      z-index: 4;
+      pointer-events: none;
+    }
+
+    .gallery-item.drop-before::before { left: -2px; }
+    .gallery-item.drop-after::after   { right: -2px; }
+
+    /* Gallery remove / load buttons */
+    .gallery-remove {
+      position: absolute;
+      top: 10px;
+      width: 32px;
+      height: 32px;
+      border-radius: var(--r-pill);
+      border: 1px solid var(--border-hi);
+      background: rgba(16,14,11,0.55);
+      color: var(--text);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      z-index: 3;
+      opacity: 0;
+      transform: scale(0.88);
+      pointer-events: none;
+      transition: opacity 150ms ease, transform 150ms ease, border-color 150ms ease, background 150ms ease;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+
+    .gallery-remove  { right: 10px; }
+
+    [data-theme="light"] .gallery-remove {
+      background: rgba(253,250,245,0.75);
+    }
+
+    .gallery-item:hover .gallery-remove,
+    .gallery-item:focus-within .gallery-remove {
+      opacity: 1;
+      transform: scale(1);
+      pointer-events: auto;
+    }
+
+    .gallery-remove:hover {
+      border-color: rgba(239,68,68,0.5);
+      background: rgba(239,68,68,0.14);
+    }
+
+    /* Gallery preview image */
+    .gallery-preview {
+      position: absolute;
+      inset: 0;
+      border: 0;
+      background: var(--surface);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      padding: 0;
+    }
+
+    .gallery-preview img,
+    .gallery-preview svg {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    /* Gallery overlay (on hover) */
+    .gallery-overlay {
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      padding: 12px;
+      background: linear-gradient(180deg,
+        transparent 0%,
+        rgba(16,14,11,0.06) 30%,
+        rgba(16,14,11,0.90) 100%
+      );
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 160ms ease;
+    }
+
+    [data-theme="light"] .gallery-overlay {
+      background: linear-gradient(180deg,
+        transparent 0%,
+        rgba(255,250,245,0.06) 30%,
+        rgba(255,250,245,0.92) 100%
+      );
+    }
+
+    .gallery-item:hover .gallery-overlay,
+    .gallery-item:focus-within .gallery-overlay {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .gallery-footer {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .gallery-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      min-width: 0;
+      flex: 1 1 auto;
+    }
+
+    .gallery-meta strong {
+      font-size: 0.9rem;
+      letter-spacing: -0.01em;
+      word-break: break-word;
+      line-height: 1.2;
+    }
+
+    .gallery-meta span {
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.4;
+    }
+
+    .gallery-filename-wrap {
+      display: grid;
+      gap: 5px;
+      min-width: 0;
+      max-width: 100%;
+    }
+
+    .gallery-filename-display {
+      display: inline-block;
+      max-width: 100%;
+      border: 0;
+      padding: 0;
+      background: transparent;
+      color: inherit;
+      font: inherit;
+      text-align: left;
+      cursor: text;
+      word-break: break-word;
+      line-height: 1.2;
+    }
+
+    .gallery-filename-edit {
+      display: none;
+      width: 100%;
+      border: 1px solid var(--border-hi);
+      border-radius: var(--r-sm);
+      background: var(--bg);
+      color: var(--text);
+      font: inherit;
+      font-size: 12px;
+      padding: 5px 8px;
+      outline: none;
+    }
+
+    .gallery-filename-edit:focus {
+      border-color: rgba(232,160,32,0.65);
+      box-shadow: 0 0 0 2px var(--accent-dim);
+    }
+
+    .gallery-item.is-editing .gallery-filename-display { display: none; }
+    .gallery-item.is-editing .gallery-filename-edit    { display: block; }
+
+    /* Gallery action buttons (star, download) */
+    .gallery-actions {
+      display: flex;
+      gap: 6px;
+      flex-wrap: nowrap;
+      align-items: center;
+      flex-shrink: 0;
+    }
+
+    .gallery-action {
+      width: 32px;
+      height: 32px;
+      border-radius: var(--r-pill);
+      border: 1px solid var(--border-hi);
+      background: rgba(16,14,11,0.40);
+      color: var(--text);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      opacity: 0;
+      transform: translateY(4px) scale(0.92);
+      pointer-events: none;
+      transition: opacity 150ms ease, transform 150ms ease, border-color 150ms ease, background 150ms ease;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      flex-shrink: 0;
+    }
+
+    [data-theme="light"] .gallery-action {
+      background: rgba(253,250,245,0.70);
+    }
+
+    .gallery-item:hover .gallery-action,
+    .gallery-item:focus-within .gallery-action {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+      pointer-events: auto;
+    }
+
+    .gallery-action:hover {
+      border-color: rgba(232,160,32,0.55);
+      background: var(--accent-dim);
+    }
+
+    .gallery-favourite.is-active { color: var(--warn); }
+
+    .gallery-favourite.is-active svg path {
+      fill: currentColor;
+      stroke: currentColor;
+    }
+
+    .gallery-favourite.is-active svg {
+      animation: starPop 240ms cubic-bezier(0.2,0.8,0.2,1);
+      transform-origin: center;
+    }
+
+    /* ── Select mode ─────────────────────────────────────────── */
+    .gallery-item .select-checkbox {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      width: 24px;
+      height: 24px;
+      border-radius: 7px;
+      border: 1.5px solid var(--border-hi);
+      background: rgba(16,14,11,0.60);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 4;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 150ms ease, background 150ms ease, border-color 150ms ease, transform 150ms ease;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      flex-shrink: 0;
+    }
+
+    .gallery-item .select-checkbox svg {
+      width: 14px;
+      height: 14px;
+      opacity: 0;
+      transition: opacity 120ms ease;
+    }
+
+    .gallery-section.is-selecting .gallery-item .select-checkbox {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .gallery-section.is-selecting .gallery-item.is-selected .select-checkbox {
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+
+    .gallery-section.is-selecting .gallery-item.is-selected .select-checkbox svg {
+      opacity: 1;
+    }
+
+    .gallery-section.is-selecting .gallery-item {
+      cursor: pointer;
+    }
+
+    .gallery-section.is-selecting .gallery-item.is-selected {
+      outline: 2px solid rgba(232,160,32,0.70);
+      outline-offset: -2px;
+      box-shadow: 0 0 0 4px rgba(232,160,32,0.10), var(--shadow);
+    }
+
+    /* Always show the overlay in select mode */
+    .gallery-section.is-selecting .gallery-item .gallery-overlay {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .gallery-section.is-selecting .gallery-item .gallery-action,
+    .gallery-section.is-selecting .gallery-item .gallery-remove {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+      pointer-events: auto;
+    }
+
+    /* Select toggle button active state */
+    .select-mode-btn.is-active {
+      border-color: rgba(232,160,32,0.45);
+      background: var(--accent-dim);
+      color: var(--accent);
+    }
+
+    /* Download selected — hidden until select mode is on */
+    .download-selected-btn {
+      display: none;
+      white-space: nowrap;
+    }
+
+    .download-selected-btn svg { width: 15px; height: 15px; flex-shrink: 0; }
+
+    .gallery-section.is-selecting .download-selected-btn {
+      display: inline-flex;
+    }
+
+    /* ── Animations ──────────────────────────────────────────── */
+    @keyframes starPop {
+      0%   { transform: scale(0.82); }
+      60%  { transform: scale(1.18); }
+      100% { transform: scale(1); }
+    }
+
+    @keyframes cardIn {
+      0%   { opacity: 0; transform: translateY(10px) scale(0.94); }
+      65%  { opacity: 1; transform: translateY(-2px) scale(1.015); }
+      100% { opacity: 1; transform: none; }
+    }
+
+    @keyframes cardOut {
+      0%   { opacity: 1; transform: translateY(0) scale(1); }
+      100% { opacity: 0; transform: translateY(-8px) scale(0.94); }
+    }
+
+    .gallery-item.is-favourite-entering {
+      animation: cardIn 280ms cubic-bezier(0.2,0.85,0.2,1);
+    }
+
+    .gallery-item.is-favourite-leaving {
+      animation: cardOut 220ms ease-in forwards;
+      pointer-events: none;
+    }
+
+    .gallery-item.is-favourite-leaving .gallery-action,
+    .gallery-item.is-favourite-leaving .gallery-remove { pointer-events: none; }
+
+    /* ── Responsive ───────────────────────────────────────────── */
+    @media (max-width: 1060px) {
+      .main-grid { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 620px) {
+      .app { padding: 20px 16px 40px; }
+
+      .header { flex-direction: column; }
+
+      .card-head {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .meta {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .gallery-grid {
+        grid-template-columns: 1fr;
+        max-width: 100%;
+      }
+    }
+  
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #3a3628; border-radius: 2px; }
+  * { scrollbar-width: thin; scrollbar-color: #3a3628 transparent; }
+
+  
+  /* ── Scrollbar ── */
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(245,240,230,0.18); border-radius: 2px; }
+  * { scrollbar-width: thin; scrollbar-color: rgba(245,240,230,0.18) transparent; }
+
+  /* ── Header favicon SVG ─────────────────────────────────── */
+  #headerFavicon {
+    cursor: pointer;
+    overflow: visible;
+    -webkit-tap-highlight-color: transparent;
+    outline: none;
+  }
+
+  @keyframes hf-palette-bounce {
+    0%   { transform: rotate(0deg) scale(1); }
+    12%  { transform: rotate(-18deg) scale(1.18); }
+    28%  { transform: rotate(12deg) scale(0.9); }
+    45%  { transform: rotate(-7deg) scale(1.08); }
+    62%  { transform: rotate(4deg) scale(0.97); }
+    78%  { transform: rotate(-2deg) scale(1.02); }
+    90%  { transform: rotate(1deg) scale(0.99); }
+    100% { transform: rotate(0deg) scale(1); }
+  }
+
+  #headerFavicon.hf-animating {
+    animation: hf-palette-bounce 0.72s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+  }
+
+  .hf-path {
+    transition: fill 0.25s ease;
+  }
+
+  @keyframes hf-path-flash {
+    0%   { opacity: 1; }
+    20%  { opacity: 0.15; }
+    50%  { opacity: 1; }
+    70%  { opacity: 0.55; }
+    100% { opacity: 1; }
+  }
+
+  .hf-path.hf-flashing {
+    animation: hf-path-flash 0.45s ease both;
+  }
+</style>
+</head>
+<body data-theme="dark">
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+#_sb_wrap { font-family: system-ui, sans-serif; font-size: 0.82rem; display: none; position: relative; z-index: 9999; background: #141414; border-bottom: 1px solid #232323; }
+#_sb_main_row { display: flex; align-items: center; gap: 12px; padding: 10px 20px; }
+#_sb_msg { flex: 1; color: #777; }
+#_sb_msg strong { color: #aaa; font-weight: 500; }
+#_sb_connect_btn { background: transparent; border: 1px solid #2e2e2e; border-radius: 100px; color: #999; padding: 5px 14px; font-size: 0.78rem; font-family: system-ui, sans-serif; cursor: pointer; white-space: nowrap; transition: border-color 0.15s, color 0.15s; }
+#_sb_connect_btn:hover { border-color: #555; color: #ddd; }
+#_sb_dismiss_btn { background: transparent; border: none; color: #444; font-size: 1rem; line-height: 1; cursor: pointer; padding: 4px 6px; transition: color 0.15s; flex-shrink: 0; }
+#_sb_dismiss_btn:hover { color: #888; }
+#_sb_form_row { display: none; align-items: center; gap: 8px; padding: 8px 20px 12px; flex-wrap: wrap; border-top: 1px solid #1c1c1c; }
+#_sb_form_row input { background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 6px; color: #ccc; padding: 6px 10px; font-size: 0.78rem; font-family: system-ui, sans-serif; outline: none; transition: border-color 0.15s; }
+#_sb_form_row input:focus { border-color: #3a3a3a; }
+#_sb_form_row input::placeholder { color: #3a3a3a; }
+#_sb_url_in { width: 210px; } #_sb_key_in { width: 230px; } #_sb_email_in { width: 165px; } #_sb_pass_in { width: 130px; }
+#_sb_save_btn { background: #1e1e1e; border: 1px solid #2e2e2e; border-radius: 6px; color: #bbb; padding: 6px 14px; font-size: 0.78rem; font-family: system-ui, sans-serif; cursor: pointer; white-space: nowrap; transition: background 0.15s, border-color 0.15s; }
+#_sb_save_btn:hover { background: #252525; border-color: #444; }
+#_sb_status { font-size: 0.75rem; color: #555; }
+#_sb_status.ok { color: #5a9e7a; } #_sb_status.err { color: #c06060; }
+</style>
+
+<div id="_sb_wrap">
+  <div id="_sb_main_row">
+    <span id="_sb_msg"><strong>Sync your data across devices</strong> &mdash; connect Supabase to save externally and access anywhere</span>
+    <button id="_sb_connect_btn">Set up sync &rarr;</button>
+    <button id="_sb_dismiss_btn" title="Dismiss">&times;</button>
+  </div>
+  <div id="_sb_form_row">
+    <input id="_sb_url_in"   placeholder="Project URL  (https://xxx.supabase.co)">
+    <input id="_sb_key_in"   placeholder="Anon public key">
+    <input id="_sb_email_in" placeholder="Email">
+    <input id="_sb_pass_in"  type="password" placeholder="Password">
+    <button id="_sb_save_btn">Save &amp; Connect</button>
+    <span id="_sb_status"></span>
+  </div>
+</div>
+
+<script>
+(async function () {
+  const K = { url:'_sb_url', key:'_sb_key', email:'_sb_email', pass:'_sb_pass', dismissed:'_sb_dismissed' };
+  let _sb = null, _user = null;
+
+  const wrap    = document.getElementById('_sb_wrap');
+  const formRow = document.getElementById('_sb_form_row');
+  const status  = document.getElementById('_sb_status');
+
+  const showBanner = () => { wrap.style.display = 'block'; };
+  const hideBanner = () => { wrap.style.display = 'none';  };
+
+  const setStatus = (msg, cls) => { status.textContent = msg; status.className = cls || ''; };
+
+  document.getElementById('_sb_dismiss_btn').onclick = () => {
+    localStorage.setItem(K.dismissed, '1');
+    hideBanner();
+  };
+
+  document.getElementById('_sb_connect_btn').onclick = () => {
+    formRow.style.display = 'flex';
+    document.getElementById('_sb_url_in').value   = localStorage.getItem(K.url)   || '';
+    document.getElementById('_sb_key_in').value   = localStorage.getItem(K.key)   || '';
+    document.getElementById('_sb_email_in').value = localStorage.getItem(K.email) || '';
+    document.getElementById('_sb_pass_in').value  = localStorage.getItem(K.pass)  || '';
+  };
+
+  document.getElementById('_sb_save_btn').onclick = async () => {
+    const url   = document.getElementById('_sb_url_in').value.trim();
+    const key   = document.getElementById('_sb_key_in').value.trim();
+    const email = document.getElementById('_sb_email_in').value.trim();
+    const pass  = document.getElementById('_sb_pass_in').value;
+    if (!url || !key || !email || !pass) { setStatus('Please fill all fields.', 'err'); return; }
+    setStatus('Connecting...', '');
+    try {
+      const client = supabase.createClient(url, key);
+      const { data, error } = await client.auth.signInWithPassword({ email, password: pass });
+      if (error) { setStatus('Error: ' + error.message, 'err'); return; }
+      localStorage.setItem(K.url, url); localStorage.setItem(K.key, key);
+      localStorage.setItem(K.email, email); localStorage.setItem(K.pass, pass);
+      localStorage.removeItem(K.dismissed);
+      _sb = client; _user = data.user;
+      setStatus('Connected!', 'ok');
+      // Pull remote data if it exists, otherwise push local up
+      const { data: remoteRow } = await client.from(window._SB_TABLE || '__').select('data').eq('user_id', data.user.id).maybeSingle();
+      if (remoteRow && window._sbOnLoad) {
+        window._sbPaused = true;
+        try { window._sbOnLoad(remoteRow.data); } finally { window._sbPaused = false; }
+      } else {
+        await _syncNow();
+      }
+      setTimeout(hideBanner, 1500);
+    } catch (e) { setStatus('Error: ' + e.message, 'err'); }
+  };
+
+  async function _tryConnect() {
+    const url = localStorage.getItem(K.url), key = localStorage.getItem(K.key),
+          email = localStorage.getItem(K.email), pass = localStorage.getItem(K.pass);
+    if (!url || !key || !email || !pass) return false;
+    try {
+      const client = supabase.createClient(url, key);
+      const { data, error } = await client.auth.signInWithPassword({ email, password: pass });
+      if (error) return false;
+      _sb = client; _user = data.user; return true;
+    } catch { return false; }
+  }
+
+  async function _upsert(table, payload) {
+    if (!_sb || !_user) return;
+    const row = { user_id: _user.id, data: payload, updated_at: new Date().toISOString() };
+    return await _sb.from(table).upsert(row, { onConflict: 'user_id' });
+  }
+
+  async function _syncNow() {
+    if (!window._SB_TABLE) return;
+    const payload = window._sbGetData ? window._sbGetData()
+                  : window._SB_LS_KEY ? JSON.parse(localStorage.getItem(window._SB_LS_KEY) || 'null')
+                  : null;
+    if (payload != null) await _upsert(window._SB_TABLE, payload);
+  }
+
+  window._sbSyncNow = _syncNow;
+  window._sbOpenPanel = function() {
+    localStorage.removeItem('_sb_dismissed');
+    wrap.style.display = 'block';
+    formRow.style.display = 'flex';
+    document.getElementById('_sb_url_in').value   = localStorage.getItem(K.url)   || '';
+    document.getElementById('_sb_key_in').value   = localStorage.getItem(K.key)   || '';
+    document.getElementById('_sb_email_in').value = localStorage.getItem(K.email) || '';
+    document.getElementById('_sb_pass_in').value  = localStorage.getItem(K.pass)  || '';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  window._sbPaused  = false;
+
+  const connected = await _tryConnect();
+  if (connected) {
+    hideBanner();
+    const { data: row } = await _sb.from(window._SB_TABLE || '__').select('data').eq('user_id', _user.id).maybeSingle();
+    if (row && window._sbOnLoad) {
+      window._sbPaused = true;
+      try { window._sbOnLoad(row.data); } finally { window._sbPaused = false; }
+    }
+  } else if (!localStorage.getItem(K.dismissed)) {
+    showBanner();
+  }
+})();
+</script>
+
+
+  <div class="app">
+
+    <!-- ── Header ─────────────────────────────────────────── -->
+    <header class="header">
+      <div class="header-left">
+        <h1 class="title"><a href="../" style="color:inherit;text-decoration:none;cursor:pointer;">Palette Painter</a> <span style="display:inline-block;transform:translateY(8px);" title="Click to recolour with your palette!"><svg id="headerFavicon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1254 1254" width="60" height="60" aria-label="Palette Painter logo — click to recolour" role="button" tabindex="0">
+  <path id="hfPath1" class="hf-path" fill="#e96da0" d="M146.2,851.8c-19.2-104.2-15-209.5,15.3-310.1,37.6-124.7,116.6-233.2,229.3-299.5,79.5-46.7,161-63.2,252.9-63.5l93.7-.3c43.9-.2,86.5-5,129.2-14.5,42.7-9.5,82.9-24.4,120.8-45.8,46.1-26,84.5-61.3,114.3-105.6-2.9,93.4-34.3,175.2-94.2,245.6-41,47.4-90.7,86.5-146.6,114.6-52.2,26.2-108.4,39.4-166.7,40.2l-81.2,1.1c-69.7,3-135.9,22.4-196.2,57.4-100.7,58.6-175.9,147.6-224.2,253.1-18.8,41.2-33.1,83-46.4,127.3h.1Z"/>
+  <g>
+    <path id="hfPath2" class="hf-path" fill="#0b3d2e" d="M213.9,1248.2c.8-25.5,6.6-49.1,14.5-73,33.8-103.2,119.2-193.4,213.8-244.8,51.5-28,107.1-42.8,165.6-44.7,28-.9,54-2.6,81.5-6.6,65.3-9.4,126.9-33.2,182.6-68.5,101.5-64.4,180.7-158.3,228.2-268.5l21.6-55.6c4.2,48.8,6.2,95.3,4.7,143.3-1.6,49.9-7.3,98.2-19.3,146.5-48.4,195.2-207.3,342.5-409.8,360.1-31.6,2.7-62.1,3-94.1,2.3l-99.4-2.2c-49.6-1.1-97.9,6.7-144.8,22.2-54.7,18.4-103.2,47.6-145.2,89.4h0Z"/>
+    <path id="hfPath3" class="hf-path" fill="#7fbe8a" d="M186.7,1184c-10.6-68.6-12.7-140.6.8-210,3.5-20.1,10.6-37.1,20.7-54.6,16.4-28.6,35.3-54.8,57.4-79.7,57.1-64.1,125.4-118,201.4-158,51.4-27.1,106.6-41.7,164.5-45l73.2-4.2c60.4-4.9,118.2-20.6,173.1-46.1,88.3-41.2,174.6-106.3,225.5-191.1-4.3,37.7-11.1,73-21.5,108.4-11.9,39.9-29.2,76.3-52.7,110.8-42.5,62.6-97.7,116.2-161.7,156.6-41.3,26-85.8,45.1-133.4,56.2-33,7.7-65.3,10.3-99.1,10.9-33.8.6-61.4,2.4-92.3,9.3-48.9,10.9-94.3,30.6-136.7,57.3-69.7,43.9-132.1,105.2-174.6,176.1-19.6,32.2-33.8,65.3-44.5,103.2h0Z"/>
+    <path id="hfPath4" class="hf-path" fill="#f2b7c6" d="M438.1,657.1c-106.6,51.6-208.3,139-261.3,245.9-.3-99.6,41.1-196.1,102.8-272.1,45.6-56.1,100.8-103.6,164-138.5,63.2-34.9,107.8-45.3,166.5-48.3l84.9-1.8c78.2-.2,153.2-21,220.5-60.4,84.7-49.6,148.9-111.8,195.1-199.8,2.1,35.7.6,69.4-4.6,103.6-12.1,84.7-58.4,147.2-125.4,197.9-38.5,29.1-79.3,54.3-122.3,76.2s-125.3,47.2-193,49.3l-69.8,3.5c-54.9,4.8-107.7,20.2-157.5,44.3h.1Z"/>
+  </g>
+</svg></span></h1>
+      </div>
+      <div>
+      </div>
+    </header>
+
+    <!-- ── Two-column grid ────────────────────────────────── -->
+    <div class="main-grid">
+
+      <!-- ── Input & extraction card ──────────────────────── -->
+      <section class="card">
+        <div class="card-head">
+          <div class="card-title">
+            <strong>Input &amp; extraction</strong>
+            <span>Paste anything. Garbage is ignored. Only <code>#RRGGBB</code> codes survive.</span>
+          </div>
+          <div class="badge" id="countBadge">0 unique colours</div>
+        </div>
+
+        <div class="card-body">
+          <label for="input">Paste your text</label>
+          <textarea
+            id="input"
+            placeholder="Paste notes, captions, colour lists, or any messy text here…"
+          ></textarea>
+
+          <div class="filename-field">
+            <label for="filenameInput">File name</label>
+            <div class="filename-input-row">
+              <input
+                id="filenameInput"
+                class="filename-input"
+                type="text"
+                placeholder="coloured-art"
+                autocomplete="off"
+                spellcheck="false"
+              />
+              <button class="filename-save-btn" id="filenameSaveBtn" type="button" disabled aria-label="Save SVG to gallery" title="Save to gallery">
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+                  <path d="M5 21V5C5 3.89543 5.89543 3 7 3H17C18.1046 3 19 3.89543 19 5V21L13.0815 17.1953C12.4227 16.7717 11.5773 16.7717 10.9185 17.1953L5 21Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </button>
+            </div>
+            <p class="filename-hint">Extension is added automatically when saving SVG or PNG.</p>
+          </div>
+
+          <div class="button-row">
+            <button class="btn" id="submitBtn" type="button">
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              </svg>
+              Apply colours
+            </button>
+            <button class="btn ghost" id="resetBtn" type="button" title="Reset input">Reset</button>
+            <button class="btn secondary" id="downloadBtn" type="button" disabled>
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path fill="currentColor" d="M12 3a1 1 0 0 1 1 1v8.59l2.3-2.3a1 1 0 1 1 1.4 1.42l-4.01 4a1 1 0 0 1-1.38 0l-4.01-4a1 1 0 1 1 1.4-1.42L11 12.59V4a1 1 0 0 1 1-1Zm-7 13a1 1 0 0 1 1 1v2h12v-2a1 1 0 1 1 2 0v3a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1Z"/>
+              </svg>
+              <span>Download SVG</span>
+            </button>
+            <button class="btn secondary" id="pngBtn" type="button" disabled>
+              <svg viewBox="0 0 122.88 91.27" aria-hidden="true" focusable="false">
+                <path fill="currentColor" fill-rule="evenodd" d="M87.29,16.88A11.35,11.35,0,1,1,75.94,28.23,11.35,11.35,0,0,1,87.29,16.88Zm27.33,74.39H8.26a8.27,8.27,0,0,1-5.83-2.44h0A8.24,8.24,0,0,1,0,83V8.26A8.26,8.26,0,0,1,2.42,2.42h0A8.26,8.26,0,0,1,8.26,0H114.62a8.26,8.26,0,0,1,5.83,2.43h0a8.26,8.26,0,0,1,2.42,5.84V83a8.24,8.24,0,0,1-2.42,5.83h0a8.27,8.27,0,0,1-5.83,2.44Zm-7.35-9.43L87.6,50.46a4.52,4.52,0,0,0-7.65,0L70.66,65.39,80.77,81.84H76.62l-27.57-44c-2.54-3.39-6.61-3.13-8.88,0l-27,44H9.42V9.42h104V81.84Z"/>
+              </svg>
+              <span>Export PNG</span>
+            </button>
+            <button class="btn ghost" id="flipBtn" type="button" aria-pressed="false" title="Flip colour order">
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path fill="currentColor" d="M7 3a1 1 0 0 1 1 1v12.59l2.3-2.3a1 1 0 1 1 1.4 1.42l-4.01 4a1 1 0 0 1-1.38 0l-4.01-4a1 1 0 1 1 1.4-1.42L6 16.59V4a1 1 0 0 1 1-1Zm10 18a1 1 0 0 1-1-1V7.41l-2.3 2.3a1 1 0 0 1-1.4-1.42l4.01-4a1 1 0 0 1 1.38 0l4.01 4a1 1 0 1 1-1.4 1.42L18 6.41V20a1 1 0 0 1-1 1Z"/>
+              </svg>
+              <span>Flip order</span>
+            </button>
+          </div>
+
+          <div class="meta" id="status" data-tone="neutral">
+            <span><strong>No colours loaded yet.</strong> Paste text, then press Enter or Apply colours.</span>
+            <span id="usageMeta">0 / 12 used</span>
+          </div>
+
+          <div class="progress" aria-hidden="true"><span id="progressBar"></span></div>
+
+          <div class="chips" id="chips"></div>
+
+          <p class="hint">Preview updates as you type. Enter applies and cleans the list. Shift+Enter inserts a new line. Ctrl+Z undoes the clean.</p>
+          <p class="footer-note">Only the first 12 codes colour the SVG. Extra codes appear in the cleaned list but do not paint any section.</p>
+        </div>
+      </section>
+
+      <!-- ── Live preview card ─────────────────────────────── -->
+      <section class="card">
+        <div class="card-head">
+          <div class="card-title">
+            <strong>Live preview</strong>
+            <span>The finished artwork updates immediately after you apply colours.</span>
+          </div>
+          <div class="preview-tools">
+            <div class="badge">SVG canvas</div>
+            <button class="btn secondary icon-only" id="previewDownloadBtn" type="button" disabled aria-label="Download SVG" title="Download SVG">
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path fill="currentColor" d="M12 3a1 1 0 0 1 1 1v8.59l2.3-2.3a1 1 0 1 1 1.4 1.42l-4.01 4a1 1 0 0 1-1.38 0l-4.01-4a1 1 0 1 1 1.4-1.42L11 12.59V4a1 1 0 0 1 1-1Zm-7 13a1 1 0 0 1 1 1v2h12v-2a1 1 0 1 1 2 0v3a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1Z"/>
+              </svg>
+            </button>
+            <button class="btn secondary icon-only" id="copyPngBtn" type="button" disabled aria-label="Copy PNG to clipboard" title="Copy PNG">
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path fill="currentColor" d="M8,7 L8,8 L6.5,8 C5.67157288,8 5,8.67157288 5,9.5 L5,18.5 C5,19.3284271 5.67157288,20 6.5,20 L13.5,20 C14.3284271,20 15,19.3284271 15,18.5 L15,17 L16,17 L16,18.5 C16,19.8807119 14.8807119,21 13.5,21 L6.5,21 C5.11928813,21 4,19.8807119 4,18.5 L4,9.5 C4,8.11928813 5.11928813,7 6.5,7 L8,7 Z M16,4 L10.5,4 C9.67157288,4 9,4.67157288 9,5.5 L9,14.5 C9,15.3284271 9.67157288,16 10.5,16 L17.5,16 C18.3284271,16 19,15.3284271 19,14.5 L19,7 L16.5,7 C16.2238576,7 16,6.77614237 16,6.5 L16,4 Z M20,6.52797748 L20,14.5 C20,15.8807119 18.8807119,17 17.5,17 L10.5,17 C9.11928813,17 8,15.8807119 8,14.5 L8,5.5 C8,4.11928813 9.11928813,3 10.5,3 L16.4720225,3 C16.6047688,2.99158053 16.7429463,3.03583949 16.8535534,3.14644661 L19.8535534,6.14644661 C19.9641605,6.25705373 20.0084195,6.39523125 20,6.52797748 Z M17,6 L18.2928932,6 L17,4.70710678 L17,6 Z M11.5,13 C11.2238576,13 11,12.7761424 11,12.5 C11,12.2238576 11.2238576,12 11.5,12 L13.5,12 C13.7761424,12 14,12.2238576 14,12.5 C14,12.7761424 13.7761424,13 13.5,13 L11.5,13 Z M11.5,11 C11.2238576,11 11,10.7761424 11,10.5 C11,10.2238576 11.2238576,10 11.5,10 L16.5,10 C16.7761424,10 17,10.2238576 17,10.5 C17,10.7761424 16.7761424,11 16.5,11 L11.5,11 Z M11.5,9 C11.2238576,9 11,8.77614237 11,8.5 C11,8.22385763 11.2238576,8 11.5,8 L16.5,8 C16.7761424,8 17,8.22385763 17,8.5 C17,8.77614237 16.7761424,9 16.5,9 L11.5,9 Z"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="preview-body">
+          <div class="artboard">
+            <div class="artboard-inner" id="preview">
+<svg id="Layer_1" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 3000 3000">
+  <g>
+    <path fill="#FF6B6B" d="M3000.01,2956.4v43.62H-.01v-301.83h.27c246.3,44.06,499.11,53.72,758.02,31.1,78.76-14.21,168.32-16.47,267.16-8.48,59.14,7.33,115.77,19.07,162.56,48.06,133.72,61.06,333.18,104.65,532.32,107.07,123.85,7.55,238.31,21.29,345.63,39.76,101.82,22.59,225.6,9.17,387.43-13.25,181.2-4.39,287.37,1.34,347.67,13.25,93.5,14.18,157.87,27.71,198.96,40.7Z"/>
+    <path fill="#FF8A5B" d="M3000.01,2379.44v576.96c-41.09-12.99-105.46-26.52-198.96-40.7-60.3-11.91-166.47-17.64-347.67-13.25-161.83,22.42-285.61,35.84-387.43,13.25-107.32-18.47-221.78-32.21-345.63-39.76-199.14-2.42-398.6-46.01-532.32-107.07-46.79-28.99-103.42-40.73-162.56-48.06-98.84-7.99-188.4-5.73-267.16,8.48-258.91,22.62-511.72,12.96-758.02-31.1H-.01v-96.83h.27c81.15,24.72,371.92,42.75,440.12,29.81,178.43-15.35,369.48-54.75,590.75-93.86,83.69-17.46,186.37-24.5,310.28-19.87,124.58-3.76,298.85,64.2,505.73,75.08,160.45,8.96,310.64-2,452.72-28.71,169.58-37.24,311.11-83.89,446.1-125.88,92.22-28.2,177.27-48.12,254.05-58.49Z"/>
+    <path fill="#FFA94D" d="M3000.01,2204.31v175.13c-76.78,10.37-161.83,30.29-254.05,58.49-134.99,41.99-276.52,88.64-446.1,125.88-142.08,26.71-292.27,37.67-452.72,28.71-206.88-10.88-381.15-78.84-505.73-75.08-123.91-4.63-226.59,2.41-310.28,19.87-221.27,39.11-412.32,78.51-590.75,93.86-68.2,12.94-358.97-5.09-440.12-29.81H-.01v-330.29c36.08-16.47,79.21-28.75,127.76-37.82,75.67-11.96,129.61-4.62,174.15,11.07,73.33,20.06,206.29,58.68,327.54,92.2,48.97,8.55,92.52,3.4,131.9-12.25,55.1-23.75,181.05-94.54,290.92-129.61,75.38-19.82,154.38-29.97,235.68-33.91,143.83-12.84,276.99-22.52,399.63-29.11,109.13-1.42,205.17,10.99,293.83,31.21,130.75,36.75,266,65.73,403.55,90.75,153.7,37.35,285.72,25.91,412.11,1.79,81.01-18.18,150.76-35.39,202.95-51.08Z"/>
+    <path fill="#FFD43B" d="M3000.01,1972.65v231.66c-52.19,15.69-121.94,32.9-202.95,51.08-126.39,24.12-258.41,35.56-412.11-1.79-137.55-25.02-272.8-54-403.55-90.75-88.66-20.22-184.7-32.63-293.83-31.21-122.64,6.59-255.8,16.27-399.63,29.11-81.3,3.94-160.3,14.09-235.68,33.91-109.87,35.07-235.82,105.86-290.92,129.61-39.38,15.65-82.93,20.8-131.9,12.25-121.25-33.52-254.21-72.14-327.54-92.2-44.54-15.69-98.48-23.03-174.15-11.07-48.55,9.07-91.68,21.35-127.76,37.82v-326.9h.77c102.83-3.64,209.42-3.58,318.35-1.23,184.12,10.08,315.82,21.75,416.76,34.35,81.33,9.18,158.39,14.35,231.67,15.99,154.25-4.23,259.06-10.79,324.47-19.21,199.83-6.26,469.64-29.63,744.44-54.22,93.84-11.92,175.56-19.18,246.29-22.2,103.81-3.58,196.56,6.08,279.68,27.29,131.1,29.9,226.86,44.49,300.54,49.54,61.77,3.35,108.22,2.93,137.05-1.83Z"/>
+    <path fill="#A9E34B" d="M3000.01,1663.55v309.1c-28.83,4.76-75.28,5.18-137.05,1.83-73.68-5.05-169.44-19.64-300.54-49.54-83.12-21.21-175.87-30.87-279.68-27.29-70.73,3.02-152.45,10.28-246.29,22.2-274.8,24.59-544.61,47.96-744.44,54.22-65.41,8.42-170.22,14.98-324.47,19.21-73.28-1.64-150.34-6.81-231.67-15.99-100.94-12.6-232.64-24.27-416.76-34.35-108.93-2.35-215.52-2.41-318.35,1.23H0v-138.66c107.61-34.51,222.72-70.58,326.02-90.21,86.79-13.02,131.77-12.9,175.84-17.92,115.08-22.85,208.91-90.91,281.33-115.49,44.15-12.9,95.53-11.25,150.7,1.63,41.53,9.15,83.16,24.5,124.88,46.54,34.9,19.05,71.02,32.4,108.06,41.45,60.95,15.54,165.73,28.18,262.81,46.57,53.06,11.84,99.75,28.92,142.78,49.03,24.73,13.83,53.48,24.28,85.83,31.68,172.36,22.6,343.41,6.56,513.53-37.57,67.67-12.77,235.08-76.52,326.94-97.31,38.06-9.04,74.95-12.17,110.67-9.36,129.73,8.89,264.61,9.53,390.62,9Z"/>
+    <path fill="#69DB7C" d="M3000.01,1389.98v273.57c-126.01.53-260.89-.11-390.62-9-35.72-2.81-72.61.32-110.67,9.36-91.86,20.79-259.27,84.54-326.94,97.31-170.12,44.13-341.17,60.17-513.53,37.57-32.35-7.4-61.1-17.85-85.83-31.68-43.03-20.11-89.72-37.19-142.78-49.03-97.08-18.39-201.86-31.03-262.81-46.57-37.04-9.05-73.16-22.4-108.06-41.45-41.72-22.04-83.35-37.39-124.88-46.54-55.17-12.88-106.55-14.53-150.7-1.63-72.42,24.58-166.25,92.64-281.33,115.49-44.07,5.02-89.05,4.9-175.84,17.92C222.72,1734.93,107.61,1771,0,1805.51v-377.66c120.38-16.56,241.44-26.43,372.71-31.89,117.45-16.25,210.27-25.68,280.79-28.94,36.45-2.57,70.03.53,101.16,8.43,59.49,11.41,108.36,28.09,147.19,49.77,94.42,41.36,182.7,56.61,266.3,51.92,69.45,1.15,214.7,43.87,262.32,43.67,59.65,6.7,181.33-42.19,292.55-71.33,180.3-38.86,347.54-76.66,463.63-110.25,88.41-24.85,166.58-28.61,236.96-16.33,66.59,7.37,135.6,21.19,206.54,40.15,82.94,14.3,165.89,22.72,248.85,26.64,34.07,1.72,73.23,2.13,121.01.29Z"/>
+    <path fill="#38D9A9" d="M3000.01,1215.29v174.69c-47.78,1.84-86.94,1.43-121.01-.29-82.96-3.92-165.91-12.34-248.85-26.64-70.94-18.96-139.95-32.78-206.54-40.15-70.38-12.28-148.55-8.52-236.96,16.33-116.09,33.59-283.33,71.39-463.63,110.25-111.22,29.14-232.9,78.03-292.55,71.33-47.62.2-192.87-42.52-262.32-43.67-83.6,4.69-171.88-10.56-266.3-51.92-38.83-21.68-87.7-38.36-147.19-49.77-31.13-7.9-64.71-11-101.16-8.43-70.52,3.26-163.34,12.69-280.79,28.94-131.27,5.46-252.33,15.33-372.71,31.89v-246.85c124,9.87,172.43,15.93,296.59,25.8,42.32,3.37,84.95,6.73,127.15,2.04,41.1-4.57,80.91-16.68,121.09-26.45,251.22-61.06,514.52-30.28,771.17.84,84.49,10.24,173.13,5.07,257.74-4.14,113.53-12.35,222.81-49.9,335.47-68.58,23.12-3.84,46.38-6.88,69.71-9.11,58.65-5.61,118.43.96,174.46,19.17,49.47,16.08,95.57,40.94,143.8,60.4,183,73.84,389.88,66.96,582.5,24.08,52.44-11.67,81.55-21.53,120.33,10.24Z"/>
+    <path fill="#3BC9DB" d="M3000.01,895.67v319.62c-38.78-31.77-67.89-21.91-120.33-10.24-192.62,42.88-399.5,49.76-582.5-24.08-48.23-19.46-94.33-44.32-143.8-60.4-56.03-18.21-115.81-24.78-174.46-19.17-23.33,2.23-46.59,5.27-69.71,9.11-112.66,18.68-221.94,56.23-335.47,68.58-84.61,9.21-173.25,14.38-257.74,4.14-256.65-31.12-519.95-61.9-771.17-.84-40.18,9.77-79.99,21.88-121.09,26.45-42.2,4.69-84.83,1.33-127.15-2.04-124.16-9.87-172.59-15.93-296.59-25.8v-218.34c276.56,50.47,429.2-85.5,710.17-66.64,192.75,12.93,376.12,92.98,568.79,107,103.54,7.53,208.46-4.38,307.68-34.93,46.11-14.2,91.53-32.5,139.52-37.38,121.95-12.4,233.37,61.94,349.12,102.28,128.11,44.65,268.11,47.94,401.93,25.64,133.82-22.31,262.33-69.34,386.77-123.4,55.77-24.24,78.22-53.44,136.03-39.56Z"/>
+    <path fill="#4DABF7" d="M3000.01,707.71v187.96c-57.81-13.88-80.26,15.32-136.03,39.56-124.44,54.06-252.95,101.09-386.77,123.4-133.82,22.3-273.82,19.01-401.93-25.64-115.75-40.34-227.17-114.68-349.12-102.28-47.99,4.88-93.41,23.18-139.52,37.38-99.22,30.55-204.14,42.46-307.68,34.93-192.67-14.02-376.04-94.07-568.79-107C429.2,877.16,276.56,1013.13,0,962.66v-439.09c147.58,55.09,279.49,95.89,431.21,138.94,267.59,75.92,552.07,132.68,822.2,66.35,66.37-16.3,131.37-39.94,199.37-46.78,173.6-17.46,336.35,74.96,495.55,146.37,35.39,15.87,71.7,30.97,110.1,36.42,98.1,13.92,192.26-35.89,284.3-72.57,127.05-50.62,263.29-78.08,400.03-80.64,98.78-1.84,159.35-15.12,257.25-3.95Z"/>
+    <path fill="#748FFC" d="M3000.01,453.2v254.51c-97.9-11.17-158.47,2.11-257.25,3.95-136.74,2.56-272.98,30.02-400.03,80.64-92.04,36.68-186.2,86.49-284.3,72.57-38.4-5.45-74.71-20.55-110.1-36.42-159.2-71.41-321.95-163.83-495.55-146.37-68,6.84-133,30.48-199.37,46.78-270.13,66.33-554.61,9.57-822.2-66.35C279.49,619.46,147.58,578.66,0,523.57v-148.55c105.88-77.66,145.47-62.93,276.9-67.94,5.94-.23,12.06-.34,17.61,1.77,7.84,2.99,13.36,9.92,18.67,16.41,101.28,123.78,263.46,186.25,423.1,195.86,159.65,9.61,318.35-28.24,471.06-75.75,83.39-25.94,166.27-54.96,252.43-69.21,86.15-14.25,177.06-12.98,257.79,20.32,53.99,22.27,101.55,57.99,155.22,81.01,102.48,43.97,220.06,38.42,328.6,12.84,108.54-25.58,211.65-69.98,318.25-102.7,44.99-13.8,91.71-25.64,138.61-21.71,41.31,3.45,80.5,18.93,119.54,32.87,86.9,31.02,130.32,56.41,222.22,54.41Z"/>
+    <path fill="#B197FC" d="M3000.01,290.42v162.78c-91.9,2-135.32-23.39-222.22-54.41-39.04-13.94-78.23-29.42-119.54-32.87-46.9-3.93-93.62,7.91-138.61,21.71-106.6,32.72-209.71,77.12-318.25,102.7-108.54,25.58-226.12,31.13-328.6-12.84-53.67-23.02-101.23-58.74-155.22-81.01-80.73-33.3-171.64-34.57-257.79-20.32-86.16,14.25-169.04,43.27-252.43,69.21-152.71,47.51-311.41,85.36-471.06,75.75-159.64-9.61-321.82-72.08-423.1-195.86-5.31-6.49-10.83-13.42-18.67-16.41-5.55-2.11-11.67-2-17.61-1.77C145.48,312.09,105.89,297.36,0,375.02V63.22c5.76-8.36,15.53-13.06,33.07-7.69,47.92,16.1,98.8,21.36,134.82,24.52,69.17,2.73,183.76-28.35,275.46-27.74,67.75,4.29,138.42,54.36,234.81,129.02,26.57,28.56,162.22,50.5,272.4,51.56,87.88-3.6,189.25-40.8,297.86-96.08,19.31-8.96,52.25-8.32,89.67-4.51,42.13,8.43,138.18,9.52,161.92,18.06,33.34,6.06,75.62,24.01,123.21,49.03,99.25,35.45,191.62,69.76,247.72,98.05,64.78,39.97,129.72,63.3,194.82,69.67,87.33,5.79,174.18-6.5,260.62-34.19,78.68-22.49,148.36-39.38,206.43-49.02,31.03-2.96,60.63-4.16,89.02-3.87,53.38-2.94,114.2-2.08,177.4,0,89.17,3.37,160.85,6.94,200.77,10.39Z"/>
+    <path fill="#F783AC" d="M3000.01,0v290.42c-39.92-3.45-111.6-7.02-200.77-10.39-63.2-2.08-124.02-2.94-177.4,0-28.39-.29-57.99.91-89.02,3.87-58.07,9.64-127.75,26.53-206.43,49.02-86.44,27.69-173.29,39.98-260.62,34.19-65.1-6.37-130.04-29.7-194.82-69.67-56.1-28.29-148.47-62.6-247.72-98.05-47.59-25.02-89.87-42.97-123.21-49.03-23.74-8.54-119.79-9.63-161.92-18.06-37.42-3.81-70.36-4.45-89.67,4.51-108.61,55.28-209.98,92.48-297.86,96.08-110.18-1.06-245.83-23-272.4-51.56-96.39-74.66-167.06-124.73-234.81-129.02-91.7-.61-206.29,30.47-275.46,27.74-36.02-3.16-86.9-8.42-134.82-24.52C15.54,50.16,5.77,54.86,0,63.22V0h3000Z"/>
+  </g>
+</svg>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div><!-- /main-grid -->
+
+    <!-- ── Saved downloads ─────────────────────────────────── -->
+    <section class="card gallery-section">
+      <div class="card-head">
+        <div class="card-title">
+          <strong>Saved downloads</strong>
+          <span>Hover a tile to reveal file details. Double click to paste into canvas. Drag to reorder.</span>
+        </div>
+        <div class="gallery-head-actions">
+          <button class="btn secondary" onclick="window._sbOpenPanel&&window._sbOpenPanel()" title="Cloud Save settings" style="padding:5px 11px;font-size:12px;gap:5px;"><svg viewBox="0 0 24 24" width="13" height="13"><path fill="currentColor" d="M19.35 10.04A7.49 7.49 0 0 0 12 4C9.11 4 6.6 5.64 5.35 8.04A5.994 5.994 0 0 0 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96z"/></svg>Cloud Save</button>
+          <div class="badge" id="galleryBadge">0 saved</div>
+          <button class="btn secondary select-mode-btn" id="gallerySelectBtn" type="button" title="Select items to download">
+            <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" focusable="false"><path fill="currentColor" d="M19 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2Zm0 2v14H5V5h14Zm-8.94 9.06L8 12l-1.41 1.41L10.06 17 17 9.41 15.59 8l-5.53 6.06Z"/></svg>
+            <span>Select</span>
+          </button>
+          <button class="btn download-selected-btn" id="downloadSelectedGalleryBtn" type="button" disabled title="Download selected items as .zip">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M12 3a1 1 0 0 1 1 1v8.59l2.3-2.3a1 1 0 1 1 1.4 1.42l-4.01 4a1 1 0 0 1-1.38 0l-4.01-4a1 1 0 1 1 1.4-1.42L11 12.59V4a1 1 0 0 1 1-1Zm-7 13a1 1 0 0 1 1 1v2h12v-2a1 1 0 1 1 2 0v3a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1Z"/></svg>
+            <span id="downloadSelectedGalleryLabel">Download selected</span>
+          </button>
+          <button class="btn secondary gallery-download-all" id="downloadAllBtn" type="button" disabled aria-label="Download all saved items as a zip" title="Download all as .zip">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path fill="currentColor" d="M12 3a1 1 0 0 1 1 1v8.59l2.3-2.3a1 1 0 1 1 1.4 1.42l-4.01 4a1 1 0 0 1-1.38 0l-4.01-4a1 1 0 1 1 1.4-1.42L11 12.59V4a1 1 0 0 1 1-1Zm-7 13a1 1 0 0 1 1 1v2h12v-2a1 1 0 1 1 2 0v3a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1Z"/>
+            </svg>
+            <span>Download all</span>
+          </button>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="gallery-empty" id="galleryEmpty">
+          Nothing saved yet. Download an SVG or PNG and it will appear here.
+        </div>
+        <div class="gallery-grid" id="galleryGrid" aria-live="polite"></div>
+      </div>
+    </section>
+
+    <!-- ── Favourites ──────────────────────────────────────── -->
+    <section class="card gallery-section">
+      <div class="card-head">
+        <div class="card-title">
+          <strong>Favourites</strong>
+          <span>Star a saved item to pin it here. Unstarring only removes it from favourites — not from saved downloads.</span>
+        </div>
+        <div class="gallery-head-actions">
+          <div class="badge" id="favouritesBadge">0 favourites</div>
+          <button class="btn secondary select-mode-btn" id="favouritesSelectBtn" type="button" title="Select items to download">
+            <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" focusable="false"><path fill="currentColor" d="M19 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2Zm0 2v14H5V5h14Zm-8.94 9.06L8 12l-1.41 1.41L10.06 17 17 9.41 15.59 8l-5.53 6.06Z"/></svg>
+            <span>Select</span>
+          </button>
+          <button class="btn download-selected-btn" id="downloadSelectedFavouritesBtn" type="button" disabled title="Download selected items as .zip">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M12 3a1 1 0 0 1 1 1v8.59l2.3-2.3a1 1 0 1 1 1.4 1.42l-4.01 4a1 1 0 0 1-1.38 0l-4.01-4a1 1 0 1 1 1.4-1.42L11 12.59V4a1 1 0 0 1 1-1Zm-7 13a1 1 0 0 1 1 1v2h12v-2a1 1 0 1 1 2 0v3a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1Z"/></svg>
+            <span id="downloadSelectedFavouritesLabel">Download selected</span>
+          </button>
+          <button class="btn secondary gallery-download-all" id="downloadFavouritesBtn" type="button" disabled aria-label="Download all favourite items as a zip" title="Download favourites as .zip">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path fill="currentColor" d="M12 3a1 1 0 0 1 1 1v8.59l2.3-2.3a1 1 0 1 1 1.4 1.42l-4.01 4a1 1 0 0 1-1.38 0l-4.01-4a1 1 0 1 1 1.4-1.42L11 12.59V4a1 1 0 0 1 1-1Zm-7 13a1 1 0 0 1 1 1v2h12v-2a1 1 0 1 1 2 0v3a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1Z"/>
+            </svg>
+            <span>Download all</span>
+          </button>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="gallery-empty" id="favouritesEmpty">
+          Nothing favourited yet. Tap the star on a saved item to add it here.
+        </div>
+        <div class="gallery-grid" id="favouritesGrid" aria-live="polite"></div>
+      </div>
+    </section>
+
+  </div><!-- /app -->
+
+  <script>
+    const input = document.getElementById('input');
+    const filenameInput = document.getElementById('filenameInput');
+    const submitBtn = document.getElementById('submitBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const previewDownloadBtn = document.getElementById('previewDownloadBtn');
+    const copyPngBtn = document.getElementById('copyPngBtn');
+    const pngBtn = document.getElementById('pngBtn');
+    const flipBtn = document.getElementById('flipBtn');
+    const status = document.getElementById('status');
+    const countBadge = document.getElementById('countBadge');
+    const chips = document.getElementById('chips');
+    const preview = document.getElementById('preview');
+    const progressBar = document.getElementById('progressBar');
+    const galleryGrid = document.getElementById('galleryGrid');
+    const galleryEmpty = document.getElementById('galleryEmpty');
+    const galleryBadge = document.getElementById('galleryBadge');
+    const downloadAllBtn = document.getElementById('downloadAllBtn');
+    const favouritesGrid = document.getElementById('favouritesGrid');
+    const favouritesEmpty = document.getElementById('favouritesEmpty');
+    const favouritesBadge = document.getElementById('favouritesBadge');
+    const downloadFavouritesBtn = document.getElementById('downloadFavouritesBtn');
+    const filenameSaveBtn = document.getElementById('filenameSaveBtn');
+    const gallerySelectBtn = document.getElementById('gallerySelectBtn');
+    const downloadSelectedGalleryBtn = document.getElementById('downloadSelectedGalleryBtn');
+    const downloadSelectedGalleryLabel = document.getElementById('downloadSelectedGalleryLabel');
+    const favouritesSelectBtn = document.getElementById('favouritesSelectBtn');
+    const downloadSelectedFavouritesBtn = document.getElementById('downloadSelectedFavouritesBtn');
+    const downloadSelectedFavouritesLabel = document.getElementById('downloadSelectedFavouritesLabel');
+
+    const svg = preview.querySelector('svg');
+    const sectionPaths = Array.from(svg.querySelectorAll('g:first-of-type > path'));
+    const orderedSectionPaths = sectionPaths.slice().reverse();
+    const DEFAULT_FILL = '#2b3240';
+    const HEX_REGEX = /#[0-9a-fA-F]{6}/g;
+    const MAX_SECTIONS = 12;
+    const STORAGE_KEY = 'svgHexSavedDownloads';
+    const FAVOURITES_KEY = 'svgHexFavouriteDownloads';
+
+    let previousText = null;
+    let draggedGalleryItem = null;
+    let draggedFavouriteItem = null;
+    let redoText = null;
+    let isFlipped = false;
+    let favouritesRenderedOnce = false;
+    const favouriteRemovalTimers = new WeakMap();
+    const gallerySelectedIds = new Set();
+    const favouritesSelectedIds = new Set();
+
+    const sampleText = `Deep Emerald — #0B3D2E
+Witch's Forest — #145A3A
+Moss Spell — #2E7D4F
+Enchanted Jade — #4EA36A
+Soft Sage Glow — #7FBE8A
+Pale Lime Mist — #C4E3A1
+Ivory Whisper — #F6F0D8
+Blush Cream — #F7DDE2
+Rose Satin — #F2B7C6
+Bubblegum Charm — #EE8FB0
+Glinda Pink — #E96DA0
+Crystal Rose — #D94B87`;
+
+    function extractHexCodes(text) {
+      const matches = text.match(HEX_REGEX) || [];
+      return matches.map((code) => code.toUpperCase());
+    }
+
+    function uniqueCodes(codes) {
+      return Array.from(new Set(codes));
+    }
+
+    function getOrderedSectionPaths() {
+      return isFlipped ? sectionPaths : orderedSectionPaths;
+    }
+
+    function setSections(codes) {
+      getOrderedSectionPaths().forEach((path, index) => {
+        const colour = codes[index] || DEFAULT_FILL;
+        path.setAttribute('fill', colour);
+        path.style.fill = colour;
+      });
+    }
+
+    async function copyHexCode(code, button) {
+      try {
+        if (navigator.clipboard && window.isSecureContext) {
+          await navigator.clipboard.writeText(code);
+        } else {
+          const temp = document.createElement('textarea');
+          temp.value = code;
+          temp.setAttribute('readonly', '');
+          temp.style.position = 'fixed';
+          temp.style.left = '-9999px';
+          document.body.appendChild(temp);
+          temp.select();
+          document.execCommand('copy');
+          temp.remove();
+        }
+
+        const previousLabel = button.getAttribute('data-label') || button.textContent;
+        button.classList.add('copied');
+        button.setAttribute('data-label', previousLabel);
+        button.querySelector('.chip-text').textContent = `${code} copied`;
+        window.clearTimeout(button._copyResetTimer);
+        button._copyResetTimer = window.setTimeout(() => {
+          button.classList.remove('copied');
+          button.querySelector('.chip-text').textContent = previousLabel;
+        }, 900);
+      } catch (error) {
+        console.error('Failed to copy hex code:', error);
+      }
+    }
+
+    function renderChips(codes) {
+      chips.innerHTML = '';
+      codes.forEach((code, index) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'chip';
+        button.setAttribute('data-label', `${index + 1} · ${code}`);
+        button.innerHTML = `<span class="swatch" style="background:${code}"></span><span class="chip-text">${index + 1} · ${code}</span>`;
+        button.addEventListener('click', () => copyHexCode(code, button));
+        chips.appendChild(button);
+      });
+    }
+
+    function setStatusTone(tone) {
+      status.dataset.tone = tone;
+    }
+
+    function updateStatus(codes, hasInput) {
+      const rawCount = codes.length;
+      const uniqueCount = uniqueCodes(codes).length;
+      const used = Math.min(rawCount, MAX_SECTIONS);
+
+      countBadge.textContent = `${uniqueCount} unique colour${uniqueCount === 1 ? '' : 's'}`;
+      progressBar.style.width = `${Math.round((used / MAX_SECTIONS) * 100)}%`;
+
+      let message;
+      let tone = 'neutral';
+
+      if (!hasInput) {
+        message = '<strong>No colours loaded yet.</strong> Paste text, then press Enter or Apply colours.';
+      } else if (rawCount === 0) {
+        message = '<strong>No valid hex codes found.</strong> The SVG stays on its default neutral fill.';
+        tone = 'warn';
+      } else if (rawCount < MAX_SECTIONS) {
+        message = `<strong>Too few codes.</strong> Found ${rawCount} valid hex code${rawCount === 1 ? '' : 's'} and need ${MAX_SECTIONS - rawCount} more to fill all 12 sections.`;
+        tone = 'warn';
+      } else if (rawCount === MAX_SECTIONS) {
+        message = '<strong>Perfect match.</strong> All 12 sections are filled.';
+        tone = 'good';
+      } else {
+        message = `<strong>Too many codes.</strong> Found ${rawCount} valid hex codes; the first 12 colour the SVG and ${rawCount - MAX_SECTIONS} extra code${rawCount - MAX_SECTIONS === 1 ? '' : 's'} were ignored.`;
+        tone = 'warn';
+      }
+
+      setStatusTone(tone);
+      status.innerHTML = `<span>${message}</span><span id="usageMeta">${used} / ${MAX_SECTIONS} used · ${uniqueCount} unique</span>`;
+    }
+
+    function processInput(replaceInput = false, preserveUndoSnapshot = false) {
+      const raw = input.value;
+      const codes = extractHexCodes(raw);
+      const hasInput = raw.trim().length > 0;
+      const hasAnyCodes = codes.length > 0;
+
+      setSections(codes);
+      renderChips(codes);
+      updateStatus(codes, hasInput);
+
+      downloadBtn.disabled = !hasAnyCodes;
+      previewDownloadBtn.disabled = !hasAnyCodes;
+      copyPngBtn.disabled = !hasAnyCodes;
+      pngBtn.disabled = !hasAnyCodes;
+      filenameSaveBtn.disabled = !hasAnyCodes;
+
+      if (replaceInput && hasAnyCodes) {
+        if (!preserveUndoSnapshot) {
+        previousText = raw;
+      }
+        redoText = null;
+        input.value = codes.join('\n');
+        input.classList.add('is-cleaned');
+        downloadBtn.classList.add('download-ready');
+        previewDownloadBtn.classList.add('download-ready');
+        pngBtn.classList.add('download-ready');
+      } else if (replaceInput && !hasAnyCodes) {
+        previousText = null;
+        redoText = null;
+        input.classList.remove('is-cleaned');
+        downloadBtn.classList.remove('download-ready');
+        previewDownloadBtn.classList.remove('download-ready');
+        copyPngBtn.classList.remove('copied');
+        pngBtn.classList.remove('download-ready');
+      }
+    }
+
+    function undoClean() {
+      if (previousText === null) return;
+      redoText = input.value;
+      input.value = previousText;
+      previousText = null;
+      input.classList.remove('is-cleaned');
+      downloadBtn.classList.remove('download-ready');
+      previewDownloadBtn.classList.remove('download-ready');
+      copyPngBtn.classList.remove('copied');
+      pngBtn.classList.remove('download-ready');
+      processInput(false);
+    }
+
+    function redoClean() {
+      if (redoText === null) return;
+      const textToRestore = redoText;
+      redoText = null;
+      previousText = input.value;
+      input.value = textToRestore;
+
+      if (textToRestore === '') {
+        input.classList.remove('is-cleaned');
+        downloadBtn.classList.remove('download-ready');
+        previewDownloadBtn.classList.remove('download-ready');
+        copyPngBtn.classList.remove('copied');
+        pngBtn.classList.remove('download-ready');
+        processInput(false);
+        return;
+      }
+
+      processInput(true, true);
+    }
+
+    function resetAll() {
+      const currentText = input.value;
+      if (currentText === '') return;
+
+      previousText = currentText;
+      redoText = null;
+      input.value = '';
+      input.classList.remove('is-cleaned');
+      downloadBtn.classList.remove('download-ready');
+      previewDownloadBtn.classList.remove('download-ready');
+      copyPngBtn.classList.remove('copied');
+      pngBtn.classList.remove('download-ready');
+      processInput(false);
+
+      input.focus({ preventScroll: true });
+    }
+
+    function sanitizeFilenameBase(value) {
+      return String(value || '')
+        .trim()
+        .replace(/[<>:"/\\|?*\u0000-\u001F]/g, '')
+        .replace(/\s+/g, ' ')
+        .replace(/[.\s]+$/g, '');
+    }
+
+    function resolveDownloadFilename(type) {
+      const defaultBase = type === 'png' ? 'coloured-png' : 'coloured-svg';
+      const cleaned = sanitizeFilenameBase(filenameInput.value) || defaultBase;
+      const lower = cleaned.toLowerCase();
+      if (type === 'svg' && lower.endsWith('.svg')) {
+        return cleaned;
+      }
+      if (type === 'png' && lower.endsWith('.png')) {
+        return cleaned;
+      }
+      const base = cleaned.replace(/\.(svg|png)$/i, '');
+      return `${base}.${type}`;
+    }
+
+    function safeParseSavedDownloads() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        const parsed = raw ? JSON.parse(raw) : [];
+        return Array.isArray(parsed) ? parsed : [];
+      } catch (error) {
+        console.warn('Could not read saved downloads.', error);
+        return [];
+      }
+    }
+
+    function persistSavedDownloads(items) {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+      } catch (error) {
+        console.warn('Could not save downloads to browser storage.', error);
+      }
+    }
+
+    function safeParseFavouriteIds() {
+      try {
+        const raw = localStorage.getItem(FAVOURITES_KEY);
+        const parsed = raw ? JSON.parse(raw) : [];
+        return Array.isArray(parsed) ? parsed.filter((item) => typeof item === 'string') : [];
+      } catch (error) {
+        console.warn('Could not read favourites from browser storage.', error);
+        return [];
+      }
+    }
+
+    function persistFavouriteIds(ids) {
+      try {
+        localStorage.setItem(FAVOURITES_KEY, JSON.stringify(ids));
+      } catch (error) {
+        console.warn('Could not save favourites to browser storage.', error);
+      }
+    }
+
+    function normalizeFavouriteIds(ids) {
+      return Array.from(new Set(ids.filter((id) => typeof id === 'string' && id.trim().length > 0)));
+    }
+
+    function syncFavouriteIds(savedItems = safeParseSavedDownloads()) {
+      const validIds = new Set(savedItems.map((item) => item.id));
+      const filtered = normalizeFavouriteIds(safeParseFavouriteIds()).filter((id) => validIds.has(id));
+      if (filtered.length !== safeParseFavouriteIds().length) {
+        persistFavouriteIds(filtered);
+      }
+      return filtered;
+    }
+
+    function toggleFavourite(id) {
+      const ids = normalizeFavouriteIds(safeParseFavouriteIds());
+      const nextIds = ids.includes(id) ? ids.filter((item) => item !== id) : [...ids, id];
+      persistFavouriteIds(nextIds);
+      renderGallery();
+      renderFavorites();
+    }
+
+    function isFavourite(id) {
+      return safeParseFavouriteIds().includes(id);
+    }
+
+    function normalizeSavedDownloads(items, preserveOrder = false) {
+      const normalized = items
+        .filter((item) => item && typeof item === 'object')
+        .slice();
+
+      if (!preserveOrder) {
+        normalized.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+      }
+
+      return normalized.slice(0, 50);
+    }
+
+    function getDataUrlFromSvg(svgString) {
+      return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgString)}`;
+    }
+
+    function buildThumbnailUrl(record) {
+      if (record.previewDataUrl) {
+        return record.previewDataUrl;
+      }
+      if (record.type === 'svg' && record.svgString) {
+        return getDataUrlFromSvg(record.svgString);
+      }
+      return '';
+    }
+
+    function dataUrlToBlob(dataUrl) {
+      const [header, data] = dataUrl.split(',');
+      const mimeMatch = header.match(/data:(.*?)(;base64)?$/);
+      const mime = mimeMatch ? mimeMatch[1] : 'application/octet-stream';
+
+      if (header.includes(';base64')) {
+        const binary = atob(data || '');
+        const bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i += 1) {
+          bytes[i] = binary.charCodeAt(i);
+        }
+        return new Blob([bytes], { type: mime });
+      }
+
+      return new Blob([decodeURIComponent(data || '')], { type: mime });
+    }
+
+    const ZIP_ENCODER = new TextEncoder();
+    const ZIP_CRC_TABLE = (() => {
+      const table = new Uint32Array(256);
+      for (let n = 0; n < 256; n += 1) {
+        let c = n;
+        for (let k = 0; k < 8; k += 1) {
+          c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+        }
+        table[n] = c >>> 0;
+      }
+      return table;
+    })();
+
+    function crc32(bytes) {
+      let crc = 0 ^ -1;
+      for (let i = 0; i < bytes.length; i += 1) {
+        crc = (crc >>> 8) ^ ZIP_CRC_TABLE[(crc ^ bytes[i]) & 0xff];
+      }
+      return (crc ^ -1) >>> 0;
+    }
+
+    function writeUint16(view, offset, value) {
+      view.setUint16(offset, value, true);
+    }
+
+    function writeUint32(view, offset, value) {
+      view.setUint32(offset, value >>> 0, true);
+    }
+
+    function toZipDateTime(date = new Date()) {
+      const year = Math.max(1980, date.getFullYear());
+      const month = date.getMonth() + 1;
+      const day = date.getDate();
+      const hours = date.getHours();
+      const minutes = date.getMinutes();
+      const seconds = Math.floor(date.getSeconds() / 2);
+      const dosTime = (hours << 11) | (minutes << 5) | seconds;
+      const dosDate = ((year - 1980) << 9) | (month << 5) | day;
+      return { dosTime, dosDate };
+    }
+
+    function sanitizeZipFilename(name) {
+      return String(name || 'download').replace(/[\\/\0<>:"|?*]+/g, '_').trim() || 'download';
+    }
+
+    function uniqueZipFilename(name, seen) {
+      const cleaned = sanitizeZipFilename(name);
+      const dotIndex = cleaned.lastIndexOf('.');
+      const base = dotIndex > 0 ? cleaned.slice(0, dotIndex) : cleaned;
+      const ext = dotIndex > 0 ? cleaned.slice(dotIndex) : '';
+      const count = (seen.get(cleaned) || 0) + 1;
+      seen.set(cleaned, count);
+      if (count === 1) {
+        return cleaned;
+      }
+      return `${base} (${count})${ext}`;
+    }
+
+    async function createZipBlob(entries) {
+      const now = new Date();
+      const { dosTime, dosDate } = toZipDateTime(now);
+      const localParts = [];
+      const centralParts = [];
+      let offset = 0;
+
+      for (const entry of entries) {
+        const filenameBytes = ZIP_ENCODER.encode(entry.name);
+        const contentBytes = entry.data instanceof Uint8Array
+          ? entry.data
+          : new Uint8Array(await entry.data.arrayBuffer());
+        const crc = crc32(contentBytes);
+        const localHeader = new ArrayBuffer(30 + filenameBytes.length);
+        const localView = new DataView(localHeader);
+
+        writeUint32(localView, 0, 0x04034b50);
+        writeUint16(localView, 4, 20);
+        writeUint16(localView, 6, 0);
+        writeUint16(localView, 8, 0);
+        writeUint16(localView, 10, dosTime);
+        writeUint16(localView, 12, dosDate);
+        writeUint32(localView, 14, crc);
+        writeUint32(localView, 18, contentBytes.length);
+        writeUint32(localView, 22, contentBytes.length);
+        writeUint16(localView, 26, filenameBytes.length);
+        writeUint16(localView, 28, 0);
+
+        new Uint8Array(localHeader, 30).set(filenameBytes);
+        localParts.push(new Uint8Array(localHeader), contentBytes);
+
+        const centralHeader = new ArrayBuffer(46 + filenameBytes.length);
+        const centralView = new DataView(centralHeader);
+
+        writeUint32(centralView, 0, 0x02014b50);
+        writeUint16(centralView, 4, 20);
+        writeUint16(centralView, 6, 20);
+        writeUint16(centralView, 8, 0);
+        writeUint16(centralView, 10, 0);
+        writeUint16(centralView, 12, dosTime);
+        writeUint16(centralView, 14, dosDate);
+        writeUint32(centralView, 16, crc);
+        writeUint32(centralView, 20, contentBytes.length);
+        writeUint32(centralView, 24, contentBytes.length);
+        writeUint16(centralView, 28, filenameBytes.length);
+        writeUint16(centralView, 30, 0);
+        writeUint16(centralView, 32, 0);
+        writeUint16(centralView, 34, 0);
+        writeUint16(centralView, 36, 0);
+        writeUint32(centralView, 38, 0);
+        writeUint32(centralView, 42, offset);
+
+        new Uint8Array(centralHeader, 46).set(filenameBytes);
+        centralParts.push(new Uint8Array(centralHeader));
+
+        offset += localHeader.byteLength + contentBytes.length;
+      }
+
+      const centralSize = centralParts.reduce((sum, part) => sum + part.byteLength, 0);
+      const endRecord = new ArrayBuffer(22);
+      const endView = new DataView(endRecord);
+
+      writeUint32(endView, 0, 0x06054b50);
+      writeUint16(endView, 4, 0);
+      writeUint16(endView, 6, 0);
+      writeUint16(endView, 8, entries.length);
+      writeUint16(endView, 10, entries.length);
+      writeUint32(endView, 12, centralSize);
+      writeUint32(endView, 16, offset);
+      writeUint16(endView, 20, 0);
+
+      return new Blob([...localParts, ...centralParts, new Uint8Array(endRecord)], { type: 'application/zip' });
+    }
+
+
+    async function downloadRecordsAsZip(items, zipFilename) {
+      if (!items.length) return;
+
+      const seen = new Map();
+      const entries = [];
+
+      for (const [index, record] of items.entries()) {
+        const filename = uniqueZipFilename(record.filename || `saved-item-${index + 1}`, seen);
+
+        if (record.type === 'svg' && record.svgString) {
+          entries.push({
+            name: filename,
+            data: ZIP_ENCODER.encode(record.svgString),
+          });
+          continue;
+        }
+
+        const previewUrl = record.previewDataUrl || buildThumbnailUrl(record);
+        if (!previewUrl) continue;
+
+        entries.push({
+          name: filename,
+          data: dataUrlToBlob(previewUrl),
+        });
+      }
+
+      if (!entries.length) return;
+
+      const zipBlob = await createZipBlob(entries);
+      downloadFile(zipBlob, zipFilename);
+    }
+
+    async function downloadAllSavedDownloads() {
+      const items = normalizeSavedDownloads(safeParseSavedDownloads(), true);
+      await downloadRecordsAsZip(items, 'saved-downloads.zip');
+    }
+
+    async function downloadAllFavouriteDownloads() {
+      const savedItems = normalizeSavedDownloads(safeParseSavedDownloads(), true);
+      const favouriteIds = new Set(syncFavouriteIds(savedItems));
+      const items = savedItems.filter((item) => favouriteIds.has(item.id));
+      await downloadRecordsAsZip(items, 'favourite-downloads.zip');
+    }
+
+    function downloadSavedRecord(record) {
+
+      if (!record) return;
+
+      if (record.type === 'svg' && record.svgString) {
+        downloadFile(new Blob([record.svgString], { type: 'image/svg+xml;charset=utf-8' }), record.filename);
+        return;
+      }
+
+      const previewUrl = record.previewDataUrl || buildThumbnailUrl(record);
+      if (!previewUrl) return;
+
+      const blob = dataUrlToBlob(previewUrl);
+      downloadFile(blob, record.filename);
+    }
+
+    function setFilenameInputFromRecord(record) {
+      if (!record) return;
+
+      const baseName = sanitizeFilenameBase(String(record.filename || '').replace(/\.(svg|png)$/i, ''));
+      if (!baseName) return;
+
+      filenameInput.value = baseName;
+      filenameSaveBtn.classList.toggle('download-ready', filenameInput.value.trim().length > 0);
+    }
+
+    function loadPaletteIntoInput(record) {
+      if (!record) return;
+      const codes = Array.isArray(record.codes) && record.codes.length
+        ? record.codes
+        : extractHexCodes(record.svgString || '');
+
+      if (!codes.length) return;
+
+      input.value = codes.join('\n');
+      setFilenameInputFromRecord(record);
+      input.focus();
+      input.setSelectionRange(input.value.length, input.value.length);
+      processInput(true);
+      window.requestAnimationFrame(() => {
+        input.scrollIntoView({ block: 'start', behavior: 'smooth' });
+      });
+    }
+
+    function saveDownloadRecord(type, filename, codes, svgString, previewDataUrl = '') {
+      const record = {
+        id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+        type,
+        filename,
+        codes,
+        svgString: type === 'svg' ? svgString : '',
+        previewDataUrl,
+        createdAt: new Date().toISOString(),
+      };
+
+      const items = normalizeSavedDownloads([...safeParseSavedDownloads(), record]);
+      persistSavedDownloads(items);
+      renderGallery();
+      renderFavorites();
+    }
+
+    function renameDownloadRecord(id, newFilename) {
+      const items = normalizeSavedDownloads(
+        safeParseSavedDownloads().map((item) => {
+          if (item.id !== id) return item;
+          return { ...item, filename: newFilename };
+        }),
+        true,
+      );
+      persistSavedDownloads(items);
+      renderGallery();
+      renderFavorites();
+    }
+
+    function removeDownloadRecord(id) {
+      const items = normalizeSavedDownloads(
+        safeParseSavedDownloads().filter((item) => item.id !== id),
+        true,
+      );
+      persistSavedDownloads(items);
+      renderGallery();
+      renderFavorites();
+    }
+
+    function persistGalleryOrder() {
+      const currentIds = [...galleryGrid.querySelectorAll('.gallery-item')].map((item) => item.dataset.recordId);
+      const itemsById = new Map(safeParseSavedDownloads().map((item) => [item.id, item]));
+      const orderedItems = currentIds.map((id) => itemsById.get(id)).filter(Boolean);
+      persistSavedDownloads(normalizeSavedDownloads(orderedItems, true));
+      renderGallery();
+      renderFavorites();
+    }
+
+    function formatSavedDate(iso) {
+      try {
+        return new Intl.DateTimeFormat(undefined, {
+          dateStyle: 'medium',
+          timeStyle: 'short',
+        }).format(new Date(iso));
+      } catch {
+        return new Date(iso).toLocaleString();
+      }
+    }
+
+    function normalizeSavedFilename(value, type, fallbackFilename = '') {
+      const fallback = sanitizeZipFilename(fallbackFilename || `saved-item.${type}`);
+      const extension = `.${type}`;
+      const cleaned = sanitizeFilenameBase(value);
+      const baseFromFallback = fallback.replace(/\.(svg|png)$/i, '');
+      const baseCandidate = cleaned ? cleaned.replace(/\.(svg|png)$/i, '') : baseFromFallback;
+      return `${baseCandidate || baseFromFallback}${extension}`;
+    }
+
+    function clearGalleryDropIndicators(container) {
+      container.querySelectorAll('.drag-over, .drop-before, .drop-after').forEach((el) => {
+        el.classList.remove('drag-over', 'drop-before', 'drop-after');
+      });
+    }
+
+    function getGalleryDropTarget(container, x, y) {
+      const draggableElements = [...container.querySelectorAll('.gallery-item:not(.is-dragging)')];
+      if (!draggableElements.length) return { target: null, before: false };
+
+      // First: find the item the cursor is directly over (rect hit-test)
+      let target = null;
+      for (const child of draggableElements) {
+        const box = child.getBoundingClientRect();
+        if (x >= box.left && x <= box.right && y >= box.top && y <= box.bottom) {
+          target = child;
+          break;
+        }
+      }
+
+      // Fallback: find closest item by centre distance
+      if (!target) {
+        let closestDistance = Number.POSITIVE_INFINITY;
+        for (const child of draggableElements) {
+          const box = child.getBoundingClientRect();
+          const cx = box.left + box.width / 2;
+          const cy = box.top + box.height / 2;
+          const d = Math.hypot(x - cx, y - cy);
+          if (d < closestDistance) { closestDistance = d; target = child; }
+        }
+      }
+
+      // Determine before/after by horizontal position: left half → before, right half → after
+      const box = target.getBoundingClientRect();
+      const relX = (x - box.left) / box.width; // 0–1
+      const before = relX < 0.5;
+
+      return { target, before };
+    }
+
+    function clearFavouriteDropIndicators(container) {
+      container.querySelectorAll('.drag-over, .drop-before, .drop-after').forEach((el) => {
+        el.classList.remove('drag-over', 'drop-before', 'drop-after');
+      });
+    }
+
+    function getFavouriteDropTarget(container, x, y) {
+      const draggableElements = [...container.querySelectorAll('.gallery-item:not(.is-dragging)')];
+      if (!draggableElements.length) return { target: null, before: false };
+
+      // First: find the item the cursor is directly over (rect hit-test)
+      let target = null;
+      for (const child of draggableElements) {
+        const box = child.getBoundingClientRect();
+        if (x >= box.left && x <= box.right && y >= box.top && y <= box.bottom) {
+          target = child;
+          break;
+        }
+      }
+
+      // Fallback: find closest item by centre distance
+      if (!target) {
+        let closestDistance = Number.POSITIVE_INFINITY;
+        for (const child of draggableElements) {
+          const box = child.getBoundingClientRect();
+          const cx = box.left + box.width / 2;
+          const cy = box.top + box.height / 2;
+          const d = Math.hypot(x - cx, y - cy);
+          if (d < closestDistance) { closestDistance = d; target = child; }
+        }
+      }
+
+      // Determine before/after by horizontal position: left half → before, right half → after
+      const box = target.getBoundingClientRect();
+      const relX = (x - box.left) / box.width; // 0–1
+      const before = relX < 0.5;
+
+      return { target, before };
+    }
+
+    function persistFavouriteOrder() {
+      const items = normalizeSavedDownloads(safeParseSavedDownloads(), true);
+      const itemsById = new Map(items.map((item) => [item.id, item]));
+      const currentIds = [...favouritesGrid.querySelectorAll('.gallery-item')].map((item) => item.dataset.recordId);
+      const orderedIds = currentIds.filter((id) => itemsById.has(id));
+      const normalized = normalizeFavouriteIds(orderedIds);
+
+      persistFavouriteIds(normalized);
+      renderFavorites();
+    }
+
+    function updateRecordCard(card, record) {
+      const favouriteBtn = card.querySelector('.gallery-favourite');
+      const downloadBtn = card.querySelector('.gallery-download');
+      const filenameDisplay = card.querySelector('.gallery-filename-display');
+      const filenameEdit = card.querySelector('.gallery-filename-edit');
+      const metaSpan = card.querySelector('.gallery-meta span');
+      const removeBtn = card.querySelector('.gallery-remove');
+      const previewImg = card.querySelector('.gallery-preview img');
+
+      if (previewImg) {
+        const previewUrl = buildThumbnailUrl(record);
+        if (previewUrl) {
+          previewImg.src = previewUrl;
+        }
+        previewImg.alt = `${record.filename} preview`;
+      }
+
+      if (filenameDisplay) {
+        filenameDisplay.textContent = record.filename;
+        filenameDisplay.title = 'Double click to rename';
+      }
+
+      if (filenameEdit) {
+        filenameEdit.value = record.filename;
+        filenameEdit.setAttribute('aria-label', `Rename ${record.filename}`);
+      }
+
+      if (metaSpan) {
+        metaSpan.textContent = `${record.type.toUpperCase()} · ${formatSavedDate(record.createdAt)}`;
+      }
+
+
+      if (removeBtn) {
+        removeBtn.setAttribute('aria-label', `Delete ${record.filename}`);
+        removeBtn.title = 'Delete file';
+      }
+
+      if (downloadBtn) {
+        downloadBtn.setAttribute('aria-label', `Download ${record.filename}`);
+        downloadBtn.title = 'Download again';
+      }
+
+      if (favouriteBtn) {
+        const favouriteActive = isFavourite(record.id);
+        favouriteBtn.classList.toggle('is-active', favouriteActive);
+        favouriteBtn.setAttribute(
+          'aria-label',
+          favouriteActive ? `Remove ${record.filename} from favourites` : `Add ${record.filename} to favourites`,
+        );
+        favouriteBtn.title = favouriteActive ? 'Remove from favourites' : 'Add to favourites';
+
+        const pathEl = favouriteBtn.querySelector('svg path');
+        if (pathEl) {
+          pathEl.setAttribute('fill', favouriteActive ? 'currentColor' : 'none');
+          pathEl.setAttribute('stroke', 'currentColor');
+        }
+      }
+    }
+
+    function createRecordCard(record, options = {}) {
+      const { collection = 'gallery' } = options;
+      const card = document.createElement('article');
+      card.className = 'gallery-item';
+      card.title = 'Double click to load palette';
+      card.draggable = true;
+      card.setAttribute('aria-grabbed', 'false');
+      card.dataset.recordId = record.id;
+      card.dataset.collection = collection;
+
+      const previewUrl = buildThumbnailUrl(record);
+      const previewMarkup = previewUrl
+        ? `<img src="${previewUrl}" alt="${record.filename} preview" />`
+        : `<svg viewBox="0 0 300 300" aria-hidden="true"><rect width="300" height="300" rx="32" fill="url(#g)"></rect><defs><linearGradient id="g" x1="0" x2="1" y1="0" y2="1"><stop offset="0%" stop-color="rgba(232,160,32,0.22)"/><stop offset="100%" stop-color="rgba(74,222,128,0.14)"/></linearGradient></defs></svg>`;
+
+      const favouriteActive = isFavourite(record.id);
+      const favouriteTitle = favouriteActive ? 'Remove from favourites' : 'Add to favourites';
+      const favouriteLabel = favouriteActive ? `Remove ${record.filename} from favourites` : `Add ${record.filename} to favourites`;
+
+      card.innerHTML = `
+          <div class="select-checkbox" aria-hidden="true">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="#0e0d0b" d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg>
+          </div>
+          <button class="gallery-remove" type="button" aria-label="Delete ${record.filename}" title="Delete file">
+            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false">
+              <path fill="currentColor" d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Zm4.3 13.3a1 1 0 0 1-1.4 1.4L12 13.41l-2.9 2.3a1 1 0 0 1-1.4-1.4L10.59 12 7.7 9.7a1 1 0 0 1 1.4-1.4L12 10.59l2.9-2.3a1 1 0 1 1 1.4 1.4L13.41 12Z"/>
+            </svg>
+          </button>
+          <div class="gallery-preview">${previewMarkup}</div>
+          <div class="gallery-overlay">
+            <div class="gallery-footer">
+              <div class="gallery-meta">
+                <div class="gallery-filename-wrap">
+                  <button class="gallery-filename-display" type="button" title="Double click to rename">${record.filename}</button>
+                  <input class="gallery-filename-edit" type="text" value="${record.filename}" aria-label="Rename ${record.filename}" />
+                </div>
+                <span>${record.type.toUpperCase()} · ${formatSavedDate(record.createdAt)}</span>
+              </div>
+              <div class="gallery-actions">
+                <button class="gallery-action gallery-favourite${favouriteActive ? ' is-active' : ''}" type="button" aria-label="${favouriteLabel}" title="${favouriteTitle}">
+                  <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false">
+                    <path fill="${favouriteActive ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>
+                  </svg>
+                </button>
+                <button class="gallery-action gallery-download" type="button" aria-label="Download ${record.filename}" title="Download again">
+                  <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false">
+                    <path fill="currentColor" d="M12 3a1 1 0 0 1 1 1v8.59l2.3-2.3a1 1 0 1 1 1.4 1.42l-4.01 4a1 1 0 0 1-1.38 0l-4.01-4a1 1 0 1 1 1.4-1.42L11 12.59V4a1 1 0 0 1 1-1Zm-7 13a1 1 0 0 1 1 1v2h12v-2a1 1 0 1 1 2 0v3a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1Z"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+
+      updateRecordCard(card, record);
+
+      const removeBtn = card.querySelector('.gallery-remove');
+      const favouriteBtn = card.querySelector('.gallery-favourite');
+      const downloadBtn = card.querySelector('.gallery-download');
+      const filenameDisplay = card.querySelector('.gallery-filename-display');
+      const filenameEdit = card.querySelector('.gallery-filename-edit');
+
+      const startEditingFilename = () => {
+        if (card.classList.contains('is-dragging')) return;
+        card.classList.add('is-editing');
+        card.draggable = false;
+        filenameEdit.value = record.filename;
+        window.requestAnimationFrame(() => {
+          filenameEdit.focus();
+          filenameEdit.select();
+        });
+      };
+
+      const commitFilenameEdit = () => {
+        if (!card.classList.contains('is-editing')) return;
+        card.draggable = true;
+        const nextFilename = normalizeSavedFilename(filenameEdit.value, record.type, record.filename);
+        card.classList.remove('is-editing');
+        if (nextFilename && nextFilename !== record.filename) {
+          renameDownloadRecord(record.id, nextFilename);
+        }
+      };
+
+      const cancelFilenameEdit = () => {
+        card.draggable = true;
+        card.classList.remove('is-editing');
+        filenameEdit.value = record.filename;
+      };
+
+      filenameDisplay.addEventListener('dblclick', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        startEditingFilename();
+      });
+
+      filenameEdit.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
+          event.preventDefault();
+          commitFilenameEdit();
+        }
+        if (event.key === 'Escape') {
+          event.preventDefault();
+          cancelFilenameEdit();
+          filenameEdit.blur();
+        }
+      });
+
+      filenameEdit.addEventListener('blur', () => {
+        commitFilenameEdit();
+      });
+
+      card.addEventListener('dblclick', (event) => {
+        if (event.target.closest('button, input, textarea, [contenteditable="true"]')) return;
+        loadPaletteIntoInput(record);
+      });
+
+      removeBtn.addEventListener('click', (event) => {
+        event.stopPropagation();
+        removeDownloadRecord(record.id);
+      });
+
+      favouriteBtn.addEventListener('click', (event) => {
+        event.stopPropagation();
+        toggleFavourite(record.id);
+      });
+
+      downloadBtn.addEventListener('click', (event) => {
+        event.stopPropagation();
+        downloadSavedRecord(record);
+      });
+
+      card.addEventListener('dragstart', (event) => {
+        if (card.classList.contains('is-editing')) {
+          event.preventDefault();
+          return;
+        }
+        if (collection === 'favourites') {
+          draggedFavouriteItem = card;
+        } else {
+          draggedGalleryItem = card;
+        }
+        card.classList.add('is-dragging');
+        card.setAttribute('aria-grabbed', 'true');
+        if (event.dataTransfer) {
+          event.dataTransfer.effectAllowed = 'move';
+          event.dataTransfer.setData('text/plain', record.id);
+        }
+      });
+
+      card.addEventListener('dragend', () => {
+        card.classList.remove('is-dragging');
+        card.setAttribute('aria-grabbed', 'false');
+
+        if (collection === 'favourites') {
+          clearFavouriteDropIndicators(favouritesGrid);
+          persistFavouriteOrder();
+          draggedFavouriteItem = null;
+        } else {
+          clearGalleryDropIndicators(galleryGrid);
+          persistGalleryOrder();
+          draggedGalleryItem = null;
+        }
+      });
+
+      // ── Select mode click ──────────────────────────────────────
+      card.addEventListener('click', (event) => {
+        const section = card.closest('.gallery-section');
+        if (!section || !section.classList.contains('is-selecting')) return;
+        if (event.target.closest('button:not(.select-checkbox), input')) return;
+        event.stopPropagation();
+        toggleCardSelection(card, record.id, collection);
+      });
+
+      return card;
+    }
+
+    // ── Select mode ───────────────────────────────────────────────
+
+    function updateDownloadSelectedBtn(collection) {
+      const selectedIds = collection === 'favourites' ? favouritesSelectedIds : gallerySelectedIds;
+      const btn = collection === 'favourites' ? downloadSelectedFavouritesBtn : downloadSelectedGalleryBtn;
+      const label = collection === 'favourites' ? downloadSelectedFavouritesLabel : downloadSelectedGalleryLabel;
+      const count = selectedIds.size;
+      btn.disabled = count === 0;
+      label.textContent = count > 0 ? `Download selected (${count})` : 'Download selected';
+    }
+
+    function toggleCardSelection(card, id, collection) {
+      const selectedIds = collection === 'favourites' ? favouritesSelectedIds : gallerySelectedIds;
+      if (selectedIds.has(id)) {
+        selectedIds.delete(id);
+        card.classList.remove('is-selected');
+      } else {
+        selectedIds.add(id);
+        card.classList.add('is-selected');
+      }
+      updateDownloadSelectedBtn(collection);
+    }
+
+    function exitSelectMode(collection) {
+      const grid = collection === 'favourites' ? favouritesGrid : galleryGrid;
+      const section = grid.closest('.gallery-section');
+      const selectBtn = collection === 'favourites' ? favouritesSelectBtn : gallerySelectBtn;
+      const selectedIds = collection === 'favourites' ? favouritesSelectedIds : gallerySelectedIds;
+
+      section.classList.remove('is-selecting');
+      selectBtn.classList.remove('is-active');
+      selectBtn.querySelector('span').textContent = 'Select';
+      selectedIds.clear();
+      grid.querySelectorAll('.gallery-item.is-selected').forEach((el) => el.classList.remove('is-selected'));
+      updateDownloadSelectedBtn(collection);
+    }
+
+    function enterSelectMode(collection) {
+      const grid = collection === 'favourites' ? favouritesGrid : galleryGrid;
+      const section = grid.closest('.gallery-section');
+      const selectBtn = collection === 'favourites' ? favouritesSelectBtn : gallerySelectBtn;
+
+      section.classList.add('is-selecting');
+      selectBtn.classList.add('is-active');
+      selectBtn.querySelector('span').textContent = 'Cancel';
+    }
+
+    function toggleSelectMode(collection) {
+      const grid = collection === 'favourites' ? favouritesGrid : galleryGrid;
+      const section = grid.closest('.gallery-section');
+      if (section.classList.contains('is-selecting')) {
+        exitSelectMode(collection);
+      } else {
+        enterSelectMode(collection);
+      }
+    }
+
+    async function downloadSelected(collection) {
+      const selectedIds = collection === 'favourites' ? favouritesSelectedIds : gallerySelectedIds;
+      if (!selectedIds.size) return;
+      const allItems = normalizeSavedDownloads(safeParseSavedDownloads(), true);
+      const items = allItems.filter((item) => selectedIds.has(item.id));
+      const zipName = collection === 'favourites' ? 'selected-favourites.zip' : 'selected-downloads.zip';
+      await downloadRecordsAsZip(items, zipName);
+    }
+
+    function renderGallery() {
+      exitSelectMode('gallery');
+      const items = normalizeSavedDownloads(safeParseSavedDownloads(), true);
+      syncFavouriteIds(items);
+
+      galleryGrid.innerHTML = '';
+      galleryBadge.textContent = `${items.length} saved`;
+      galleryEmpty.style.display = items.length ? 'none' : 'block';
+      downloadAllBtn.disabled = !items.length;
+      downloadAllBtn.classList.toggle('download-ready', items.length > 0);
+
+      items.forEach((record) => {
+        galleryGrid.appendChild(createRecordCard(record, { collection: 'gallery' }));
+      });
+    }
+
+    function renderFavorites() {
+      exitSelectMode('favourites');
+      const items = normalizeSavedDownloads(safeParseSavedDownloads(), true);
+      const favouriteIds = syncFavouriteIds(items);
+      const itemsById = new Map(items.map((item) => [item.id, item]));
+      const favouriteItems = favouriteIds.map((id) => itemsById.get(id)).filter(Boolean);
+      const nextFavouriteIds = favouriteItems.map((item) => item.id);
+      const nextFavouriteSet = new Set(nextFavouriteIds);
+      const existingCards = new Map(
+        [...favouritesGrid.querySelectorAll('.gallery-item')].map((item) => [item.dataset.recordId, item]),
+      );
+
+      favouritesBadge.textContent = `${favouriteItems.length} favourites`;
+      downloadFavouritesBtn.disabled = !favouriteItems.length;
+      downloadFavouritesBtn.classList.toggle('download-ready', favouriteItems.length > 0);
+
+      existingCards.forEach((card, id) => {
+        if (!nextFavouriteSet.has(id)) {
+          if (!card.classList.contains('is-favourite-leaving')) {
+            card.classList.add('is-favourite-leaving');
+            const timer = window.setTimeout(() => {
+              if (card.isConnected && card.dataset.recordId === id && !nextFavouriteSet.has(id)) {
+                card.remove();
+              }
+              favouriteRemovalTimers.delete(card);
+              favouritesEmpty.style.display = favouritesGrid.querySelector('.gallery-item') ? 'none' : 'block';
+            }, 220);
+            favouriteRemovalTimers.set(card, timer);
+          }
+        }
+      });
+
+      favouriteItems.forEach((record, index) => {
+        let card = existingCards.get(record.id);
+        if (card) {
+          const timer = favouriteRemovalTimers.get(card);
+          if (timer) {
+            window.clearTimeout(timer);
+            favouriteRemovalTimers.delete(card);
+          }
+          card.classList.remove('is-favourite-leaving');
+          updateRecordCard(card, record);
+        } else {
+          card = createRecordCard(record, { collection: 'favourites' });
+          if (favouritesRenderedOnce) {
+            card.classList.add('is-favourite-entering');
+            card.addEventListener('animationend', () => {
+              card.classList.remove('is-favourite-entering');
+            }, { once: true });
+          }
+        }
+
+        const currentChild = favouritesGrid.children[index];
+        if (currentChild !== card) {
+          favouritesGrid.insertBefore(card, currentChild || null);
+        }
+      });
+
+      favouritesEmpty.style.display = favouriteItems.length || favouritesGrid.querySelector('.gallery-item') ? 'none' : 'block';
+      favouritesRenderedOnce = true;
+    }
+
+    function getSvgString() {
+      const clone = svg.cloneNode(true);
+      clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+      const serializer = new XMLSerializer();
+      return serializer.serializeToString(clone);
+    }
+
+    function downloadFile(blob, filename, onComplete) {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      if (typeof onComplete === 'function') onComplete();
+    }
+
+    function downloadSVG() {
+      const svgString = getSvgString();
+      const filename = resolveDownloadFilename('svg');
+      const blob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+      downloadFile(blob, filename, () => {
+        saveDownloadRecord('svg', filename, extractHexCodes(input.value), svgString, getDataUrlFromSvg(svgString));
+      });
+    }
+
+    
+    async function svgToPngBlob(svgString) {
+      const blob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const image = new Image();
+      const { width, height } = getSvgDimensions();
+
+      return await new Promise((resolve, reject) => {
+        image.onload = () => {
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+
+          if (!ctx) {
+            URL.revokeObjectURL(url);
+            reject(new Error('Could not create a canvas context.'));
+            return;
+          }
+
+          ctx.clearRect(0, 0, width, height);
+          ctx.drawImage(image, 0, 0, width, height);
+
+          canvas.toBlob((pngBlob) => {
+            URL.revokeObjectURL(url);
+            if (pngBlob) {
+              resolve(pngBlob);
+            } else {
+              reject(new Error('Could not create a PNG blob.'));
+            }
+          }, 'image/png');
+        };
+
+        image.onerror = () => {
+          URL.revokeObjectURL(url);
+          reject(new Error('Failed to load SVG for PNG export.'));
+        };
+
+        image.src = url;
+      });
+    }
+    async function copyPngToClipboard() {
+      const svgString = getSvgString();
+      const filename = resolveDownloadFilename('png');
+      const originalContent = copyPngBtn.innerHTML;
+
+      try {
+        const pngBlob = await svgToPngBlob(svgString);
+        const pngFile = new File([pngBlob], filename, { type: 'image/png' });
+
+        if (navigator.clipboard && window.isSecureContext && typeof ClipboardItem !== 'undefined') {
+          await navigator.clipboard.write([
+            new ClipboardItem({
+              'image/png': pngFile
+            })
+          ]);
+        } else {
+          throw new Error('Clipboard image writing is not supported in this browser.');
+        }
+
+        copyPngBtn.classList.add('copied');
+        copyPngBtn.disabled = true;
+        copyPngBtn.innerHTML = `
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path fill="currentColor" d="M9 16.2 5.8 13a1 1 0 1 0-1.4 1.4l4.3 4.3a1 1 0 0 0 1.4 0L19.6 9.2a1 1 0 1 0-1.4-1.4L9 16.2Z"/>
+          </svg>`;
+        window.clearTimeout(copyPngBtn._copyResetTimer);
+        copyPngBtn._copyResetTimer = window.setTimeout(() => {
+          copyPngBtn.innerHTML = originalContent;
+          copyPngBtn.classList.remove('copied');
+          copyPngBtn.disabled = !extractHexCodes(input.value).length;
+        }, 1100);
+      } catch (error) {
+        console.error('Failed to copy PNG:', error);
+      }
+    }
+
+    function saveToGallery() {
+
+      const svgString = getSvgString();
+      const filename = resolveDownloadFilename('svg');
+      saveDownloadRecord('svg', filename, extractHexCodes(input.value), svgString, getDataUrlFromSvg(svgString));
+
+      const originalContent = filenameSaveBtn.innerHTML;
+      filenameSaveBtn.disabled = true;
+      filenameSaveBtn.innerHTML = `
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+          <path d="M5 13l4 4L19 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>`;
+      filenameSaveBtn.style.borderColor = 'rgba(74,222,128,0.6)';
+      filenameSaveBtn.style.background = 'rgba(74,222,128,0.12)';
+      setTimeout(() => {
+        filenameSaveBtn.innerHTML = originalContent;
+        filenameSaveBtn.style.borderColor = '';
+        filenameSaveBtn.style.background = '';
+        filenameSaveBtn.disabled = false;
+      }, 1200);
+    }
+
+    function getSvgDimensions() {
+      const vb = svg.viewBox && svg.viewBox.baseVal;
+      if (vb && vb.width && vb.height) {
+        return { width: vb.width, height: vb.height };
+      }
+
+      const parsed = (svg.getAttribute('viewBox') || '').trim().split(/\s+/).map(Number);
+      if (parsed.length === 4 && parsed.every((n) => Number.isFinite(n))) {
+        return { width: parsed[2], height: parsed[3] };
+      }
+
+      const width = Number(svg.getAttribute('width')) || 3000;
+      const height = Number(svg.getAttribute('height')) || 3000;
+      return { width, height };
+    }
+    async function downloadPNG() {
+      try {
+        const svgString = getSvgString();
+        const filename = resolveDownloadFilename('png');
+        const pngBlob = await svgToPngBlob(svgString);
+
+        downloadFile(pngBlob, filename, () => {
+          const reader = new FileReader();
+          reader.onload = () => {
+            const dataUrl = String(reader.result || '');
+            saveDownloadRecord('png', filename, extractHexCodes(input.value), svgString, dataUrl);
+          };
+          reader.readAsDataURL(pngBlob);
+        });
+      } catch (error) {
+        console.error('Failed to export PNG:', error);
+      }
+    }
+
+    submitBtn.addEventListener('click', () => processInput(true));
+    resetBtn.addEventListener('click', resetAll);
+    downloadBtn.addEventListener('click', downloadSVG);
+    previewDownloadBtn.addEventListener('click', downloadSVG);
+    copyPngBtn.addEventListener('click', copyPngToClipboard);
+    pngBtn.addEventListener('click', downloadPNG);
+    downloadAllBtn.addEventListener('click', () => {
+      downloadAllSavedDownloads();
+    });
+    downloadFavouritesBtn.addEventListener('click', () => {
+      downloadAllFavouriteDownloads();
+    });
+    flipBtn.addEventListener('click', () => {
+      isFlipped = !isFlipped;
+      flipBtn.setAttribute('aria-pressed', String(isFlipped));
+      flipBtn.classList.toggle('active', isFlipped);
+      processInput(false);
+    });
+
+    function isEditableField(target) {
+      return Boolean(
+        target &&
+        (target === input ||
+          target === filenameInput ||
+          target.isContentEditable ||
+          /^(input|textarea)$/i.test(target.tagName || ''))
+      );
+    }
+
+    document.addEventListener('keydown', (event) => {
+      const isUndoShortcut = (event.metaKey || event.ctrlKey) && !event.shiftKey && event.key.toLowerCase() === 'z';
+      const isRedoShortcut = (event.metaKey || event.ctrlKey) && event.shiftKey && event.key.toLowerCase() === 'z';
+      const target = event.target;
+      const isMainInput = target === input;
+      const isOtherEditable = isEditableField(target) && !isMainInput;
+
+      if (isOtherEditable) return;
+
+      if (isUndoShortcut && previousText !== null) {
+        event.preventDefault();
+        undoClean();
+        return;
+      }
+
+      if (isRedoShortcut && redoText !== null) {
+        event.preventDefault();
+        redoClean();
+        return;
+      }
+    }, true);
+
+    input.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' && !event.shiftKey) {
+        event.preventDefault();
+        processInput(true);
+      }
+    });
+
+    input.addEventListener('input', () => {
+      previousText = null;
+      redoText = null;
+      input.classList.remove('is-cleaned');
+      downloadBtn.classList.remove('download-ready');
+      previewDownloadBtn.classList.remove('download-ready');
+      copyPngBtn.classList.remove('copied');
+      pngBtn.classList.remove('download-ready');
+      processInput(false);
+    });
+
+    filenameInput.addEventListener('input', () => {
+      filenameSaveBtn.classList.toggle('download-ready', filenameInput.value.trim().length > 0);
+    });
+
+    filenameInput.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' && !event.shiftKey) {
+        event.preventDefault();
+        if (!filenameSaveBtn.disabled) {
+          filenameSaveBtn.click();
+        }
+      }
+    });
+
+    filenameSaveBtn.addEventListener('click', saveToGallery);
+
+    gallerySelectBtn.addEventListener('click', () => toggleSelectMode('gallery'));
+    favouritesSelectBtn.addEventListener('click', () => toggleSelectMode('favourites'));
+    downloadSelectedGalleryBtn.addEventListener('click', () => downloadSelected('gallery'));
+    downloadSelectedFavouritesBtn.addEventListener('click', () => downloadSelected('favourites'));
+
+    // ── Header favicon: click to recolour with palette colours 1, 4, 7, 10 ──
+    (function() {
+      var headerFavicon = document.getElementById('headerFavicon');
+      if (!headerFavicon) return;
+
+      var hfPaths = [
+        document.getElementById('hfPath1'),  // visually 1st (outer swoosh)
+        document.getElementById('hfPath4'),  // visually 2nd
+        document.getElementById('hfPath3'),  // visually 3rd
+        document.getElementById('hfPath2'),  // visually 4th (bottom)
+      ];
+      // 1st, 4th, 9th, 12th colours (0-indexed: 0, 3, 8, 11)
+      var PALETTE_INDICES = [0, 3, 8, 11];
+      // Original colours in the same visual order, used as fallbacks
+      var FALLBACKS = ['#e96da0', '#f2b7c6', '#7fbe8a', '#0b3d2e'];
+
+      function updateTabFavicon(c) {
+        // c = [colour0, colour1, colour2, colour3] in visual top-to-bottom order
+        // Maps back to DOM path order: path1=c[0], path2=c[3], path3=c[2], path4=c[1]
+        var svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1254 1254">'
+          + '<path fill="' + c[0] + '" d="M146.2,851.8c-19.2-104.2-15-209.5,15.3-310.1,37.6-124.7,116.6-233.2,229.3-299.5,79.5-46.7,161-63.2,252.9-63.5l93.7-.3c43.9-.2,86.5-5,129.2-14.5,42.7-9.5,82.9-24.4,120.8-45.8,46.1-26,84.5-61.3,114.3-105.6-2.9,93.4-34.3,175.2-94.2,245.6-41,47.4-90.7,86.5-146.6,114.6-52.2,26.2-108.4,39.4-166.7,40.2l-81.2,1.1c-69.7,3-135.9,22.4-196.2,57.4-100.7,58.6-175.9,147.6-224.2,253.1-18.8,41.2-33.1,83-46.4,127.3h.1Z"/>'
+          + '<g>'
+          + '<path fill="' + c[3] + '" d="M213.9,1248.2c.8-25.5,6.6-49.1,14.5-73,33.8-103.2,119.2-193.4,213.8-244.8,51.5-28,107.1-42.8,165.6-44.7,28-.9,54-2.6,81.5-6.6,65.3-9.4,126.9-33.2,182.6-68.5,101.5-64.4,180.7-158.3,228.2-268.5l21.6-55.6c4.2,48.8,6.2,95.3,4.7,143.3-1.6,49.9-7.3,98.2-19.3,146.5-48.4,195.2-207.3,342.5-409.8,360.1-31.6,2.7-62.1,3-94.1,2.3l-99.4-2.2c-49.6-1.1-97.9,6.7-144.8,22.2-54.7,18.4-103.2,47.6-145.2,89.4h0Z"/>'
+          + '<path fill="' + c[2] + '" d="M186.7,1184c-10.6-68.6-12.7-140.6.8-210,3.5-20.1,10.6-37.1,20.7-54.6,16.4-28.6,35.3-54.8,57.4-79.7,57.1-64.1,125.4-118,201.4-158,51.4-27.1,106.6-41.7,164.5-45l73.2-4.2c60.4-4.9,118.2-20.6,173.1-46.1,88.3-41.2,174.6-106.3,225.5-191.1-4.3,37.7-11.1,73-21.5,108.4-11.9,39.9-29.2,76.3-52.7,110.8-42.5,62.6-97.7,116.2-161.7,156.6-41.3,26-85.8,45.1-133.4,56.2-33,7.7-65.3,10.3-99.1,10.9-33.8.6-61.4,2.4-92.3,9.3-48.9,10.9-94.3,30.6-136.7,57.3-69.7,43.9-132.1,105.2-174.6,176.1-19.6,32.2-33.8,65.3-44.5,103.2h0Z"/>'
+          + '<path fill="' + c[1] + '" d="M438.1,657.1c-106.6,51.6-208.3,139-261.3,245.9-.3-99.6,41.1-196.1,102.8-272.1,45.6-56.1,100.8-103.6,164-138.5,63.2-34.9,107.8-45.3,166.5-48.3l84.9-1.8c78.2-.2,153.2-21,220.5-60.4,84.7-49.6,148.9-111.8,195.1-199.8,2.1,35.7.6,69.4-4.6,103.6-12.1,84.7-58.4,147.2-125.4,197.9-38.5,29.1-79.3,54.3-122.3,76.2s-125.3,47.2-193,49.3l-69.8,3.5c-54.9,4.8-107.7,20.2-157.5,44.3h.1Z"/>'
+          + '</g></svg>';
+        var link = document.querySelector('link[rel="icon"]');
+        if (link) {
+          link.href = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+        }
+      }
+
+      function applyFaviconPalette() {
+        var codes = extractHexCodes(input.value);
+        var resolvedColours = PALETTE_INDICES.map(function(idx, i) {
+          return codes[idx] || FALLBACKS[i];
+        });
+        if (isFlipped) { resolvedColours = resolvedColours.slice().reverse(); }
+
+        updateTabFavicon(resolvedColours);
+
+        // Bounce-wiggle the whole SVG
+        headerFavicon.classList.remove('hf-animating');
+        void headerFavicon.offsetWidth;
+        headerFavicon.classList.add('hf-animating');
+        headerFavicon.addEventListener('animationend', function onEnd() {
+          headerFavicon.classList.remove('hf-animating');
+          headerFavicon.removeEventListener('animationend', onEnd);
+        });
+
+        // Staggered flash + colour swap on each path
+        hfPaths.forEach(function(path, i) {
+          setTimeout(function() {
+            var colour = resolvedColours[i];
+            path.setAttribute('fill', colour);
+            path.classList.remove('hf-flashing');
+            void path.offsetWidth;
+            path.classList.add('hf-flashing');
+            path.addEventListener('animationend', function onFlashEnd() {
+              path.classList.remove('hf-flashing');
+              path.removeEventListener('animationend', onFlashEnd);
+            });
+          }, i * 90);
+        });
+      }
+
+      headerFavicon.addEventListener('click', applyFaviconPalette);
+      headerFavicon.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          applyFaviconPalette();
+        }
+      });
+    })();
+
+
+    galleryGrid.addEventListener('dragover', (event) => {
+      if (!draggedGalleryItem) return;
+      event.preventDefault();
+      if (event.dataTransfer) {
+        event.dataTransfer.dropEffect = 'move';
+      }
+
+      const { target, before } = getGalleryDropTarget(galleryGrid, event.clientX, event.clientY);
+      clearGalleryDropIndicators(galleryGrid);
+
+      if (!target || target === draggedGalleryItem) {
+        return;
+      }
+
+      target.classList.add('drag-over');
+      target.classList.add(before ? 'drop-before' : 'drop-after');
+
+      if (before) {
+        galleryGrid.insertBefore(draggedGalleryItem, target);
+      } else {
+        galleryGrid.insertBefore(draggedGalleryItem, target.nextElementSibling);
+      }
+    });
+
+    galleryGrid.addEventListener('drop', (event) => {
+      if (!draggedGalleryItem) return;
+      event.preventDefault();
+      clearGalleryDropIndicators(galleryGrid);
+      persistGalleryOrder();
+    });
+
+    favouritesGrid.addEventListener('dragover', (event) => {
+      if (!draggedFavouriteItem) return;
+      event.preventDefault();
+      if (event.dataTransfer) {
+        event.dataTransfer.dropEffect = 'move';
+      }
+
+      const { target, before } = getFavouriteDropTarget(favouritesGrid, event.clientX, event.clientY);
+      clearFavouriteDropIndicators(favouritesGrid);
+
+      if (!target || target === draggedFavouriteItem) {
+        return;
+      }
+
+      target.classList.add('drag-over');
+      target.classList.add(before ? 'drop-before' : 'drop-after');
+
+      if (before) {
+        favouritesGrid.insertBefore(draggedFavouriteItem, target);
+      } else {
+        favouritesGrid.insertBefore(draggedFavouriteItem, target.nextElementSibling);
+      }
+    });
+
+    favouritesGrid.addEventListener('drop', (event) => {
+      if (!draggedFavouriteItem) return;
+      event.preventDefault();
+      clearFavouriteDropIndicators(favouritesGrid);
+      persistFavouriteOrder();
+    });
+
+    renderGallery();
+    renderFavorites();
+    input.value = sampleText;
+    processInput(false);
+  </script>
+
+<script>
+window._SB_TABLE = 'palette_gallery';
+
+window._sbGetData = function() {
+  const g = localStorage.getItem('svgHexSavedDownloads');
+  const f = localStorage.getItem('svgHexFavouriteDownloads');
+  return { gallery: g ? JSON.parse(g) : [], favourites: f ? JSON.parse(f) : [] };
+};
+
+const __sbOrigSet = localStorage.setItem.bind(localStorage);
+localStorage.setItem = function(key, value) {
+  __sbOrigSet(key, value);
+  if ((key === 'svgHexSavedDownloads' || key === 'svgHexFavouriteDownloads') && window._sbSyncNow && !window._sbPaused) {
+    window._sbSyncNow();
+  }
+};
+
+window._sbOnLoad = function(data) {
+  try {
+    if (data.gallery)     __sbOrigSet('svgHexSavedDownloads',       JSON.stringify(data.gallery));
+    if (data.favourites)  __sbOrigSet('svgHexFavouriteDownloads',    JSON.stringify(data.favourites));
+    if (typeof renderGallery   === 'function') renderGallery();
+    if (typeof renderFavorites === 'function') renderFavorites();
+  } catch(e) { console.warn('Supabase load error:', e); }
+};
+</script>
+
+</body>
+</html>

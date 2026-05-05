@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Corey's Projects</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --pink:       #D6336C;
+      --pink-soft:  #FF6B9D;
+      --bg:         #0D0D0D;
+      --border:     #2A2A2A;
+      --text:       #F0EDE8;
+      --text-muted: #888;
+      --radius-lg:  20px;
+    }
+
+    html { font-size: 16px; }
+
+    body {
+      background:
+        radial-gradient(ellipse at 15% 100%, #1f0813 0%, transparent 50%),
+        radial-gradient(ellipse at 85% 0%, #061510 0%, transparent 45%),
+        #0D0D0D;
+      color: var(--text);
+      font-family: 'Outfit', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── NAV / HEADER ── */
+    header {
+      padding: 24px 40px;
+      border-bottom: 1px solid var(--border);
+      animation: fadeDown 0.45s ease both;
+    }
+
+    .site-name {
+      font-family: 'DM Serif Display', serif;
+      font-size: 1.4rem;
+      color: var(--text);
+      letter-spacing: -0.01em;
+    }
+
+    .site-name em {
+      color: var(--pink-soft);
+      font-style: italic;
+    }
+
+    .project-card:nth-child(4) { animation-delay: 0.28s; }
+
+    /* ── MAIN ── */
+    main {
+      flex: 1;
+      width: 100%;
+      padding: 24px 24px 40px;
+    }
+
+    /* ── GRID ── */
+    .projects-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+
+    @media (max-width: 780px) {
+      .projects-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 480px) {
+      .projects-grid { grid-template-columns: 1fr; }
+      header { padding: 20px 24px; }
+      main { padding: 32px 20px 48px; }
+    }
+
+    /* ── CARD ── */
+    .project-card {
+      aspect-ratio: 5 / 2;
+      border-radius: var(--radius-lg);
+      text-decoration: none;
+      color: inherit;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      position: relative;
+      overflow: hidden;
+      background-color: #1a1a1a;
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      border: 1px solid var(--border);
+      transition:
+        transform 0.26s cubic-bezier(0.34, 1.56, 0.64, 1),
+        box-shadow 0.2s ease;
+      animation: fadeUp 0.5s ease both;
+    }
+
+    .project-card:nth-child(1) { animation-delay: 0.10s; }
+    .project-card:nth-child(2) { animation-delay: 0.16s; }
+    .project-card:nth-child(3) { animation-delay: 0.22s; }
+
+    .project-card:hover {
+      transform: scale(1.025);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+      border-color: var(--pink);
+    }
+
+    /* ── ANIMATIONS ── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes fadeDown {
+      from { opacity: 0; transform: translateY(-12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ── HEADER / NAV ── -->
+  <header>
+    <div class="site-name">swiftothecore<em>.</em>github.io</div>
+  </header>
+
+  <!-- ── PROJECT GRID ── -->
+  <main>
+    <div class="projects-grid">
+
+      <a href="album-tracker" class="project-card" style="background-image: url('album-tracker/preview.svg');"></a>
+      <a href="my-watchlist" class="project-card" style="background-image: url('my-watchlist/preview.svg');"></a>
+      <a href="palette-painter" class="project-card" style="background-image: url('palette-painter/preview.svg');"></a>
+      <a href="reading-room" class="project-card" style="background-image: url('reading-room/preview.svg');"></a>
+
+    </div>
+  </main>
+
+</body>
+</html>

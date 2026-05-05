@@ -1,0 +1,1676 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Album Tracker</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #141210;
+    color: #e0d8c4;
+    font-family: Georgia, 'Times New Roman', serif;
+    min-height: 100vh;
+    user-select: none;
+  }
+
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: #1a1814; }
+  ::-webkit-scrollbar-thumb { background: #3a3628; border-radius: 2px; }
+
+  /* Header */
+  #header {
+    padding: 1.5rem 1.5rem 1.2rem;
+    border-bottom: 1px solid #1e1c16;
+    display: flex;
+    align-items: flex-end;
+    gap: 2rem;
+    flex-wrap: wrap;
+    position: sticky;
+    top: 0;
+    background: #141210;
+    z-index: 100;
+  }
+
+  #header h1 {
+    font-size: 1.7rem;
+    font-weight: 400;
+    color: #e6ddcf;
+    letter-spacing: 0.04em;
+    line-height: 1;
+  }
+
+  #album-count {
+    font-family: system-ui, sans-serif;
+    font-size: 0.7rem;
+    color: #3a3428;
+    letter-spacing: 0.08em;
+    margin-top: 0.25rem;
+  }
+
+  /* Search */
+  #search-area { position: relative; }
+
+  #search-inputs {
+    display: flex;
+    gap: 8px;
+    align-items: flex-end;
+    flex-wrap: wrap;
+  }
+
+  .search-field { display: flex; flex-direction: column; gap: 4px; }
+
+  .search-field label {
+    font-family: system-ui, sans-serif;
+    font-size: 0.65rem;
+    color: #4a4438;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .search-field input {
+    background: #1c1a14;
+    border: 1px solid #3a3428;
+    border-radius: 5px;
+    padding: 0.5rem 0.75rem;
+    color: #ddd0b0;
+    font-size: 0.86rem;
+    font-family: system-ui, sans-serif;
+    outline: none;
+    width: 190px;
+    transition: border-color 0.15s;
+  }
+
+  .search-field input:focus { border-color: #5a5040; }
+  .search-field input::placeholder { color: #3a3428; }
+
+  #search-spinner {
+    align-self: flex-end;
+    height: 35px;
+    display: flex;
+    align-items: center;
+    font-family: system-ui, sans-serif;
+    font-size: 0.72rem;
+    color: #4a4438;
+    opacity: 0;
+    transition: opacity 0.2s;
+    pointer-events: none;
+  }
+
+  #search-spinner.visible { opacity: 1; }
+
+  /* Results dropdown */
+  #results-wrap {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    background: #1e1c16;
+    border: 1px solid #3a3428;
+    border-radius: 7px;
+    z-index: 1000;
+    min-width: 390px;
+    max-width: 490px;
+    max-height: 360px;
+    overflow-y: auto;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.7);
+    display: none;
+    animation: dropIn 0.15s ease;
+  }
+
+  @keyframes dropIn {
+    from { opacity: 0; transform: translateY(-5px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .result-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0.55rem 0.8rem;
+    cursor: pointer;
+    border-bottom: 1px solid #252318;
+    transition: background 0.1s;
+  }
+
+  .result-row:last-child { border-bottom: none; }
+  .result-row:hover:not(.already) { background: #252318; }
+  .result-row.highlighted { background: #2e2b20; }
+  .result-row.already { opacity: 0.4; cursor: default; }
+
+  .result-thumb {
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+    border-radius: 3px;
+    overflow: hidden;
+    background: #252118;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    color: #3a3428;
+  }
+
+  .result-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .result-info { flex: 1; min-width: 0; }
+
+  .result-title {
+    font-size: 0.88rem;
+    color: #ddd0b0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .result-meta {
+    font-family: system-ui, sans-serif;
+    font-size: 0.72rem;
+    color: #6a6050;
+    margin-top: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .result-badge {
+    font-family: system-ui, sans-serif;
+    font-size: 0.65rem;
+    color: #4a4438;
+    flex-shrink: 0;
+  }
+
+  .results-msg {
+    font-family: system-ui, sans-serif;
+    font-size: 0.8rem;
+    color: #4a4438;
+    padding: 0.75rem 0.85rem;
+  }
+
+  /* Sections */
+  #sections {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    min-height: calc(100vh - 92px);
+  }
+
+  .section-col {
+    border-right: 1px solid #1e1c16;
+    display: flex;
+    flex-direction: column;
+    transition: background 0.15s;
+  }
+
+  .section-col:last-child { border-right: none; }
+
+  .section-col.drag-over { background: #1a1814; }
+
+  .section-col.drag-over .section-body {
+    outline: 2px dashed #3a3428;
+    outline-offset: -6px;
+    border-radius: 4px;
+  }
+
+  .section-head {
+    padding: 0.78rem 0.9rem 0.65rem;
+    border-bottom: 1px solid #1e1c16;
+    position: sticky;
+    top: 92px;
+    background: #141210;
+    z-index: 50;
+  }
+
+  .section-title-row {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin-bottom: 5px;
+  }
+
+  .section-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+  .section-label {
+    font-family: system-ui, sans-serif;
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #6a6050;
+  }
+
+  .section-count {
+    margin-left: auto;
+    font-family: system-ui, sans-serif;
+    font-size: 0.68rem;
+    color: #3a3428;
+    background: #1c1a14;
+    padding: 1px 7px;
+    border-radius: 10px;
+  }
+
+  .section-sub {
+    font-family: system-ui, sans-serif;
+    font-size: 0.66rem;
+    color: #302e26;
+    line-height: 1.4;
+  }
+
+  .section-body {
+    padding: 0.7rem;
+    flex: 1;
+    min-height: 60px;
+    transition: outline 0.12s;
+  }
+
+  /* Album card */
+  .album-card {
+    position: relative;
+    margin-bottom: 8px;
+    background: #1c1a14;
+    border: 1px solid #272420;
+    border-radius: 6px;
+    cursor: grab;
+    transition: opacity 0.15s, box-shadow 0.15s;
+    animation: cardIn 0.2s ease;
+  }
+
+  .album-card:active { cursor: grabbing; }
+
+  @keyframes cardIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .album-card.dragging { opacity: 0.3; }
+
+  .album-inner {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0.6rem;
+  }
+
+  .album-thumb {
+    width: 52px;
+    height: 52px;
+    flex-shrink: 0;
+    border-radius: 4px;
+    overflow: hidden;
+    background: #252118;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    color: #2e2c24;
+  }
+
+  .album-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+  .album-info { flex: 1; min-width: 0; }
+
+  .album-title {
+    font-size: 0.9rem;
+    color: #ddd0b0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.3;
+  }
+
+  .album-meta {
+    font-family: system-ui, sans-serif;
+    font-size: 0.7rem;
+    color: #5a5040;
+    margin-top: 3px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* Age stripe — coloured left border on "Need to Listen" cards, no height impact */
+  .album-card[data-age]           { border-left-width: 3px; }
+  .album-card[data-age="fresh"]   { border-left-color: #5E9E72; }
+  .album-card[data-age="recent"]  { border-left-color: #C8A42A; }
+  .album-card[data-age="stale"]   { border-left-color: #C87030; }
+  .album-card[data-age="old"]     { border-left-color: #C84A3A; }
+  .album-card[data-age="unknown"] { border-left-color: #3a3428; }
+
+  /* Invisible hit zone over the stripe — triggers the age tooltip */
+  .age-hit {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 16px;
+    z-index: 10;
+    cursor: default;
+  }
+
+  .age-tooltip {
+    position: absolute;
+    left: 18px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: #201e18;
+    border: 1px solid #3a3428;
+    border-radius: 5px;
+    padding: 4px 9px;
+    font-family: system-ui, sans-serif;
+    font-size: 0.68rem;
+    color: #c0b09a;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s 0.1s;
+    z-index: 700;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.55);
+  }
+
+  .age-hit:hover .age-tooltip { opacity: 1; }
+
+  /* Sort-by-age button in the Need to Listen header */
+  .sort-age-btn {
+    margin-left: 5px;
+    font-family: system-ui, sans-serif;
+    font-size: 0.6rem;
+    letter-spacing: 0.08em;
+    background: none;
+    border: 1px solid #252318;
+    border-radius: 4px;
+    color: #3a3428;
+    padding: 1px 6px;
+    cursor: pointer;
+    outline: none;
+    transition: color 0.15s, border-color 0.15s;
+    flex-shrink: 0;
+  }
+
+  .sort-age-btn:hover { color: #7a6a58; border-color: #3a3428; }
+
+  .sort-age-btn.active { color: #C8A42A; border-color: #5a4828; }
+
+  .album-menu-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #3a3428;
+    padding: 4px 6px;
+    font-size: 18px;
+    line-height: 1;
+    border-radius: 4px;
+    flex-shrink: 0;
+    transition: color 0.12s;
+  }
+
+  .album-menu-btn:hover { color: #8a7a60; }
+
+  /* Card context menu */
+  .card-menu {
+    position: absolute;
+    right: 4px;
+    top: calc(100% + 4px);
+    background: #201e18;
+    border: 1px solid #3a3428;
+    border-radius: 7px;
+    z-index: 600;
+    min-width: 178px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.65);
+    display: none;
+    animation: dropIn 0.13s ease;
+  }
+
+  .menu-header {
+    font-family: system-ui, sans-serif;
+    font-size: 0.65rem;
+    color: #4a4438;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 0.5rem 0.85rem 0.3rem;
+  }
+
+  .menu-item {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 0.45rem 0.85rem;
+    cursor: pointer;
+    font-size: 0.83rem;
+    color: #c0b09a;
+    transition: background 0.1s;
+  }
+
+  .menu-item:hover { background: #2a2820; }
+  .menu-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+  .menu-divider { border-top: 1px solid #2a2820; }
+
+  .menu-remove {
+    font-family: system-ui, sans-serif;
+    padding: 0.45rem 0.85rem;
+    cursor: pointer;
+    font-size: 0.8rem;
+    color: #8a5050;
+    transition: background 0.1s;
+  }
+
+  .menu-set-date {
+    font-family: system-ui, sans-serif;
+    padding: 0.45rem 0.85rem;
+    cursor: pointer;
+    font-size: 0.8rem;
+    color: #6a7a8a;
+    transition: background 0.1s;
+  }
+
+  .menu-set-date:hover { background: #1e2228; }
+
+  .date-pick-panel {
+    padding: 0.5rem 0.85rem 0.65rem;
+    display: none;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .date-pick-panel.open { display: flex; }
+
+  .date-pick-label {
+    font-family: system-ui, sans-serif;
+    font-size: 0.63rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #4a4438;
+  }
+
+  .date-pick-input {
+    background: #181612;
+    border: 1px solid #3a3428;
+    border-radius: 4px;
+    color: #c0b09a;
+    font-family: system-ui, sans-serif;
+    font-size: 0.78rem;
+    padding: 0.3rem 0.5rem;
+    outline: none;
+    width: 100%;
+    cursor: text;
+    color-scheme: dark;
+  }
+
+  .date-pick-input:focus { border-color: #5a5040; }
+
+  .date-pick-confirm {
+    align-self: flex-end;
+    background: #252318;
+    border: 1px solid #3a3428;
+    border-radius: 4px;
+    color: #c0b09a;
+    font-family: system-ui, sans-serif;
+    font-size: 0.72rem;
+    padding: 3px 10px;
+    cursor: pointer;
+    transition: background 0.1s, border-color 0.1s;
+    outline: none;
+  }
+
+  .date-pick-confirm:hover { background: #2e2c24; border-color: #5a5040; }
+
+  .empty-col {
+    padding: 2.5rem 0.5rem;
+    text-align: center;
+    font-size: 0.8rem;
+    font-family: system-ui, sans-serif;
+    color: #252318;
+  }
+
+  .drop-placeholder {
+    height: 68px;
+    border: 1px dashed #3a3428;
+    border-radius: 6px;
+    margin-bottom: 8px;
+    background: #191714;
+  }
+
+  /* Square placeholder that slots into the grid correctly */
+  #sections.grid-view .drop-placeholder {
+    height: auto;
+    aspect-ratio: 1;
+    margin-bottom: 0;
+    border-radius: 5px;
+    border-style: dashed;
+    background: #191714;
+  }
+
+  /* Year filter toggle */
+  #year-filter-wrap {
+    margin-left: auto;
+    align-self: flex-end;
+    flex-shrink: 0;
+  }
+
+  #year-filter-btn {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    background: #1c1a14;
+    border: 1px solid #2e2c24;
+    border-radius: 5px;
+    padding: 0.42rem 0.72rem 0.42rem 0.6rem;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+    outline: none;
+    white-space: nowrap;
+  }
+
+  #year-filter-btn:hover {
+    border-color: #3a3428;
+    background: #201e18;
+  }
+
+  #year-filter-btn.active {
+    border-color: #3a4a38;
+    background: #191e17;
+  }
+
+  .yf-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #2a2820;
+    flex-shrink: 0;
+    transition: background 0.2s, box-shadow 0.2s;
+  }
+
+  #year-filter-btn.active .yf-dot {
+    background: #5E9E72;
+    box-shadow: 0 0 5px rgba(94,158,114,0.55);
+  }
+
+  .yf-label {
+    font-family: system-ui, sans-serif;
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    color: #4a4438;
+    transition: color 0.15s;
+  }
+
+  #year-filter-btn.active .yf-label {
+    color: #7a9a80;
+  }
+
+  /* View toggle button */
+  #view-toggle-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    background: #1c1a14;
+    border: 1px solid #2e2c24;
+    border-radius: 5px;
+    padding: 0.42rem 0.72rem;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+    outline: none;
+    white-space: nowrap;
+  }
+
+  #view-toggle-btn:hover {
+    border-color: #3a3428;
+    background: #201e18;
+  }
+
+  #view-toggle-btn.active {
+    border-color: #3a4048;
+    background: #17191e;
+  }
+
+  .vt-icon {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    transition: opacity 0.15s;
+  }
+
+  .vt-icon svg {
+    width: 11px;
+    height: 11px;
+    fill: none;
+    stroke: #4a4438;
+    stroke-width: 1.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    transition: stroke 0.15s;
+  }
+
+  #view-toggle-btn.active .vt-icon svg { stroke: #7a8a9a; }
+
+  .vt-label {
+    font-family: system-ui, sans-serif;
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    color: #4a4438;
+    transition: color 0.15s;
+  }
+
+  #view-toggle-btn.active .vt-label { color: #7a8a9a; }
+
+  /* ── Grid view layout ── */
+  #sections.grid-view {
+    display: block;
+    padding: 0.6rem 1rem 1.5rem;
+  }
+
+  #sections.grid-view .section-col {
+    border-right: none;
+    border-bottom: 1px solid #1e1c16;
+    margin-bottom: 0.9rem;
+    padding-bottom: 0.9rem;
+  }
+
+  #sections.grid-view .section-col:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+  }
+
+  #sections.grid-view .section-head {
+    position: static;
+    padding: 0 0 0.75rem 0;
+    border-bottom: none;
+    background: transparent;
+  }
+
+  #sections.grid-view .section-body {
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: 8px;
+  }
+
+  #sections.grid-view .empty-col {
+    grid-column: 1 / -1;
+    padding: 1.5rem 0;
+  }
+
+  /* Grid album card */
+  #sections.grid-view .album-card {
+    margin-bottom: 0;
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+  }
+
+  #sections.grid-view .album-inner {
+    padding: 0;
+    display: block;
+  }
+
+  #sections.grid-view .album-thumb {
+    width: 100%;
+    height: 0;
+    padding-bottom: 100%;
+    border-radius: 5px;
+    position: relative;
+    background: #1e1c14;
+    font-size: 36px;
+  }
+
+  #sections.grid-view .album-thumb img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 5px;
+    transition: filter 0.2s;
+  }
+
+  /* Overlay on hover */
+  #sections.grid-view .album-card:hover .album-thumb img { filter: brightness(0.45); }
+
+  #sections.grid-view .album-info {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 0.5rem 0.45rem 0.45rem;
+    opacity: 0;
+    transition: opacity 0.2s;
+    pointer-events: none;
+  }
+
+  #sections.grid-view .album-card:hover .album-info { opacity: 1; }
+
+  #sections.grid-view .album-title {
+    font-size: 0.72rem;
+    line-height: 1.3;
+    white-space: normal;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    color: #e8dfc8;
+  }
+
+  #sections.grid-view .album-meta {
+    font-size: 0.63rem;
+    margin-top: 2px;
+    color: #9a8e78;
+  }
+
+  #sections.grid-view .album-menu-btn { display: none; }
+
+  #sections.grid-view .album-card[data-age]::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    z-index: 5;
+    border-radius: 0 0 5px 5px;
+  }
+  #sections.grid-view .album-card[data-age="fresh"]::after   { background: #5E9E72; }
+  #sections.grid-view .album-card[data-age="recent"]::after  { background: #C8A42A; }
+  #sections.grid-view .album-card[data-age="stale"]::after   { background: #C87030; }
+  #sections.grid-view .album-card[data-age="old"]::after     { background: #C84A3A; }
+  #sections.grid-view .album-card[data-age="unknown"]::after { background: #3a3428; }
+
+  /* Grid card context menu — triggered by click on card */
+  #sections.grid-view .album-card .card-menu {
+    top: auto;
+    bottom: 4px;
+    right: 4px;
+  }
+
+  /* Transition between views */
+  #sections { transition: none; }
+  #sections .section-col { transition: background 0.15s; }
+</style>
+</head>
+<body>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+#_sb_wrap { font-family: system-ui, sans-serif; font-size: 0.82rem; display: none; position: relative; z-index: 9999; background: #141414; border-bottom: 1px solid #232323; }
+#_sb_main_row { display: flex; align-items: center; gap: 12px; padding: 10px 20px; }
+#_sb_msg { flex: 1; color: #777; }
+#_sb_msg strong { color: #aaa; font-weight: 500; }
+#_sb_connect_btn { background: transparent; border: 1px solid #2e2e2e; border-radius: 100px; color: #999; padding: 5px 14px; font-size: 0.78rem; font-family: system-ui, sans-serif; cursor: pointer; white-space: nowrap; transition: border-color 0.15s, color 0.15s; }
+#_sb_connect_btn:hover { border-color: #555; color: #ddd; }
+#_sb_dismiss_btn { background: transparent; border: none; color: #444; font-size: 1rem; line-height: 1; cursor: pointer; padding: 4px 6px; transition: color 0.15s; flex-shrink: 0; }
+#_sb_dismiss_btn:hover { color: #888; }
+#_sb_form_row { display: none; align-items: center; gap: 8px; padding: 8px 20px 12px; flex-wrap: wrap; border-top: 1px solid #1c1c1c; }
+#_sb_form_row input { background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 6px; color: #ccc; padding: 6px 10px; font-size: 0.78rem; font-family: system-ui, sans-serif; outline: none; transition: border-color 0.15s; }
+#_sb_form_row input:focus { border-color: #3a3a3a; }
+#_sb_form_row input::placeholder { color: #3a3a3a; }
+#_sb_url_in { width: 210px; } #_sb_key_in { width: 230px; } #_sb_email_in { width: 165px; } #_sb_pass_in { width: 130px; }
+#_sb_save_btn { background: #1e1e1e; border: 1px solid #2e2e2e; border-radius: 6px; color: #bbb; padding: 6px 14px; font-size: 0.78rem; font-family: system-ui, sans-serif; cursor: pointer; white-space: nowrap; transition: background 0.15s, border-color 0.15s; }
+#_sb_save_btn:hover { background: #252525; border-color: #444; }
+#_sb_status { font-size: 0.75rem; color: #555; }
+#_sb_status.ok { color: #5a9e7a; } #_sb_status.err { color: #c06060; }
+</style>
+
+<div id="_sb_wrap">
+  <div id="_sb_main_row">
+    <span id="_sb_msg"><strong>Sync your data across devices</strong> &mdash; connect Supabase to save externally and access anywhere</span>
+    <button id="_sb_connect_btn">Set up sync &rarr;</button>
+    <button id="_sb_dismiss_btn" title="Dismiss">&times;</button>
+  </div>
+  <div id="_sb_form_row">
+    <input id="_sb_url_in"   placeholder="Project URL  (https://xxx.supabase.co)">
+    <input id="_sb_key_in"   placeholder="Anon public key">
+    <input id="_sb_email_in" placeholder="Email">
+    <input id="_sb_pass_in"  type="password" placeholder="Password">
+    <button id="_sb_save_btn">Save &amp; Connect</button>
+    <span id="_sb_status"></span>
+  </div>
+</div>
+
+<script>
+(async function () {
+  const K = { url:'_sb_url', key:'_sb_key', email:'_sb_email', pass:'_sb_pass', dismissed:'_sb_dismissed' };
+  let _sb = null, _user = null;
+
+  const wrap    = document.getElementById('_sb_wrap');
+  const formRow = document.getElementById('_sb_form_row');
+  const status  = document.getElementById('_sb_status');
+
+  const showBanner = () => { wrap.style.display = 'block'; };
+  const hideBanner = () => { wrap.style.display = 'none';  };
+
+  const setStatus = (msg, cls) => { status.textContent = msg; status.className = cls || ''; };
+
+  document.getElementById('_sb_dismiss_btn').onclick = () => {
+    localStorage.setItem(K.dismissed, '1');
+    hideBanner();
+  };
+
+  document.getElementById('_sb_connect_btn').onclick = () => {
+    formRow.style.display = 'flex';
+    document.getElementById('_sb_url_in').value   = localStorage.getItem(K.url)   || '';
+    document.getElementById('_sb_key_in').value   = localStorage.getItem(K.key)   || '';
+    document.getElementById('_sb_email_in').value = localStorage.getItem(K.email) || '';
+    document.getElementById('_sb_pass_in').value  = localStorage.getItem(K.pass)  || '';
+  };
+
+  document.getElementById('_sb_save_btn').onclick = async () => {
+    const url   = document.getElementById('_sb_url_in').value.trim();
+    const key   = document.getElementById('_sb_key_in').value.trim();
+    const email = document.getElementById('_sb_email_in').value.trim();
+    const pass  = document.getElementById('_sb_pass_in').value;
+    if (!url || !key || !email || !pass) { setStatus('Please fill all fields.', 'err'); return; }
+    setStatus('Connecting...', '');
+    try {
+      const client = supabase.createClient(url, key);
+      const { data, error } = await client.auth.signInWithPassword({ email, password: pass });
+      if (error) { setStatus('Error: ' + error.message, 'err'); return; }
+      localStorage.setItem(K.url, url); localStorage.setItem(K.key, key);
+      localStorage.setItem(K.email, email); localStorage.setItem(K.pass, pass);
+      localStorage.removeItem(K.dismissed);
+      _sb = client; _user = data.user;
+      setStatus('Connected!', 'ok');
+      // Pull remote data if it exists, otherwise push local up
+      const { data: remoteRow } = await client.from(window._SB_TABLE || '__').select('data').eq('user_id', data.user.id).maybeSingle();
+      if (remoteRow && window._sbOnLoad) {
+        window._sbPaused = true;
+        try { window._sbOnLoad(remoteRow.data); } finally { window._sbPaused = false; }
+      } else {
+        await _syncNow();
+      }
+      setTimeout(hideBanner, 1500);
+    } catch (e) { setStatus('Error: ' + e.message, 'err'); }
+  };
+
+  async function _tryConnect() {
+    const url = localStorage.getItem(K.url), key = localStorage.getItem(K.key),
+          email = localStorage.getItem(K.email), pass = localStorage.getItem(K.pass);
+    if (!url || !key || !email || !pass) return false;
+    try {
+      const client = supabase.createClient(url, key);
+      const { data, error } = await client.auth.signInWithPassword({ email, password: pass });
+      if (error) return false;
+      _sb = client; _user = data.user; return true;
+    } catch { return false; }
+  }
+
+  async function _upsert(table, payload) {
+    if (!_sb || !_user) return;
+    const row = { user_id: _user.id, data: payload, updated_at: new Date().toISOString() };
+    return await _sb.from(table).upsert(row, { onConflict: 'user_id' });
+  }
+
+  async function _syncNow() {
+    if (!window._SB_TABLE) return;
+    const payload = window._sbGetData ? window._sbGetData()
+                  : window._SB_LS_KEY ? JSON.parse(localStorage.getItem(window._SB_LS_KEY) || 'null')
+                  : null;
+    if (payload != null) await _upsert(window._SB_TABLE, payload);
+  }
+
+  window._sbSyncNow = _syncNow;
+  window._sbOpenPanel = function() {
+    localStorage.removeItem('_sb_dismissed');
+    wrap.style.display = 'block';
+    formRow.style.display = 'flex';
+    document.getElementById('_sb_url_in').value   = localStorage.getItem(K.url)   || '';
+    document.getElementById('_sb_key_in').value   = localStorage.getItem(K.key)   || '';
+    document.getElementById('_sb_email_in').value = localStorage.getItem(K.email) || '';
+    document.getElementById('_sb_pass_in').value  = localStorage.getItem(K.pass)  || '';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  window._sbPaused  = false;
+
+  const connected = await _tryConnect();
+  if (connected) {
+    hideBanner();
+    const { data: row } = await _sb.from(window._SB_TABLE || '__').select('data').eq('user_id', _user.id).maybeSingle();
+    if (row && window._sbOnLoad) {
+      window._sbPaused = true;
+      try { window._sbOnLoad(row.data); } finally { window._sbPaused = false; }
+    }
+  } else if (!localStorage.getItem(K.dismissed)) {
+    showBanner();
+  }
+})();
+</script>
+
+
+<div id="header">
+  <div>
+    <h1><a href="../" style="color:inherit;text-decoration:none;cursor:pointer;">Album Tracker</a></h1>
+    <div id="album-count" class="sans">0 albums across all shelves</div>
+  </div>
+  <div id="search-area">
+    <div id="search-inputs">
+      <div class="search-field">
+        <label>Album</label>
+        <input type="text" id="input-album" placeholder="e.g. 1989" autocomplete="off">
+      </div>
+      <div class="search-field">
+        <label>Artist</label>
+        <input type="text" id="input-artist" placeholder="e.g. Taylor Swift" autocomplete="off">
+      </div>
+      <div id="search-spinner">Searching...</div>
+    </div>
+    <div id="results-wrap"></div>
+  </div>
+  <div id="year-filter-wrap" style="display:flex;gap:6px;align-items:flex-end;">
+    <button onclick="window._sbOpenPanel&&window._sbOpenPanel()" title="Cloud Save settings" style="display:flex;align-items:center;gap:7px;background:#1c1a14;border:1px solid #2e2c24;border-radius:5px;padding:0.42rem 0.72rem 0.42rem 0.6rem;cursor:pointer;font-family:system-ui,sans-serif;font-size:0.7rem;letter-spacing:0.1em;color:#4a4438;outline:none;transition:border-color 0.15s,background 0.15s,color 0.15s;white-space:nowrap;" onmouseover="this.style.borderColor='#3a3428';this.style.background='#201e18';this.style.color='#6a6458'" onmouseout="this.style.borderColor='#2e2c24';this.style.background='#1c1a14';this.style.color='#4a4438'"><svg viewBox="0 0 24 24" width="9" height="9"><path fill="currentColor" d="M19.35 10.04A7.49 7.49 0 0 0 12 4C9.11 4 6.6 5.64 5.35 8.04A5.994 5.994 0 0 0 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96z"/></svg>Cloud Save</button>
+    <button id="year-filter-btn" title="Show only this year's releases">
+      <span class="yf-dot"></span>
+      <span class="yf-label" id="yf-label-text"></span>
+    </button>
+    <button id="view-toggle-btn" title="Toggle grid view">
+      <span class="vt-icon" id="vt-icon-kanban">
+        <svg viewBox="0 0 16 16"><rect x="1" y="2" width="4" height="12" rx="1"/><rect x="6" y="2" width="4" height="12" rx="1"/><rect x="11" y="2" width="4" height="12" rx="1"/></svg>
+      </span>
+      <span class="vt-icon" id="vt-icon-grid" style="display:none">
+        <svg viewBox="0 0 16 16"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg>
+      </span>
+      <span class="vt-label" id="vt-label-text">Grid</span>
+    </button>
+  </div>
+</div>
+
+<div id="sections"></div>
+
+<script>
+const SECTIONS = [
+  { id: "listen", label: "Need to Listen",  sub: "Not yet heard",            accent: "#C8922A" },
+  { id: "fathom", label: "Need to Fathom",  sub: "Heard, not yet processed", accent: "#5E8FB5" },
+  { id: "loved",  label: "Fathomed & Love", sub: "Fully absorbed, adored",   accent: "#5E9E72" },
+  { id: "enough", label: "Once is Enough",  sub: "Heard it, done with it",   accent: "#9E7A9E" },
+];
+
+const STORAGE_KEY      = "album_tracker_v1";
+const COVER_CACHE_KEY  = "album_tracker_covers_v1";
+let state = { listen: [], fathom: [], loved: [], enough: [] };
+let coverCache = {}; // { [mbid]: "data:image/jpeg;base64,..." }
+let draggingId = null;
+let draggingFrom = null;
+let placeholderEl = null;
+let filterYear2026 = false;
+let listenSortOldest = true;
+const CURRENT_YEAR = String(new Date().getFullYear());
+
+/* ---------- Year filter ---------- */
+const yearFilterBtn = document.getElementById("year-filter-btn");
+document.getElementById("yf-label-text").textContent = CURRENT_YEAR;
+yearFilterBtn.addEventListener("click", () => {
+  filterYear2026 = !filterYear2026;
+  yearFilterBtn.classList.toggle("active", filterYear2026);
+  SECTIONS.forEach(sec => renderSectionBody(sec.id));
+  updateCount();
+});
+
+/* ---------- View toggle (kanban ↔ grid) ---------- */
+let isGridView = window.matchMedia("(max-width: 600px)").matches;
+const sectionsEl      = document.getElementById("sections");
+const viewToggleBtn   = document.getElementById("view-toggle-btn");
+const vtIconKanban    = document.getElementById("vt-icon-kanban");
+const vtIconGrid      = document.getElementById("vt-icon-grid");
+const vtLabelText     = document.getElementById("vt-label-text");
+
+function applyViewState() {
+  sectionsEl.classList.toggle("grid-view", isGridView);
+  viewToggleBtn.classList.toggle("active", isGridView);
+  if (isGridView) {
+    vtIconKanban.style.display = "none";
+    vtIconGrid.style.display   = "flex";
+    vtLabelText.textContent    = "Kanban";
+  } else {
+    vtIconKanban.style.display = "flex";
+    vtIconGrid.style.display   = "none";
+    vtLabelText.textContent    = "Grid";
+  }
+}
+
+applyViewState();
+
+viewToggleBtn.addEventListener("click", () => {
+  isGridView = !isGridView;
+  applyViewState();
+  if (isGridView) enableGridCardClicks();
+});
+
+function enableGridCardClicks() {
+  /* Cards in grid view open the context menu on card click (not the ⋯ btn) */
+  document.querySelectorAll(".album-card").forEach(card => {
+    card.addEventListener("click", gridCardClick);
+  });
+}
+
+function gridCardClick(e) {
+  if (!isGridView) return;
+  if (e.target.closest(".card-menu")) return;
+  const menu   = this.querySelector(".card-menu");
+  const isOpen = menu.style.display === "block";
+  closeAllMenus();
+  if (!isOpen) menu.style.display = "block";
+}
+
+/* ---------- Persistence ---------- */
+function loadState() {
+  try { const r = localStorage.getItem(STORAGE_KEY); if (r) state = JSON.parse(r); } catch {}
+}
+function saveState() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch {}
+}
+function getAllAlbums() { return Object.values(state).flat(); }
+
+/* ---------- Cover art cache ---------- */
+function loadCoverCache() {
+  try { const r = localStorage.getItem(COVER_CACHE_KEY); if (r) coverCache = JSON.parse(r); } catch {}
+}
+
+function saveCoverCache() {
+  try { localStorage.setItem(COVER_CACHE_KEY, JSON.stringify(coverCache)); } catch (e) {
+    // Storage quota exceeded — cache what we have, no further action needed
+  }
+}
+
+async function fetchAndCacheCover(mbid) {
+  if (!mbid || coverCache[mbid]) return;
+  try {
+    const r = await fetch(`https://coverartarchive.org/release-group/${mbid}/front-250`);
+    if (!r.ok) return;
+    const blob = await r.blob();
+    const base64 = await new Promise((res, rej) => {
+      const reader = new FileReader();
+      reader.onload = () => res(reader.result);
+      reader.onerror = rej;
+      reader.readAsDataURL(blob);
+    });
+    coverCache[mbid] = base64;
+    saveCoverCache();
+  } catch {}
+}
+
+function cachedCover(album) {
+  return coverCache[album.mbid] || coverUrl(album.mbid);
+}
+
+/* Cache covers for any existing albums that aren't yet stored */
+function cacheUncoveredAlbums() {
+  getAllAlbums().forEach(a => { if (!coverCache[a.mbid]) fetchAndCacheCover(a.mbid); });
+}
+
+/* ---------- Helpers ---------- */
+function coverUrl(mbid, size) { return `https://coverartarchive.org/release-group/${mbid}/front-${size || 250}`; }
+function esc(s) { return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+function updateCount() {
+  const all = getAllAlbums();
+  const visible = filterYear2026 ? all.filter(a => String(a.year) === CURRENT_YEAR) : all;
+  const n = visible.length;
+  const total = all.length;
+  const suffix = filterYear2026 && n !== total ? ` of ${total}` : "";
+  document.getElementById("album-count").textContent = `${n}${suffix} album${n !== 1 ? "s" : ""} across all shelves`;
+}
+
+/* ---------- MusicBrainz ---------- */
+async function searchMB(album, artist) {
+  let q = "";
+  if (album && artist) q = `releasegroup:"${album}" AND artist:"${artist}"`;
+  else if (album)      q = `releasegroup:"${album}"`;
+  else if (artist)     q = `artist:"${artist}"`;
+  if (!q) return [];
+  const url = `https://musicbrainz.org/ws/2/release-group?query=${encodeURIComponent(q)}&type=album&fmt=json&limit=8`;
+  const r = await fetch(url, { headers: { Accept: "application/json" } });
+  if (!r.ok) throw new Error("fail");
+  const d = await r.json();
+  return d["release-groups"] || [];
+}
+
+/* ---------- Live search ---------- */
+const inputAlbum  = document.getElementById("input-album");
+const inputArtist = document.getElementById("input-artist");
+const resultsWrap = document.getElementById("results-wrap");
+const spinner     = document.getElementById("search-spinner");
+let searchTimer = null;
+let resultsRenderedAt = null;
+let highlightedIndex = -1;
+
+function scheduleSearch() {
+  clearTimeout(searchTimer);
+  const album  = inputAlbum.value.trim();
+  const artist = inputArtist.value.trim();
+  if (!album && !artist) { closeResults(); return; }
+  spinner.classList.add("visible");
+  searchTimer = setTimeout(async () => {
+    try {
+      const results = await searchMB(album, artist);
+      renderResults(results);
+    } catch {
+      showMsg("Search failed. Check your connection.");
+    }
+    spinner.classList.remove("visible");
+  }, 450);
+}
+
+[inputAlbum, inputArtist].forEach(inp => inp.addEventListener("input", scheduleSearch));
+
+inputAlbum.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
+    if (highlightedIndex >= 0) {
+      e.preventDefault();
+      const rows = getSelectableRows();
+      if (rows[highlightedIndex]) rows[highlightedIndex].click();
+    } else {
+      e.preventDefault();
+      closeResults();
+      inputArtist.focus();
+      const end = inputArtist.value.length;
+      inputArtist.setSelectionRange(end, end);
+    }
+    return;
+  }
+  const isAtEnd = inputAlbum.selectionStart === inputAlbum.value.length && inputAlbum.selectionEnd === inputAlbum.value.length;
+  if (e.key === "ArrowRight" && isAtEnd) {
+    e.preventDefault();
+    closeResults();
+    inputArtist.focus();
+    const end = inputArtist.value.length;
+    inputArtist.setSelectionRange(end, end);
+  }
+});
+
+inputArtist.addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && resultsWrap.style.display === "block" && resultsRenderedAt && Date.now() - resultsRenderedAt >= 100) {
+    e.preventDefault();
+    const rows = getSelectableRows();
+    const target = highlightedIndex >= 0 ? rows[highlightedIndex] : rows[0];
+    if (target) target.click();
+  }
+});
+
+function renderResults(results) {
+  resultsWrap.innerHTML = "";
+  highlightedIndex = -1;
+  if (results.length === 0) { showMsg("No results found."); return; }
+  const existingIds = new Set(getAllAlbums().map(a => a.id));
+  results.forEach(rg => {
+    const already = existingIds.has(rg.id);
+    const artistName = rg["artist-credit"]?.[0]?.name || "Unknown Artist";
+    const year = rg["first-release-date"]?.slice(0, 4) || "";
+    const row = document.createElement("div");
+    row.className = `result-row${already ? " already" : ""}`;
+    row.innerHTML = `
+      <div class="result-thumb"><img src="${coverUrl(rg.id, 100)}" alt="" onerror="this.parentElement.innerHTML='&#9834;'"></div>
+      <div class="result-info">
+        <div class="result-title">${esc(rg.title)}</div>
+        <div class="result-meta">${esc(artistName)}${year ? ` &middot; ${year}` : ""}</div>
+      </div>
+      ${already ? `<span class="result-badge">Added</span>` : ""}
+    `;
+    if (!already) {
+      row.addEventListener("click", () => {
+        pickResult({ id: rg.id, title: rg.title, artist: artistName, mbid: rg.id, coverUrl: coverUrl(rg.id), year });
+      });
+    }
+    resultsWrap.appendChild(row);
+  });
+  resultsWrap.style.display = "block";
+  resultsRenderedAt = Date.now();
+}
+
+function showMsg(msg) {
+  resultsWrap.innerHTML = `<div class="results-msg">${msg}</div>`;
+  resultsWrap.style.display = "block";
+}
+
+function getSelectableRows() {
+  return [...resultsWrap.querySelectorAll(".result-row:not(.already)")];
+}
+
+function setHighlight(index) {
+  const rows = getSelectableRows();
+  rows.forEach(r => r.classList.remove("highlighted"));
+  if (index >= 0 && index < rows.length) {
+    highlightedIndex = index;
+    rows[index].classList.add("highlighted");
+    rows[index].scrollIntoView({ block: "nearest" });
+  } else {
+    highlightedIndex = -1;
+  }
+}
+
+function closeResults() {
+  resultsWrap.style.display = "none";
+  resultsWrap.innerHTML = "";
+  clearTimeout(searchTimer);
+  spinner.classList.remove("visible");
+  highlightedIndex = -1;
+}
+
+function pickResult(album) {
+  if (getAllAlbums().find(a => a.id === album.id)) return;
+  album.addedAt = new Date().toISOString();
+  state.listen.unshift(album);
+  saveState();
+  fetchAndCacheCover(album.mbid); // cache artwork in background
+  renderSectionBody("listen");
+  updateCount();
+  closeResults();
+  inputAlbum.value = "";
+  inputArtist.value = "";
+}
+
+document.addEventListener("click", e => {
+  if (!e.target.closest("#search-area")) closeResults();
+  if (!e.target.closest(".album-card"))  closeAllMenus();
+});
+
+/* ---------- Render ---------- */
+function renderAll() {
+  const container = document.getElementById("sections");
+  container.innerHTML = "";
+  SECTIONS.forEach(sec => {
+    const col = document.createElement("div");
+    col.className = "section-col";
+    col.dataset.section = sec.id;
+    col.innerHTML = `
+      <div class="section-head">
+        <div class="section-title-row">
+          <span class="section-dot" style="background:${sec.accent}"></span>
+          <span class="section-label">${sec.label}</span>
+          ${sec.id === "listen" ? `<button class="sort-age-btn" id="sort-age-btn" title="Sort by date added (oldest first)">↑ Oldest</button>` : ""}
+          <span class="section-count" id="count-${sec.id}">0</span>
+        </div>
+        <div class="section-sub">${sec.sub}</div>
+      </div>
+      <div class="section-body" id="body-${sec.id}"></div>
+    `;
+    container.appendChild(col);
+    setupDropZone(col, sec.id);
+    renderSectionBody(sec.id);
+  });
+  updateCount();
+
+  /* Wire sort button (created above for listen column) */
+  const sortBtn = document.getElementById("sort-age-btn");
+  if (sortBtn) {
+    sortBtn.classList.toggle("active", listenSortOldest);
+    sortBtn.addEventListener("click", () => {
+      listenSortOldest = !listenSortOldest;
+      sortBtn.classList.toggle("active", listenSortOldest);
+      renderSectionBody("listen");
+    });
+  }
+}
+
+function renderSectionBody(sectionId) {
+  const body    = document.getElementById(`body-${sectionId}`);
+  const countEl = document.getElementById(`count-${sectionId}`);
+  if (!body) return;
+  body.innerHTML = "";
+  let albums = filterYear2026
+    ? state[sectionId].filter(a => String(a.year) === CURRENT_YEAR)
+    : [...state[sectionId]];
+
+  if (sectionId === "listen" && listenSortOldest) {
+    albums = albums.slice().sort((a, b) => {
+      if (!a.addedAt && !b.addedAt) return 0;
+      if (!a.addedAt) return 1;   // unknowns sink to bottom
+      if (!b.addedAt) return -1;
+      return new Date(a.addedAt) - new Date(b.addedAt);
+    });
+  }
+  if (countEl) countEl.textContent = albums.length;
+  if (albums.length === 0) {
+    body.innerHTML = `<div class="empty-col">Empty</div>`;
+    return;
+  }
+  albums.forEach(album => body.appendChild(createCard(album, sectionId)));
+}
+
+/* ---------- Age stripe (Need to Listen) ---------- */
+function getAgeInfo(album) {
+  if (!album.addedAt) return { cls: "unknown", title: "Added date unknown" };
+  const days = Math.floor((Date.now() - new Date(album.addedAt).getTime()) / 86400000);
+  let cls;
+  if      (days < 7)   cls = "fresh";
+  else if (days < 30)  cls = "recent";
+  else if (days < 90)  cls = "stale";
+  else                 cls = "old";
+  const label = days < 1 ? "added today"
+    : days === 1 ? "1 day on list"
+    : days < 30  ? `${days} days on list`
+    : days < 365 ? `${Math.floor(days/30)} month${Math.floor(days/30)>1?"s":""} on list`
+    : `${Math.floor(days/365)} year${Math.floor(days/365)>1?"s":""} on list`;
+  return { cls, title: label };
+}
+
+/* ---------- Card ---------- */
+function createCard(album, sectionId) {
+  const card = document.createElement("div");
+  card.className = "album-card";
+  card.draggable = true;
+  card.dataset.id = album.id;
+  card.dataset.section = sectionId;
+
+  if (sectionId === "listen") {
+    const { cls, title } = getAgeInfo(album);
+    card.dataset.age = cls;
+    /* Inject hit zone + tooltip over the stripe — after innerHTML is set below */
+    card._ageTooltipText = title;
+  }
+
+  const others   = SECTIONS.filter(s => s.id !== sectionId);
+  const moveItems = others.map(s =>
+    `<div class="menu-item" data-move="${s.id}"><span class="menu-dot" style="background:${s.accent}"></span>${s.label}</div>`
+  ).join("");
+
+  card.innerHTML = `
+    <div class="album-inner">
+      <div class="album-thumb">
+        <img src="${esc(cachedCover(album))}" alt="" onerror="this.parentElement.innerHTML='&#9834;'">
+      </div>
+      <div class="album-info">
+        <div class="album-title" title="${esc(album.title)}">${esc(album.title)}</div>
+        <div class="album-meta">${esc(album.artist)}${album.year ? ` &middot; ${album.year}` : ""}</div>
+      </div>
+      <button class="album-menu-btn" title="Options">&#8943;</button>
+    </div>
+    <div class="card-menu">
+      <div class="menu-header">Move to</div>
+      ${moveItems}
+      <div class="menu-divider">
+        ${sectionId === "listen" ? `<div class="menu-set-date">&#128337; Set date added…</div><div class="date-pick-panel"><span class="date-pick-label">Date added</span><input type="date" class="date-pick-input"><button class="date-pick-confirm">Set</button></div>` : ""}
+        <div class="menu-remove">Remove</div>
+      </div>
+    </div>
+  `;
+
+  /* Context menu */
+  const menu = card.querySelector(".card-menu");
+
+  /* Age hit zone — appended after innerHTML so it sits on top */
+  if (card._ageTooltipText) {
+    const hit = document.createElement("div");
+    hit.className = "age-hit";
+    const tip = document.createElement("div");
+    tip.className = "age-tooltip";
+    tip.textContent = card._ageTooltipText;
+    hit.appendChild(tip);
+    card.appendChild(hit);
+    delete card._ageTooltipText;
+  }
+  card.querySelector(".album-menu-btn").addEventListener("click", e => {
+    e.stopPropagation();
+    const isOpen = menu.style.display === "block";
+    closeAllMenus();
+    if (!isOpen) menu.style.display = "block";
+  });
+  card.querySelectorAll("[data-move]").forEach(el =>
+    el.addEventListener("click", e => { e.stopPropagation(); moveAlbum(album.id, sectionId, el.dataset.move); })
+  );
+  card.querySelector(".menu-remove").addEventListener("click", e => {
+    e.stopPropagation(); removeAlbum(album.id, sectionId);
+  });
+
+  /* Set date added (listen section only) */
+  if (sectionId === "listen") {
+    const setDateItem  = card.querySelector(".menu-set-date");
+    const datePanel    = card.querySelector(".date-pick-panel");
+    const dateInput    = card.querySelector(".date-pick-input");
+    const dateConfirm  = card.querySelector(".date-pick-confirm");
+
+    /* Pre-fill with existing date if known */
+    if (album.addedAt) {
+      dateInput.value = new Date(album.addedAt).toISOString().slice(0, 10);
+    }
+
+    setDateItem.addEventListener("click", e => {
+      e.stopPropagation();
+      datePanel.classList.toggle("open");
+      if (datePanel.classList.contains("open")) dateInput.focus();
+    });
+
+    dateInput.addEventListener("click",  e => e.stopPropagation());
+    dateInput.addEventListener("keydown", e => e.stopPropagation());
+
+    dateConfirm.addEventListener("click", e => {
+      e.stopPropagation();
+      if (!dateInput.value) return;
+      const album_ref = state.listen.find(a => a.id === album.id);
+      if (album_ref) {
+        album_ref.addedAt = new Date(dateInput.value).toISOString();
+        saveState();
+        renderSectionBody("listen");
+      }
+      closeAllMenus();
+    });
+  }
+
+  /* Drag events */
+  card.addEventListener("dragstart", e => {
+    closeAllMenus();
+    draggingId   = album.id;
+    draggingFrom = sectionId;
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", album.id);
+    setTimeout(() => card.classList.add("dragging"), 0);
+  });
+
+  card.addEventListener("dragend", () => {
+    card.classList.remove("dragging");
+    removePlaceholder();
+    document.querySelectorAll(".drag-over").forEach(c => c.classList.remove("drag-over"));
+    draggingId   = null;
+    draggingFrom = null;
+  });
+
+  /* Grid-view: whole card opens context menu */
+  card.addEventListener("click", function(e) {
+    if (!isGridView) return;
+    if (e.target.closest(".card-menu")) return;
+    const menu   = this.querySelector(".card-menu");
+    const isOpen = menu.style.display === "block";
+    closeAllMenus();
+    if (!isOpen) menu.style.display = "block";
+  });
+
+  return card;
+}
+
+function closeAllMenus() {
+  document.querySelectorAll(".card-menu").forEach(m => m.style.display = "none");
+}
+
+/* ---------- Drag and drop ---------- */
+function removePlaceholder() {
+  if (placeholderEl && placeholderEl.parentElement) placeholderEl.parentElement.removeChild(placeholderEl);
+  placeholderEl = null;
+}
+
+function getOrCreatePlaceholder() {
+  if (!placeholderEl) {
+    placeholderEl = document.createElement("div");
+    placeholderEl.className = "drop-placeholder";
+  }
+  return placeholderEl;
+}
+
+/**
+ * Find the index (among non-dragging cards) at which to insert.
+ * In kanban mode uses only Y; in grid mode uses X+Y to handle rows.
+ */
+function calcInsertIndex(body, clientX, clientY) {
+  const cards = [...body.querySelectorAll(".album-card:not(.dragging)")];
+  if (isGridView) {
+    for (let i = 0; i < cards.length; i++) {
+      const r = cards[i].getBoundingClientRect();
+      // "above" this card's row → insert before it
+      if (clientY < r.top) return i;
+      // same row, left of its horizontal midpoint → insert before it
+      if (clientY <= r.bottom && clientX < r.left + r.width / 2) return i;
+    }
+  } else {
+    for (let i = 0; i < cards.length; i++) {
+      const r = cards[i].getBoundingClientRect();
+      if (clientY < r.top + r.height / 2) return i;
+    }
+  }
+  return cards.length;
+}
+
+function setupDropZone(col, sectionId) {
+  const body = col.querySelector(".section-body");
+
+  col.addEventListener("dragover", e => {
+    if (!draggingId) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    col.classList.add("drag-over");
+
+    const ph    = getOrCreatePlaceholder();
+    const cards = [...body.querySelectorAll(".album-card:not(.dragging)")];
+    const idx   = calcInsertIndex(body, e.clientX, e.clientY);
+
+    if (idx < cards.length) {
+      if (ph.nextSibling !== cards[idx]) body.insertBefore(ph, cards[idx]);
+    } else {
+      const emptyDiv = body.querySelector(".empty-col");
+      if (emptyDiv) body.insertBefore(ph, emptyDiv);
+      else if (body.lastChild !== ph) body.appendChild(ph);
+    }
+  });
+
+  col.addEventListener("dragleave", e => {
+    // Only clear when cursor truly exits the column (not just moving between children)
+    if (!col.contains(e.relatedTarget)) {
+      col.classList.remove("drag-over");
+      if (placeholderEl && placeholderEl.parentElement === body) removePlaceholder();
+    }
+  });
+
+  col.addEventListener("drop", e => {
+    e.preventDefault();
+    if (!draggingId) return;
+
+    const fromId = draggingFrom;
+    const id     = draggingId;
+
+    col.classList.remove("drag-over");
+    removePlaceholder();
+
+    if (fromId === sectionId) {
+      /* Reorder within same section.
+         calcInsertIndex excludes the dragging card, so the returned index
+         is already correct for the state array after we splice the item out. */
+      const stateIdx = state[sectionId].findIndex(a => a.id === id);
+      if (stateIdx === -1) return;
+      const [album] = state[sectionId].splice(stateIdx, 1);
+      // Re-query after placeholder is removed so positions are accurate
+      const dropIdx = calcInsertIndex(body, e.clientX, e.clientY);
+      state[sectionId].splice(dropIdx, 0, album);
+    } else {
+      /* Cross-section move */
+      const fromArr = state[fromId];
+      const stateIdx = fromArr.findIndex(a => a.id === id);
+      if (stateIdx === -1) return;
+      const [album] = fromArr.splice(stateIdx, 1);
+      const dropIdx = calcInsertIndex(body, e.clientX, e.clientY);
+      state[sectionId].splice(dropIdx, 0, album);
+      renderSectionBody(fromId);
+    }
+
+    saveState();
+    renderSectionBody(sectionId);
+    updateCount();
+  });
+}
+
+/* ---------- Album operations ---------- */
+function moveAlbum(albumId, from, to) {
+  const idx = state[from].findIndex(a => a.id === albumId);
+  if (idx === -1) return;
+  const [album] = state[from].splice(idx, 1);
+  state[to].unshift(album);
+  saveState();
+  renderSectionBody(from);
+  renderSectionBody(to);
+  updateCount();
+  closeAllMenus();
+}
+
+function removeAlbum(albumId, sectionId) {
+  state[sectionId] = state[sectionId].filter(a => a.id !== albumId);
+  saveState();
+  renderSectionBody(sectionId);
+  updateCount();
+  closeAllMenus();
+}
+
+/* ---------- Keyboard shortcuts ---------- */
+document.addEventListener("keydown", e => {
+  // If "/" is pressed and we're not already typing in an input
+  if (e.key === "/" && !document.activeElement.matches("input")) {
+    e.preventDefault();
+    // Focus the album search input (first input in #search-inputs)
+    const albumInput = document.querySelector("#search-inputs input");
+    if (albumInput) {
+      albumInput.focus();
+    }
+  }
+
+  // Arrow key navigation between album and artist fields
+  const inputs = [...document.querySelectorAll("#search-inputs input")];
+  const albumInput  = inputs[0];
+  const artistInput = inputs[1];
+
+  if (e.key === "ArrowRight" && document.activeElement === albumInput) {
+    e.preventDefault();
+    artistInput.focus();
+  } else if (e.key === "ArrowLeft" && document.activeElement === artistInput) {
+    e.preventDefault();
+    albumInput.focus();
+  }
+
+  // ArrowDown/Up navigate the results dropdown when either search input is focused
+  const inSearchInput = document.activeElement === albumInput || document.activeElement === artistInput;
+  if (inSearchInput && resultsWrap.style.display === "block") {
+    const rows = getSelectableRows();
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setHighlight(highlightedIndex < rows.length - 1 ? highlightedIndex + 1 : 0);
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setHighlight(highlightedIndex > 0 ? highlightedIndex - 1 : rows.length - 1);
+    }
+  }
+});
+
+/* ---------- Init ---------- */
+loadState();
+loadCoverCache();
+renderAll();
+cacheUncoveredAlbums();
+</script>
+
+<script>
+window._SB_TABLE  = 'albums';
+window._SB_LS_KEY = 'album_tracker_v1';
+
+// Sync to Supabase whenever state is saved to localStorage
+const __sbOrigSet = localStorage.setItem.bind(localStorage);
+localStorage.setItem = function(key, value) {
+  __sbOrigSet(key, value);
+  if (key === 'album_tracker_v1' && window._sbSyncNow && !window._sbPaused) window._sbSyncNow();
+};
+
+// Refresh UI when Supabase data is loaded
+window._sbOnLoad = function(data) {
+  try {
+    __sbOrigSet('album_tracker_v1', JSON.stringify(data));
+    loadState(); renderAll(); updateCount();
+  } catch(e) { console.warn('Supabase load error:', e); }
+};
+</script>
+
+</body>
+</html>
