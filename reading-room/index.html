@@ -416,7 +416,6 @@ input, textarea { user-select: text; }
   cursor: grab;
   /* No transition on transform — it creates a stacking context that traps the menu */
   transition: border-color 0.15s, box-shadow 0.15s;
-  animation: cardIn 0.2s ease both;
   box-shadow: 0 1px 3px var(--shadow);
 }
 
@@ -435,6 +434,9 @@ input, textarea { user-select: text; }
   from { opacity: 0; transform: translateY(8px); }
   to   { opacity: 1; transform: translateY(0); }
 }
+
+/* Only animate cards explicitly added by the user */
+.book-card.animate-in { animation: cardIn 0.2s ease both; }
 
 .book-inner {
   display: flex;
@@ -1294,7 +1296,8 @@ function buildCard(book, sectionId) {
   const card = document.createElement('div');
   const showAge = AGE_SECTIONS.has(sectionId);
   const { cls: ageClass, label: ageLabel } = showAge ? getAgeInfo(book.addedAt) : { cls: '', label: '' };
-  card.className = ageClass ? `book-card ${ageClass}` : 'book-card';
+  const animateIn = book._animateIn; delete book._animateIn;
+  card.className = [animateIn ? 'animate-in' : '', 'book-card', ageClass].filter(Boolean).join(' ');
   card.setAttribute('draggable', 'true');
   card.title = (showAge && book.addedAt) ? `Added ${formatAESTDate(book.addedAt)}` : '';
 
@@ -1372,11 +1375,12 @@ function addBook(doc, targetSectionId) {
   }
   state[targetSectionId].unshift({
     id,
-    title:   doc.title || 'Untitled',
-    author:  (doc.author_name || []).slice(0, 2).join(', ') || '',
-    year:    doc.first_publish_year || null,
-    coverId: doc.cover_i || null,
-    addedAt: Date.now(),
+    title:      doc.title || 'Untitled',
+    author:     (doc.author_name || []).slice(0, 2).join(', ') || '',
+    year:       doc.first_publish_year || null,
+    coverId:    doc.cover_i || null,
+    addedAt:    Date.now(),
+    _animateIn: true,
   });
   saveState();
   renderSectionBody(targetSectionId);
