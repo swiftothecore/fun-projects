@@ -50,6 +50,138 @@
     margin-top: 0.25rem;
   }
 
+  /* Mobile: compact header with toggle */
+  #mobile-controls-toggle {
+    display: none;
+  }
+
+  #mobile-controls {
+    display: contents;
+  }
+
+  @media (max-width: 768px) {
+    #header {
+      padding: 0.9rem 1.2rem;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0;
+      justify-content: space-between;
+    }
+
+    #header h1 {
+      font-size: 1.2rem;
+    }
+
+    #album-count {
+      font-size: 0.6rem;
+      margin-top: 0.15rem;
+    }
+
+    #mobile-controls-toggle {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: none;
+      border: 1px solid #2e2c24;
+      border-radius: 5px;
+      padding: 0.4rem 0.75rem;
+      cursor: pointer;
+      color: #4a4438;
+      flex-shrink: 0;
+      font-family: system-ui, sans-serif;
+      font-size: 0.7rem;
+      letter-spacing: 0.08em;
+      transition: border-color 0.15s, color 0.15s;
+    }
+
+    #mobile-controls-toggle:hover,
+    #mobile-controls-toggle.active {
+      border-color: #4a4438;
+      color: #8a8070;
+    }
+
+    .toggle-label-hide { display: none; }
+    #mobile-controls-toggle.active .toggle-label-show { display: none; }
+    #mobile-controls-toggle.active .toggle-label-hide { display: inline; }
+
+    #mobile-controls {
+      /* Float below the header — content never shifts */
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: #141210;
+      border-bottom: 1px solid #1e1c16;
+      z-index: 99;
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+      padding: 0 1.2rem;
+      /* Animate open/close without affecting layout */
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease, padding 0.3s ease;
+    }
+
+    #mobile-controls.open {
+      max-height: 500px;
+      padding: 0.75rem 1.2rem;
+    }
+
+    #mobile-controls #search-area {
+      width: 100%;
+    }
+
+    #mobile-controls #search-inputs {
+      flex-direction: column;
+      flex-wrap: nowrap;
+      align-items: stretch;
+      gap: 6px;
+      width: 100%;
+    }
+
+    #mobile-controls .search-field {
+      width: 100%;
+    }
+
+    #mobile-controls .search-field input {
+      width: 100%;
+    }
+
+    #mobile-controls #search-spinner {
+      display: none;
+    }
+
+    /* Buttons row: cloud icon + 2026 + view toggle all inline, full width */
+    #mobile-controls #year-filter-wrap {
+      display: flex;
+      flex-direction: row;
+      flex-wrap: nowrap;
+      align-items: stretch;
+      gap: 6px;
+      margin-left: 0;
+      width: 100%;
+    }
+
+    #mobile-controls #year-filter-wrap > * {
+      flex: 1;
+      justify-content: center;
+    }
+
+    /* Cloud Save: icon only on mobile, square */
+    .cloud-save-label {
+      display: none;
+    }
+
+    #cloud-save-btn {
+      flex: 1;
+      gap: 0;
+      justify-content: center;
+      align-self: stretch;
+      padding: 0;
+    }
+  }
+
   /* Search */
   #search-area { position: relative; }
 
@@ -788,6 +920,38 @@
   /* Transition between views */
   #sections { transition: none; }
   #sections .section-col { transition: background 0.15s; }
+  /* ── List view layout (mobile only) ── */
+  #sections.list-view {
+    display: block;
+  }
+
+  #sections.list-view .section-col {
+    border-right: none;
+    border-bottom: 1px solid #1e1c16;
+  }
+
+  #sections.list-view .section-col:last-child {
+    border-bottom: none;
+  }
+
+  #sections.list-view .section-head {
+    position: sticky;
+    top: 57px;
+    background: #141210;
+    z-index: 50;
+    padding: 0.78rem 0.9rem 0.65rem;
+    border-bottom: 1px solid #1e1c16;
+  }
+
+  #sections.list-view .section-body {
+    padding: 0.7rem;
+  }
+
+  /* List cards look like kanban cards — override nothing, they use the base style */
+  #sections.list-view .album-card {
+    cursor: default;
+  }
+
 </style>
 </head>
 <body>
@@ -944,6 +1108,12 @@
     <h1><a href="../" style="color:inherit;text-decoration:none;cursor:pointer;">Album Tracker</a></h1>
     <div id="album-count" class="sans">0 albums across all shelves</div>
   </div>
+  <button id="mobile-controls-toggle" onclick="document.getElementById('mobile-controls').classList.toggle('open');this.classList.toggle('active');" title="Search and settings">
+    <svg viewBox="0 0 16 16" width="12" height="12" fill="currentColor" style="flex-shrink:0"><circle cx="6.5" cy="6.5" r="4" stroke="currentColor" stroke-width="1.5" fill="none"/><line x1="10" y1="10" x2="14" y2="14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+    <span class="toggle-label-show">Search</span>
+    <span class="toggle-label-hide">Hide search</span>
+  </button>
+  <div id="mobile-controls">
   <div id="search-area">
     <div id="search-inputs">
       <div class="search-field">
@@ -959,20 +1129,24 @@
     <div id="results-wrap"></div>
   </div>
   <div id="year-filter-wrap" style="display:flex;gap:6px;align-items:flex-end;">
-    <button onclick="window._sbOpenPanel&&window._sbOpenPanel()" title="Cloud Save settings" style="display:flex;align-items:center;gap:7px;background:#1c1a14;border:1px solid #2e2c24;border-radius:5px;padding:0.42rem 0.72rem 0.42rem 0.6rem;cursor:pointer;font-family:system-ui,sans-serif;font-size:0.7rem;letter-spacing:0.1em;color:#4a4438;outline:none;transition:border-color 0.15s,background 0.15s,color 0.15s;white-space:nowrap;" onmouseover="this.style.borderColor='#3a3428';this.style.background='#201e18';this.style.color='#6a6458'" onmouseout="this.style.borderColor='#2e2c24';this.style.background='#1c1a14';this.style.color='#4a4438'"><svg viewBox="0 0 24 24" width="9" height="9"><path fill="currentColor" d="M19.35 10.04A7.49 7.49 0 0 0 12 4C9.11 4 6.6 5.64 5.35 8.04A5.994 5.994 0 0 0 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96z"/></svg>Cloud Save</button>
+    <button id="cloud-save-btn" onclick="window._sbOpenPanel&&window._sbOpenPanel()" title="Cloud Save settings" style="display:flex;align-items:center;gap:7px;background:#1c1a14;border:1px solid #2e2c24;border-radius:5px;padding:0.42rem 0.72rem 0.42rem 0.6rem;cursor:pointer;font-family:system-ui,sans-serif;font-size:0.7rem;letter-spacing:0.1em;color:#4a4438;outline:none;transition:border-color 0.15s,background 0.15s,color 0.15s;white-space:nowrap;" onmouseover="this.style.borderColor='#3a3428';this.style.background='#201e18';this.style.color='#6a6458'" onmouseout="this.style.borderColor='#2e2c24';this.style.background='#1c1a14';this.style.color='#4a4438'"><svg viewBox="0 0 24 24" width="9" height="9"><path fill="currentColor" d="M19.35 10.04A7.49 7.49 0 0 0 12 4C9.11 4 6.6 5.64 5.35 8.04A5.994 5.994 0 0 0 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96z"/></svg><span class="cloud-save-label">Cloud Save</span></button>
     <button id="year-filter-btn" title="Show only this year's releases">
       <span class="yf-dot"></span>
       <span class="yf-label" id="yf-label-text"></span>
     </button>
-    <button id="view-toggle-btn" title="Toggle grid view">
+    <button id="view-toggle-btn" title="Toggle view">
       <span class="vt-icon" id="vt-icon-kanban">
         <svg viewBox="0 0 16 16"><rect x="1" y="2" width="4" height="12" rx="1"/><rect x="6" y="2" width="4" height="12" rx="1"/><rect x="11" y="2" width="4" height="12" rx="1"/></svg>
       </span>
       <span class="vt-icon" id="vt-icon-grid" style="display:none">
         <svg viewBox="0 0 16 16"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg>
       </span>
+      <span class="vt-icon" id="vt-icon-list" style="display:none">
+        <svg viewBox="0 0 16 16"><rect x="1" y="2" width="3" height="3" rx="0.5"/><line x1="6" y1="3.5" x2="15" y2="3.5" stroke-width="1.5" stroke-linecap="round"/><rect x="1" y="6.5" width="3" height="3" rx="0.5"/><line x1="6" y1="8" x2="15" y2="8" stroke-width="1.5" stroke-linecap="round"/><rect x="1" y="11" width="3" height="3" rx="0.5"/><line x1="6" y1="12.5" x2="15" y2="12.5" stroke-width="1.5" stroke-linecap="round"/></svg>
+      </span>
       <span class="vt-label" id="vt-label-text">Grid</span>
     </button>
+  </div>
   </div>
 </div>
 
@@ -1007,34 +1181,64 @@ yearFilterBtn.addEventListener("click", () => {
   updateCount();
 });
 
-/* ---------- View toggle (kanban ↔ grid) ---------- */
-let isGridView = window.matchMedia("(max-width: 600px)").matches;
-const sectionsEl      = document.getElementById("sections");
-const viewToggleBtn   = document.getElementById("view-toggle-btn");
-const vtIconKanban    = document.getElementById("vt-icon-kanban");
-const vtIconGrid      = document.getElementById("vt-icon-grid");
-const vtLabelText     = document.getElementById("vt-label-text");
+/* ---------- View toggle ---------- */
+// Views: "kanban" (desktop only), "grid", "list" (mobile only)
+const isMobile = () => window.matchMedia("(max-width: 768px)").matches;
+let currentView = isMobile() ? "list" : "kanban";
+let isGridView  = currentView === "grid";
+
+const sectionsEl    = document.getElementById("sections");
+const viewToggleBtn = document.getElementById("view-toggle-btn");
+const vtIconKanban  = document.getElementById("vt-icon-kanban");
+const vtIconGrid    = document.getElementById("vt-icon-grid");
+const vtIconList    = document.getElementById("vt-icon-list");
+const vtLabelText   = document.getElementById("vt-label-text");
 
 function applyViewState() {
-  sectionsEl.classList.toggle("grid-view", isGridView);
-  viewToggleBtn.classList.toggle("active", isGridView);
-  if (isGridView) {
-    vtIconKanban.style.display = "none";
-    vtIconGrid.style.display   = "flex";
-    vtLabelText.textContent    = "Kanban";
+  isGridView = currentView === "grid";
+
+  sectionsEl.classList.toggle("grid-view", currentView === "grid");
+  sectionsEl.classList.toggle("list-view", currentView === "list");
+  viewToggleBtn.classList.toggle("active", currentView !== "kanban");
+
+  // All icons off first
+  vtIconKanban.style.display = "none";
+  vtIconGrid.style.display   = "none";
+  vtIconList.style.display   = "none";
+
+  if (isMobile()) {
+    // On mobile: toggle between grid and list
+    if (currentView === "grid") {
+      // Currently grid — offer to switch to list
+      vtIconList.style.display = "flex";
+      vtLabelText.textContent  = "List";
+    } else {
+      // Currently list — offer to switch to grid
+      vtIconGrid.style.display = "flex";
+      vtLabelText.textContent  = "Grid";
+    }
   } else {
-    vtIconKanban.style.display = "flex";
-    vtIconGrid.style.display   = "none";
-    vtLabelText.textContent    = "Grid";
+    // On desktop: toggle between kanban and grid
+    if (currentView === "grid") {
+      vtIconGrid.style.display = "flex";
+      vtLabelText.textContent  = "Kanban";
+    } else {
+      vtIconKanban.style.display = "flex";
+      vtLabelText.textContent    = "Grid";
+    }
   }
 }
 
 applyViewState();
 
 viewToggleBtn.addEventListener("click", () => {
-  isGridView = !isGridView;
+  if (isMobile()) {
+    currentView = currentView === "grid" ? "list" : "grid";
+  } else {
+    currentView = currentView === "kanban" ? "grid" : "kanban";
+  }
   applyViewState();
-  if (isGridView) enableGridCardClicks();
+  if (currentView === "grid") enableGridCardClicks();
 });
 
 function enableGridCardClicks() {
@@ -1043,6 +1247,7 @@ function enableGridCardClicks() {
     card.addEventListener("click", gridCardClick);
   });
 }
+
 
 function gridCardClick(e) {
   if (!isGridView) return;
@@ -1466,12 +1671,17 @@ function createCard(album, sectionId) {
 
   /* Grid-view: whole card opens context menu */
   card.addEventListener("click", function(e) {
-    if (!isGridView) return;
     if (e.target.closest(".card-menu")) return;
-    const menu   = this.querySelector(".card-menu");
-    const isOpen = menu.style.display === "block";
-    closeAllMenus();
-    if (!isOpen) menu.style.display = "block";
+    if (isGridView) {
+      // Grid: click card to open menu
+      const menu   = this.querySelector(".card-menu");
+      const isOpen = menu.style.display === "block";
+      closeAllMenus();
+      if (!isOpen) menu.style.display = "block";
+    } else if (currentView === "list") {
+      // List: click anywhere on card body to close open menus
+      closeAllMenus();
+    }
   });
 
   return card;
@@ -1644,6 +1854,27 @@ document.addEventListener("keydown", e => {
     }
   }
 });
+
+/* ---------- Auto-hide search on scroll (mobile) ---------- */
+(function () {
+  let lastScrollY = window.scrollY;
+  window.addEventListener("scroll", () => {
+    if (!isMobile()) return;
+    const currentScrollY = window.scrollY;
+    if (currentScrollY > lastScrollY && currentScrollY > 10) {
+      // Scrolling down — collapse the search panel if open
+      const panel  = document.getElementById("mobile-controls");
+      const toggle = document.getElementById("mobile-controls-toggle");
+      if (panel.classList.contains("open")) {
+        panel.classList.remove("open");
+        toggle.classList.remove("active");
+      }
+    }
+    // Always close any open card menus when scrolling in list view
+    if (currentView === "list") closeAllMenus();
+    lastScrollY = currentScrollY;
+  }, { passive: true });
+})();
 
 /* ---------- Init ---------- */
 loadState();
