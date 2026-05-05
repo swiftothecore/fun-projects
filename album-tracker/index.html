@@ -404,7 +404,6 @@
     border-radius: 6px;
     cursor: grab;
     transition: opacity 0.15s, box-shadow 0.15s;
-    animation: cardIn 0.2s ease;
   }
 
   .album-card:active { cursor: grabbing; }
@@ -413,6 +412,9 @@
     from { opacity: 0; transform: translateY(6px); }
     to   { opacity: 1; transform: translateY(0); }
   }
+
+  /* Only animate cards explicitly added by the user */
+  .album-card.animate-in { animation: cardIn 0.2s ease; }
 
   .album-card.dragging { opacity: 0.3; }
 
@@ -1454,6 +1456,7 @@ function closeResults() {
 function pickResult(album) {
   if (getAllAlbums().find(a => a.id === album.id)) return;
   album.addedAt = new Date().toISOString();
+  album._animateIn = true;
   state.listen.unshift(album);
   saveState();
   fetchAndCacheCover(album.mbid); // cache artwork in background
@@ -1552,7 +1555,8 @@ function getAgeInfo(album) {
 /* ---------- Card ---------- */
 function createCard(album, sectionId) {
   const card = document.createElement("div");
-  card.className = "album-card";
+  card.className = album._animateIn ? "album-card animate-in" : "album-card";
+  delete album._animateIn;
   card.draggable = true;
   card.dataset.id = album.id;
   card.dataset.section = sectionId;
@@ -1898,7 +1902,13 @@ localStorage.setItem = function(key, value) {
 window._sbOnLoad = function(data) {
   try {
     __sbOrigSet('album_tracker_v1', JSON.stringify(data));
-    loadState(); renderAll(); updateCount();
+    loadState();
+    document.documentElement.classList.add("preload");
+    renderAll();
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      document.documentElement.classList.remove("preload");
+    }));
+    updateCount();
   } catch(e) { console.warn('Supabase load error:', e); }
 };
 </script>
