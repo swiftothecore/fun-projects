@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Album Tracker</title>
+<title>Album Atlas</title>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -1107,7 +1107,7 @@
 
 <div id="header">
   <div>
-    <h1><a href="../" style="color:inherit;text-decoration:none;cursor:pointer;">Album Tracker</a></h1>
+    <h1><a href="../" style="color:inherit;text-decoration:none;cursor:pointer;">Album Atlas</a></h1>
     <div id="album-count" class="sans">0 albums across all shelves</div>
   </div>
   <button id="mobile-controls-toggle" onclick="document.getElementById('mobile-controls').classList.toggle('open');this.classList.toggle('active');" title="Search and settings">
@@ -1162,8 +1162,8 @@ const SECTIONS = [
   { id: "enough", label: "Once is Enough",  sub: "Heard it, done with it",   accent: "#9E7A9E" },
 ];
 
-const STORAGE_KEY      = "album_tracker_v1";
-const COVER_CACHE_KEY  = "album_tracker_covers_v1";
+const STORAGE_KEY      = "album_atlas_v1";
+const COVER_CACHE_KEY  = "album_atlas_covers_v1";
 let state = { listen: [], fathom: [], loved: [], enough: [] };
 let coverCache = {}; // { [mbid]: "data:image/jpeg;base64,..." }
 let draggingId = null;
@@ -1889,19 +1889,19 @@ cacheUncoveredAlbums();
 
 <script>
 window._SB_TABLE  = 'albums';
-window._SB_LS_KEY = 'album_tracker_v1';
+window._SB_LS_KEY = 'album_atlas_v1';
 
 // Sync to Supabase whenever state is saved to localStorage
 const __sbOrigSet = localStorage.setItem.bind(localStorage);
 localStorage.setItem = function(key, value) {
   __sbOrigSet(key, value);
-  if (key === 'album_tracker_v1' && window._sbSyncNow && !window._sbPaused) window._sbSyncNow();
+  if (key === 'album_atlas_v1' && window._sbSyncNow && !window._sbPaused) window._sbSyncNow();
 };
 
 // Refresh UI when Supabase data is loaded
 window._sbOnLoad = function(data) {
   try {
-    __sbOrigSet('album_tracker_v1', JSON.stringify(data));
+    __sbOrigSet('album_atlas_v1', JSON.stringify(data));
     loadState();
     document.documentElement.classList.add("preload");
     renderAll();
