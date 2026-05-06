@@ -1280,7 +1280,7 @@ function buildListRow(m,i){
     :m.watched?`<span class="list-status watched">✓ Watched</span>`:'';
   const dateLabel=m.watched?formatDateWatched(m.dateWatched):formatDateAdded(m.dateAdded);
   const rowClass=`list-row${m.watched?' list-row-watched':''}${m.graveyard?' list-row-graveyard':''}${staleClass?staleClass.replace('card-stale','list-stale'):''}`;
-  return`<div class="${rowClass}" onclick="openDetail('${m.id}')" style="animation-delay:${i*0.02}s">
+  return`<div class="${rowClass}" data-id="${m.id}" onclick="openDetail('${m.id}')" style="animation-delay:${i*0.02}s">
     <div class="list-thumb-wrap">${thumb}${soonPip}</div>
     <div class="list-info">
       <div class="list-title">${esc(m.title)}</div>
@@ -1536,7 +1536,7 @@ function getFiltered(){
 
 function buildSoonCard(m,i){
   const img=m.poster?`<img class="soon-card-poster" src="${esc(m.poster)}" alt="${esc(m.title)}" loading="lazy" onerror="this.style.display='none';this.nextSibling.style.display='flex'"><div class="soon-card-placeholder" style="display:none">&#127917;</div>`:`<div class="soon-card-placeholder">&#127917;</div>`;
-  return`<div class="soon-card" onmousedown="holdStart(event,'${m.id}')" ontouchstart="holdStart(event,'${m.id}')" onmouseup="holdCancel()" ontouchmove="holdTouchMove(event)" ontouchend="holdTouchEnd(event,'${m.id}')" onmouseleave="holdCancel()" onclick="holdClick(event,'${m.id}')" style="animation-delay:${i*0.04}s"><div class="soon-pip"></div>${img}<div class="soon-card-body"><div class="soon-card-title">${esc(m.title)}</div>${m.year?`<div class="soon-card-year">${esc(m.year)}</div>`:''}</div></div>`;
+  return`<div class="soon-card" data-id="${m.id}" onmousedown="holdStart(event,'${m.id}')" ontouchstart="holdStart(event,'${m.id}')" onmouseup="holdCancel()" ontouchmove="holdTouchMove(event)" ontouchend="holdTouchEnd(event,'${m.id}')" onmouseleave="holdCancel()" onclick="holdClick(event,'${m.id}')" style="animation-delay:${i*0.04}s"><div class="soon-pip"></div>${img}<div class="soon-card-body"><div class="soon-card-title">${esc(m.title)}</div>${m.year?`<div class="soon-card-year">${esc(m.year)}</div>`:''}</div></div>`;
 }
 
 function buildCard(m,i){
@@ -1544,7 +1544,7 @@ function buildCard(m,i){
   const graveyardCls=m.graveyard?' card-graveyard':'';
   const ph=m.poster?`<img class="card-poster" src="${esc(m.poster)}" alt="${esc(m.title)}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="card-poster-placeholder" style="display:none">&#127917;<span>No poster</span></div>`:`<div class="card-poster-placeholder">&#127917;<span>No poster</span></div>`;
   const ov=m.graveyard?`<div class="card-graveyard-overlay"><span class="graveyard-stamp">💀 Never</span></div>`:m.watched?`<div class="card-watched-overlay"><span class="watched-stamp">Watched</span></div>`:'';
-  return`<div class="card${stale}${graveyardCls}" onmousedown="holdStart(event,'${m.id}')" ontouchstart="holdStart(event,'${m.id}')" onmouseup="holdCancel()" ontouchmove="holdTouchMove(event)" ontouchend="holdTouchEnd(event,'${m.id}')" onmouseleave="holdCancel()" onclick="holdClick(event,'${m.id}')" data-tooltip="${formatDateAdded(m.dateAdded)}" style="animation-delay:${i*0.03}s">${ph}${ov}<div class="card-body"><div class="card-title">${esc(m.title)}</div><div class="card-meta">${[m.year,m.genre].filter(Boolean).join(' &middot; ')}</div><div class="card-services">${buildBadges(m,true)}</div></div></div>`;
+  return`<div class="card${stale}${graveyardCls}" data-id="${m.id}" onmousedown="holdStart(event,'${m.id}')" ontouchstart="holdStart(event,'${m.id}')" onmouseup="holdCancel()" ontouchmove="holdTouchMove(event)" ontouchend="holdTouchEnd(event,'${m.id}')" onmouseleave="holdCancel()" onclick="holdClick(event,'${m.id}')" data-tooltip="${formatDateAdded(m.dateAdded)}" style="animation-delay:${i*0.03}s">${ph}${ov}<div class="card-body"><div class="card-title">${esc(m.title)}</div><div class="card-meta">${[m.year,m.genre].filter(Boolean).join(' &middot; ')}</div><div class="card-services">${buildBadges(m,true)}</div></div></div>`;
 }
 
 function getOtherShort(name){
@@ -1905,6 +1905,14 @@ function saveMovie(){
     }
   }
   save();closeAddModal();render();
+  // Suppress the fadeIn re-animation on every card/row that already existed —
+  // only the newly added/edited entry should animate into view.
+  const savedId=movie.id;
+  document.querySelectorAll(`.card:not([data-id="${savedId}"]),.list-row:not([data-id="${savedId}"]),.soon-card:not([data-id="${savedId}"])`).forEach(el=>{
+    el.style.animation='none';
+    el.style.opacity='1';
+    el.style.transform='translateY(0)';
+  });
 }
 
 function deleteCurrentMovie(){
