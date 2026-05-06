@@ -786,7 +786,7 @@
         <span class="search-label">Search TMDB</span>
         <div id="searchOrNotice">
           <div class="search-input-wrap">
-            <input class="search-input" id="searchInput" type="text" placeholder="Type a movie title to search..." autocomplete="off" oninput="onSearchInput(this.value)" onkeydown="onSearchKeyDown(event)">
+            <input class="search-input" id="searchInput" type="text" placeholder="Type a movie title to search..." autocomplete="off" oninput="onSearchInput(this.value)" onkeydown="onSearchKeyDown(event)" onkeyup="if(event.key==='Enter')event.preventDefault()">
             <div class="search-spinner" id="searchSpinner"><div class="spinner-ring"></div></div>
           </div>
           <div class="search-results" id="searchResults"></div>
@@ -927,6 +927,7 @@ let christmasMovies=JSON.parse(localStorage.getItem('christmas_watchlist_v1')||'
 let christmasMode=localStorage.getItem('christmas_mode_active')==='true';
 let _normalMovies=null;
 let currentFilter='all',editingId=null,searchTimer=null,searchHighlightIndex=-1;
+let _preloadId=null,_preloadPromise=null;
 let currentView=localStorage.getItem('watchlist_view')||'grid';
 let tmdbKey=localStorage.getItem('tmdb_api_key')||'';
 let undoStack=[],redoStack=[];
@@ -1035,6 +1036,7 @@ function onSearchKeyDown(e){
     updateSearchHighlight(items);
   }else if(e.key==='Enter'){
     e.preventDefault();
+    e.stopPropagation();
     const idx=searchHighlightIndex>=0?searchHighlightIndex:0;
     if(items[idx])selectMovie(parseInt(items[idx].dataset.movieId));
   }
@@ -1043,12 +1045,13 @@ function onSearchKeyDown(e){
 function updateSearchHighlight(items){
   items.forEach((el,i)=>{
     el.classList.toggle('keyboard-active',i===searchHighlightIndex);
-    if(i===searchHighlightIndex)el.scrollIntoView({block:'nearest'});
+    if(i===searchHighlightIndex){el.scrollIntoView({block:'nearest'});preloadMovie(parseInt(el.dataset.movieId));}
   });
 }
 
 function onSearchInput(val){
   clearTimeout(searchTimer);
+  _preloadId=null;_preloadPromise=null;
   const r=document.getElementById('searchResults'),h=document.getElementById('searchHint');
   if(!val.trim()){r.classList.remove('open');h.classList.remove('visible');document.getElementById('searchSpinner').classList.remove('active');searchHighlightIndex=-1;return;}
   document.getElementById('searchSpinner').classList.add('active');
@@ -1066,10 +1069,11 @@ async function searchTMDB(q){
       const yr=m.release_date?m.release_date.slice(0,4):'?';
       const th=m.poster_path?`<img class="result-thumb" src="${TMDB_SM}${m.poster_path}" alt="" loading="lazy">`:`<div class="result-thumb-placeholder">&#127917;</div>`;
       const ov=m.overview?`<div class="result-overview">${esc(m.overview)}</div>`:'';
-      return`<div class="search-result-item" data-movie-id="${m.id}" onclick="selectMovie(${m.id})">${th}<div class="result-info"><div class="result-title">${esc(m.title)}</div><div class="result-meta">${yr}${m.vote_average?' &middot; &#9733; '+m.vote_average.toFixed(1):''}</div>${ov}</div></div>`;
+      return`<div class="search-result-item" data-movie-id="${m.id}" onclick="selectMovie(${m.id})" onmouseenter="preloadMovie(${m.id})">${th}<div class="result-info"><div class="result-title">${esc(m.title)}</div><div class="result-meta">${yr}${m.vote_average?' &middot; &#9733; '+m.vote_average.toFixed(1):''}</div>${ov}</div></div>`;
     }).join('');
     searchHighlightIndex=-1;
     r.classList.add('open');
+    if(d.results.length)preloadMovie(d.results[0].id);
   }catch{sp.classList.remove('active');r.innerHTML=`<div class="search-no-results">Search failed.</div>`;r.classList.add('open');}
 }
 
@@ -1098,27 +1102,67 @@ function toggleMovieDetails(){
   else collapseMovieDetails();
 }
 
+function preloadMovie(id){
+  if(_preloadId===id)return; // already preloading/preloaded this one
+  _preloadId=id;
+  _preloadPromise=(async()=>{
+    try{
+      const[dr,cr]=await Promise.all([
+        fetch(`https://api.themoviedb.org/3/movie/${id}?api_key=${encodeURIComponent(tmdbKey)}`),
+        fetch(`https://api.themoviedb.org/3/movie/${id}/credits?api_key=${encodeURIComponent(tmdbKey)}`)
+      ]);
+      const d=await dr.json(),c=cr.ok?await cr.json():null;
+      return{id,d,c};
+    }catch{return null;}
+  })();
+}
+
 async function selectMovie(id){
   const r=document.getElementById('searchResults'),h=document.getElementById('searchHint');
-  r.classList.remove('open');document.getElementById('searchSpinner').classList.add('active');
-  try{
-    const[dr,cr]=await Promise.all([fetch(`https://api.themoviedb.org/3/movie/${id}?api_key=${encodeURIComponent(tmdbKey)}`),fetch(`https://api.themoviedb.org/3/movie/${id}/credits?api_key=${encodeURIComponent(tmdbKey)}`)]);
-    const d=await dr.json(),c=cr.ok?await cr.json():null;
+  r.classList.remove('open');
+  // Hide the details section immediately so fTitle is not focusable during the fetch
+  document.getElementById('movieDetailsCollapsible').classList.add('collapsed');
+
+  let d,c;
+  // Use preloaded data if available (may still be in-flight — awaiting is still faster than a cold fetch)
+  if(_preloadId===id&&_preloadPromise){
+    const cached=await _preloadPromise;
+    _preloadId=null;_preloadPromise=null;
+    if(cached&&cached.id===id){d=cached.d;c=cached.c;}
+  }
+
+  if(!d){
+    // Fallback: fresh fetch (e.g. direct click on a result that was never preloaded)
+    document.getElementById('searchSpinner').classList.add('active');
+    try{
+      const[dr,cr]=await Promise.all([
+        fetch(`https://api.themoviedb.org/3/movie/${id}?api_key=${encodeURIComponent(tmdbKey)}`),
+        fetch(`https://api.themoviedb.org/3/movie/${id}/credits?api_key=${encodeURIComponent(tmdbKey)}`)
+      ]);
+      d=await dr.json();c=cr.ok?await cr.json():null;
+    }catch{
+      document.getElementById('searchSpinner').classList.remove('active');
+      h.textContent='Could not load details. Fill in manually.';h.classList.add('visible');
+      return;
+    }
     document.getElementById('searchSpinner').classList.remove('active');
-    document.getElementById('fTitle').value=d.title||'';
-    document.getElementById('fYear').value=d.release_date?d.release_date.slice(0,4):'';
-    document.getElementById('fGenre').value=d.genres?d.genres.map(g=>g.name).join(', '):'';
-    const dir=c?(c.crew||[]).find(x=>x.job==='Director'):null;
-    document.getElementById('fDirector').value=dir?dir.name:'';
-    document.getElementById('fRating').value=d.vote_average?d.vote_average.toFixed(1)+'/10':'';
-    const p=d.poster_path?TMDB_IMG+d.poster_path:'';
-    document.getElementById('fPoster').value=p;updatePosterPreview(p);
-    if(!document.getElementById('fNotes').value)document.getElementById('fNotes').value=d.overview||'';
-    document.getElementById('searchInput').value='';
-    h.textContent=`Filled from TMDB: "${d.title}". Edit details below.`;h.classList.add('visible');
-    updateModalJustWatch();
-    collapseMovieDetails();
-  }catch{document.getElementById('searchSpinner').classList.remove('active');h.textContent='Could not load details. Fill in manually.';h.classList.add('visible');}
+  }
+
+  document.getElementById('fTitle').value=d.title||'';
+  document.getElementById('fYear').value=d.release_date?d.release_date.slice(0,4):'';
+  document.getElementById('fGenre').value=d.genres?d.genres.map(g=>g.name).join(', '):'';
+  const dir=c?(c.crew||[]).find(x=>x.job==='Director'):null;
+  document.getElementById('fDirector').value=dir?dir.name:'';
+  document.getElementById('fRating').value=d.vote_average?d.vote_average.toFixed(1)+'/10':'';
+  const p=d.poster_path?TMDB_IMG+d.poster_path:'';
+  document.getElementById('fPoster').value=p;updatePosterPreview(p);
+  if(!document.getElementById('fNotes').value)document.getElementById('fNotes').value=d.overview||'';
+  document.getElementById('searchInput').value='';
+  h.textContent=`Filled from TMDB: "${d.title}". Edit details below.`;h.classList.add('visible');
+  updateModalJustWatch();
+  collapseMovieDetails();
+  // Remove focus from the search input after selection
+  document.getElementById('searchInput').blur();
 }
 
 function updateModalJustWatch(){
