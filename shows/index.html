@@ -59,10 +59,10 @@
     .jw-dot { width:8px; height:8px; border-radius:50%; background:#ff8000; flex-shrink:0; }
 
     /* ── View toggle ── */
-    .view-toggle { display:flex; gap:4px; }
-    .view-toggle-btn { background:transparent; border:1px solid var(--border); color:var(--text-muted); width:32px; height:32px; border-radius:var(--radius); cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all 0.15s; }
-    .view-toggle-btn:hover { border-color:var(--text-muted); color:var(--text-dim); }
-    .view-toggle-btn.active { border-color:var(--gold-dim); color:var(--gold); background:rgba(96,165,250,0.06); }
+    .view-toggle { display:flex; gap:2px; background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius); padding:3px; flex-shrink:0; }
+    .view-toggle-btn { background:transparent; border:none; color:var(--text-muted); padding:5px 8px; border-radius:4px; cursor:pointer; transition:all 0.15s; display:flex; align-items:center; justify-content:center; }
+    .view-toggle-btn:hover { color:var(--text); }
+    .view-toggle-btn.active { background:var(--surface); color:var(--gold); box-shadow:0 1px 4px rgba(0,0,0,0.3); }
 
     /* ── Watching strip (top of All view) ── */
     #watchingSection { padding:28px 48px 0; display:none; }
