@@ -1316,7 +1316,7 @@ function render(){
   document.getElementById('headerCount').textContent=christmasMode?(cnt===1?'1 Christmas film':`${cnt} Christmas films`):(cnt===1?'1 film':`${cnt} films`);
   const soon=movies.filter(m=>m.watchingSoon&&!m.graveyard);
   const ss=document.getElementById('soonSection'),sd=document.getElementById('soonDivider'),sr=document.getElementById('soonStrip');
-  if(soon.length&&currentFilter==='all'){ss.classList.add('visible');sd.style.display=currentView==='list'?'none':'block';sr.innerHTML=soon.map((m,i)=>buildSoonCard(m,i)).join('');}
+  if(soon.length&&currentFilter==='all'){ss.classList.add('visible');sd.style.display='none';sr.innerHTML=soon.map((m,i)=>buildSoonCard(m,i)).join('');}
   else{ss.classList.remove('visible');sd.style.display='none';}
 
   const g=document.getElementById('movieGrid');

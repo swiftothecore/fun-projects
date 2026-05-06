@@ -325,7 +325,7 @@
     .detail-service-pill.other   { background:rgba(74,124,89,0.15);  color:#6ee7a0; border:1px solid rgba(74,124,89,0.25); }
 
     /* ── List view ── */
-    .list-container { padding:0 48px 28px; }
+    .list-container { padding:14px 48px 28px; }
     .list-section { margin-bottom:28px; }
     .list-rows { display:flex; flex-direction:column; gap:3px; }
     .list-row { display:flex; align-items:center; gap:14px; padding:10px 12px; background:var(--surface); border-radius:var(--radius); cursor:pointer; transition:background 0.1s; border:1px solid var(--border); animation:fadeIn 0.3s ease both; }
@@ -381,38 +381,19 @@
       /* ── View toggle: hidden — list view forced via JS ── */
       .view-toggle{display:none;}
 
-      /* ── Status selector: 2×2 grid of rectangular tiles ── */
-      .form-status-section { margin-top:16px; padding-top:14px; }
-      .status-selector{
-        display:grid;
-        grid-template-columns:1fr 1fr;
-        gap:8px;
-      }
-      .status-chip-btn{
-        border-radius:8px!important;
-        padding:12px 8px!important;
-        text-align:center;
-        width:100%;
-        font-size:0.75rem!important;
-        letter-spacing:0.04em!important;
-        display:flex;
-        align-items:center;
-        justify-content:center;
-        gap:5px;
-        white-space:normal!important;
-        line-height:1.3;
-      }
+      /* ── Watching strip ── */
+      #watchingSection{padding-top:20px;}
 
       /* ── Form ── */
       .form-grid{grid-template-columns:1fr;}
       .form-grid .full{grid-column:1;}
       .banner-input{width:100%;}
 
-      /* ── Form footer: JustWatch + Cancel inline, Save full-width below ── */
-      .form-footer{flex-wrap:wrap;gap:8px;}
-      .form-footer a.btn-justwatch{flex:1 1 auto;justify-content:center;}
-      .form-footer .btn-ghost{flex:1 1 auto;justify-content:center;}
-      .form-footer .btn-primary{flex:1 1 100%;justify-content:center;padding:13px 20px;order:1;}
+      /* ── Form footer: JustWatch left, Cancel+Save stack below ── */
+      .form-footer{flex-direction:column;gap:10px;}
+      .form-footer .btn-primary{width:100%;justify-content:center;padding:13px 20px;}
+      .form-footer .btn-ghost{flex:1;justify-content:center;}
+      .form-footer a.btn-justwatch{width:100%;justify-content:center;}
 
       /* ── Add/edit modal: anchored to bottom, slides up ── */
       #addModal{
@@ -1257,7 +1238,7 @@ function render(){
   const ws=document.getElementById('watchingSection'),wd=document.getElementById('watchingDivider'),wstrip=document.getElementById('watchingStrip');
   if(watchingShows.length&&currentFilter==='all'){
     ws.classList.add('visible');
-    wd.style.display=currentView==='list'?'none':'block';
+    wd.style.display='none';
     wstrip.innerHTML=watchingShows.map((m,i)=>buildWatchingCard(m,i)).join('');
   }else{ws.classList.remove('visible');wd.style.display='none';}
 
