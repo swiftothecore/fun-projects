@@ -2020,6 +2020,11 @@ document.addEventListener('keydown',e=>{
   }
 
   const inField=document.activeElement.tagName==='INPUT'||document.activeElement.tagName==='TEXTAREA';
+  if(e.altKey&&e.code==='KeyT'&&!inField&&!document.getElementById('addModal').classList.contains('open')){
+    e.preventDefault();
+    openAddModal();
+    return;
+  }
   if(e.key==='z'&&(e.metaKey||e.ctrlKey)&&!e.shiftKey&&!inField){
     e.preventDefault();
     if(undoStack.length){redoStack.push(JSON.parse(JSON.stringify(movies)));movies=undoStack.pop();save();render();document.querySelectorAll('.toast').forEach(t=>dismissToast(t));showInfoToast('Deletion undone.',3000);}
