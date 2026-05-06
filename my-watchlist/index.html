@@ -1923,6 +1923,52 @@ document.addEventListener('keydown',e=>{
       saveMovie();
     }
   }
+
+  // ── Streaming / status keyboard shortcuts (only when add modal is open, not in a text field) ──
+  if(document.getElementById('addModal').classList.contains('open')){
+    const active=document.activeElement;
+    const inTextField=active&&(active.tagName==='INPUT'||active.tagName==='TEXTAREA');
+    if(!inTextField&&!e.metaKey&&!e.ctrlKey&&!e.altKey){
+      const key=e.key.toUpperCase();
+      // N=Netflix, D=Disney+, P=Prime, C=Cinema, O=Other
+      const SERVICE_KEYS={N:'netflix',D:'disney',P:'prime',C:'cinema',O:'other'};
+      if(SERVICE_KEYS[key]){
+        e.preventDefault();
+        const service=SERVICE_KEYS[key];
+        // Cinema has no VPN — Shift+C means "coming soon" instead
+        const type=e.shiftKey?(service==='cinema'?'coming':'vpn'):'direct';
+        const chip=document.querySelector(`.toggle-chip[data-service="${service}"][data-type="${type}"]`);
+        if(chip){
+          toggleChip(chip);
+          chip.scrollIntoView({block:'nearest',behavior:'smooth'});
+          // After activating, focus the relevant text input
+          if(chip.classList.contains('active')){
+            if(type==='vpn'){
+              const vpnInput=document.getElementById(`fVpnCountry-${service}`);
+              if(vpnInput&&vpnInput.classList.contains('visible'))vpnInput.focus();
+            } else if(service==='other'){
+              const otherInput=document.getElementById('fOtherName');
+              if(otherInput&&otherInput.classList.contains('visible'))otherInput.focus();
+            }
+          }
+        }
+        return;
+      }
+      // W = Watching Soon toggle, Shift+W = Mark Watched
+      if(key==='W'){
+        e.preventDefault();
+        if(e.shiftKey){
+          const cb=document.getElementById('fWatched');
+          if(cb){cb.checked=!cb.checked;cb.dispatchEvent(new Event('change'));cb.closest('label')?.scrollIntoView({block:'nearest',behavior:'smooth'});}
+        }else{
+          const cb=document.getElementById('fWatchingSoon');
+          if(cb){cb.checked=!cb.checked;cb.dispatchEvent(new Event('change'));cb.closest('label')?.scrollIntoView({block:'nearest',behavior:'smooth'});}
+        }
+        return;
+      }
+    }
+  }
+
   const inField=document.activeElement.tagName==='INPUT'||document.activeElement.tagName==='TEXTAREA';
   if(e.key==='z'&&(e.metaKey||e.ctrlKey)&&!e.shiftKey&&!inField){
     e.preventDefault();
