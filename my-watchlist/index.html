@@ -122,10 +122,10 @@
     .card.card-graveyard:hover { filter:saturate(0.4) brightness(0.85); }
 
     /* ── Collection groups ── */
-    .collection-group { border:1px solid rgba(201,168,76,0.2); border-radius:8px; padding:20px 18px 18px; background:rgba(201,168,76,0.02); position:relative; flex-shrink:0; }
-    .collection-label-tag { position:absolute; top:-8px; left:14px; background:var(--bg); padding:0 8px; font-size:0.6rem; letter-spacing:0.14em; text-transform:uppercase; color:var(--gold-dim); font-family:'DM Sans',sans-serif; font-weight:500; }
-    .collection-inner { display:flex; flex-wrap:wrap; gap:16px; }
-    .collection-inner .card { width:180px; flex-shrink:0; }
+    .collection-group { border:1px solid rgba(201,168,76,0.2); border-radius:8px; padding:20px 8px 8px; background:rgba(201,168,76,0.02); position:relative; flex-shrink:0; }
+    .collection-label-tag { position:absolute; top:-8px; left:10px; background:var(--bg); padding:0 8px; font-size:0.6rem; letter-spacing:0.14em; text-transform:uppercase; color:var(--gold-dim); font-family:'DM Sans',sans-serif; font-weight:500; }
+    .collection-inner { display:flex; flex-wrap:wrap; gap:40px; }
+    .collection-inner .card { width:184px; flex-shrink:0; }
     #cardTooltip { position:fixed; z-index:9000; background:#1a1a1a; color:#ccc; font-family:sans-serif; font-size:11px; padding:4px 7px; border-radius:3px; pointer-events:none; white-space:nowrap; opacity:0; transition:opacity 0.1s; }
     #toastContainer { position:fixed; bottom:28px; left:50%; transform:translateX(-50%); z-index:500; display:flex; flex-direction:column; gap:10px; align-items:center; pointer-events:none; }
     .toast { background:#1e1b18; border:1px solid var(--border-hi); border-radius:8px; padding:12px 18px; display:flex; align-items:center; gap:14px; box-shadow:0 8px 32px rgba(0,0,0,0.6); pointer-events:all; animation:toastIn 0.25s cubic-bezier(0.34,1.2,0.64,1); min-width:260px; position:relative; overflow:hidden; }
@@ -1954,7 +1954,13 @@ document.addEventListener('keydown',e=>{
         }
         return;
       }
-      // W = Watching Soon toggle, Shift+W = Mark Watched
+      // J = open JustWatch
+      if(key==='J'){
+        e.preventDefault();
+        const jw=document.getElementById('modalJustWatch');
+        if(jw&&jw.style.pointerEvents!=='none')jw.click();
+        return;
+      }
       if(key==='W'){
         e.preventDefault();
         if(e.shiftKey){
