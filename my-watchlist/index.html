@@ -1873,6 +1873,16 @@ function esc(s){if(!s)return'';return String(s).replace(/&/g,'&amp;').replace(/<
 
 document.addEventListener('keydown',e=>{
   if(e.key==='Escape'){closeAddModal();closeDetail();return;}
+  if(e.key==='Enter'&&!e.shiftKey){
+    const modalOpen=document.getElementById('addModal').classList.contains('open');
+    if(modalOpen){
+      const active=document.activeElement;
+      if(active&&active.tagName==='TEXTAREA')return;
+      if(document.getElementById('searchResults').classList.contains('open'))return;
+      e.preventDefault();
+      saveMovie();
+    }
+  }
   const inField=document.activeElement.tagName==='INPUT'||document.activeElement.tagName==='TEXTAREA';
   if(e.key==='z'&&(e.metaKey||e.ctrlKey)&&!e.shiftKey&&!inField){
     e.preventDefault();
