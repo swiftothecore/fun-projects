@@ -296,6 +296,9 @@
     .view-toggle-btn:hover { color:var(--text); }
     .view-toggle-btn.active { background:var(--surface); color:var(--gold); box-shadow:0 1px 4px rgba(0,0,0,0.3); }
     @media(max-width:640px){
+      /* Prevent iOS Safari from zooming on input focus (triggered when font-size < 16px) */
+      input, textarea, select { font-size: 16px; }
+
       /* Padding resets */
       .list-container{padding-left:20px;padding-right:20px;}
       header,.controls,.movie-container,.grid,#apiBanner,#soonSection,.soon-divider{padding-left:20px;padding-right:20px;}
