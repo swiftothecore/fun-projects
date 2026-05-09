@@ -557,7 +557,7 @@
 </head>
 <body>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <style>
 #_sb_wrap { font-family: system-ui, sans-serif; font-size: 0.82rem; display: none; position: relative; z-index: 9999; background: #141414; border-bottom: 1px solid #232323; }
 #_sb_main_row { display: flex; align-items: center; gap: 12px; padding: 10px 20px; }
@@ -596,8 +596,54 @@
 
 <script>
 (async function () {
+  // Guard: if the supabase CDN script didn't load, exit cleanly.
+  if (typeof supabase === 'undefined') {
+    console.warn('[Sync] Supabase library not loaded — check CDN / network / content blockers.');
+    return;
+  }
+
   const K = { url:'_sb_url', key:'_sb_key', email:'_sb_email', pass:'_sb_pass', dismissed:'_sb_dismissed' };
   let _sb = null, _user = null, _pendingSync = false;
+
+  // ── Safe localStorage helper ──
+  // On iOS with certain privacy settings, localStorage.getItem can throw.
+  function _lsGet(k) { try { return localStorage.getItem(k); } catch(e) { return null; } }
+
+  // ── Custom auth storage for supabase-js ──
+  // supabase-js stores its JWT and refresh token in localStorage internally.
+  // If localStorage is blocked or unreliable on mobile, the auth token can't
+  // be persisted/retrieved, silently breaking every API call after sign-in.
+  // This adapter keeps tokens in memory (always works) and mirrors to
+  // localStorage as a best-effort backup.
+  const _sbMem = {};
+  const _sbStore = {
+    getItem:    k => { try { return localStorage.getItem(k) ?? _sbMem[k] ?? null; } catch(e) { return _sbMem[k] ?? null; } },
+    setItem:    (k, v) => { _sbMem[k] = v; try { localStorage.setItem(k, v); } catch(e) {} },
+    removeItem: k => { delete _sbMem[k]; try { localStorage.removeItem(k); } catch(e) {} }
+  };
+
+  function _makeClient(url, key) {
+    return supabase.createClient(url, key, {
+      auth: { storage: _sbStore, persistSession: true, autoRefreshToken: true }
+    });
+  }
+
+  // ── Visible status dot on Cloud Save button ──
+  function _btnStatus(color, tip) {
+    const btn = document.getElementById('_sb_cloud_btn');
+    if (!btn) return;
+    btn.title = tip || '';
+    let dot = btn.querySelector('._sb_dot');
+    if (!dot) {
+      dot = document.createElement('span');
+      dot.className = '_sb_dot';
+      dot.style.cssText = 'width:7px;height:7px;border-radius:50%;flex-shrink:0;display:inline-block;margin-left:2px;transition:background 0.3s';
+      btn.appendChild(dot);
+    }
+    dot.style.background = color;
+    dot.style.boxShadow = `0 0 5px ${color}aa`;
+  }
+
   const wrap    = document.getElementById('_sb_wrap');
   const formRow = document.getElementById('_sb_form_row');
   const status  = document.getElementById('_sb_status');
@@ -605,13 +651,16 @@
   const hideBanner = () => { wrap.style.display = 'none';  };
   const setStatus  = (msg, cls) => { status.textContent = msg; status.className = cls || ''; };
 
-  document.getElementById('_sb_dismiss_btn').onclick = () => { localStorage.setItem(K.dismissed, '1'); hideBanner(); };
+  document.getElementById('_sb_dismiss_btn').onclick = () => {
+    try { localStorage.setItem(K.dismissed, '1'); } catch(e) {}
+    hideBanner();
+  };
   document.getElementById('_sb_connect_btn').onclick = () => {
     formRow.style.display = 'flex';
-    document.getElementById('_sb_url_in').value   = localStorage.getItem(K.url)   || '';
-    document.getElementById('_sb_key_in').value   = localStorage.getItem(K.key)   || '';
-    document.getElementById('_sb_email_in').value = localStorage.getItem(K.email) || '';
-    document.getElementById('_sb_pass_in').value  = localStorage.getItem(K.pass)  || '';
+    document.getElementById('_sb_url_in').value   = _lsGet(K.url)   || '';
+    document.getElementById('_sb_key_in').value   = _lsGet(K.key)   || '';
+    document.getElementById('_sb_email_in').value = _lsGet(K.email) || '';
+    document.getElementById('_sb_pass_in').value  = _lsGet(K.pass)  || '';
   };
 
   document.getElementById('_sb_save_btn').onclick = async () => {
@@ -622,14 +671,14 @@
     if (!url || !key || !email || !pass) { setStatus('Please fill all fields.', 'err'); return; }
     setStatus('Connecting...', '');
     try {
-      const client = supabase.createClient(url, key);
+      const client = _makeClient(url, key);
       const { data, error } = await client.auth.signInWithPassword({ email, password: pass });
       if (error) { setStatus('Error: ' + error.message, 'err'); return; }
-      localStorage.setItem(K.url, url); localStorage.setItem(K.key, key);
-      localStorage.setItem(K.email, email); localStorage.setItem(K.pass, pass);
-      localStorage.removeItem(K.dismissed);
+      try { localStorage.setItem(K.url, url); localStorage.setItem(K.key, key);
+            localStorage.setItem(K.email, email); localStorage.setItem(K.pass, pass);
+            localStorage.removeItem(K.dismissed); } catch(e) {}
       _sb = client; _user = data.user;
-      setStatus('Connected!', 'ok');
+      setStatus('Connected!', 'ok'); _btnStatus('#5a9e7a', 'Connected');
       const { data: remoteRow } = await client.from(window._SB_TABLE || '__').select('data').eq('user_id', data.user.id).maybeSingle();
       if (remoteRow && window._sbOnLoad) {
         window._sbPaused = true;
@@ -640,18 +689,16 @@
   };
 
   async function _tryConnect() {
-    const url = localStorage.getItem(K.url), key = localStorage.getItem(K.key),
-          email = localStorage.getItem(K.email), pass = localStorage.getItem(K.pass);
+    const url = _lsGet(K.url), key = _lsGet(K.key), email = _lsGet(K.email), pass = _lsGet(K.pass);
     if (!url || !key || !email || !pass) return false;
     try {
-      const client = supabase.createClient(url, key);
+      const client = _makeClient(url, key);
       const { data, error } = await client.auth.signInWithPassword({ email, password: pass });
       if (error) return false;
       _sb = client; _user = data.user; return true;
     } catch { return false; }
   }
 
-  // Count total items across any data shape (array, or object of arrays like {watchlist,christmas})
   function _countItems(data) {
     if (!data) return 0;
     if (Array.isArray(data)) return data.length;
@@ -662,30 +709,45 @@
   async function _upsert(table, payload) {
     if (!_sb || !_user) { _pendingSync = true; return false; }
     try {
+      _btnStatus('#d97706', 'Syncing...');
       const row = { user_id: _user.id, data: payload, updated_at: new Date().toISOString() };
       const { error } = await _sb.from(table).upsert(row, { onConflict: 'user_id' });
-      if (error) { console.warn('[Sync] Upsert failed:', error.message); _pendingSync = true; return false; }
-      return true;
-    } catch(e) { console.warn('[Sync] Upsert error:', e.message); _pendingSync = true; return false; }
+      if (error) {
+        console.warn('[Sync] Upsert failed:', error.message);
+        _btnStatus('#c0392b', 'Sync failed: ' + error.message);
+        _pendingSync = true; return false;
+      }
+      _btnStatus('#5a9e7a', 'Saved to cloud \u2713'); return true;
+    } catch(e) {
+      console.warn('[Sync] Upsert error:', e.message);
+      _btnStatus('#c0392b', 'Sync error: ' + e.message);
+      _pendingSync = true; return false;
+    }
   }
 
   async function _syncNow() {
     if (!window._SB_TABLE) return;
     const payload = window._sbGetData ? window._sbGetData()
-                  : window._SB_LS_KEY ? JSON.parse(localStorage.getItem(window._SB_LS_KEY) || 'null')
+                  : window._SB_LS_KEY ? JSON.parse(_lsGet(window._SB_LS_KEY) || 'null')
                   : null;
     if (payload != null) await _upsert(window._SB_TABLE, payload);
   }
 
   window._sbSyncNow = _syncNow;
+  // Call window._sbForceSync() from the browser console to test manually
+  window._sbForceSync = async () => {
+    console.log('[Sync] Force sync...');
+    if (!_sb || !_user) { const ok = await _tryConnect(); if (!ok) { console.error('[Sync] Cannot connect'); return; } }
+    await _syncNow();
+    console.log('[Sync] Done');
+  };
   window._sbOpenPanel = function() {
-    localStorage.removeItem('_sb_dismissed');
-    wrap.style.display = 'block';
-    formRow.style.display = 'flex';
-    document.getElementById('_sb_url_in').value   = localStorage.getItem(K.url)   || '';
-    document.getElementById('_sb_key_in').value   = localStorage.getItem(K.key)   || '';
-    document.getElementById('_sb_email_in').value = localStorage.getItem(K.email) || '';
-    document.getElementById('_sb_pass_in').value  = localStorage.getItem(K.pass)  || '';
+    try { localStorage.removeItem('_sb_dismissed'); } catch(e) {}
+    wrap.style.display = 'block'; formRow.style.display = 'flex';
+    document.getElementById('_sb_url_in').value   = _lsGet(K.url)   || '';
+    document.getElementById('_sb_key_in').value   = _lsGet(K.key)   || '';
+    document.getElementById('_sb_email_in').value = _lsGet(K.email) || '';
+    document.getElementById('_sb_pass_in').value  = _lsGet(K.pass)  || '';
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
   window._sbPaused = false;
@@ -693,45 +755,41 @@
   const connected = await _tryConnect();
   if (connected) {
     hideBanner();
+    _btnStatus('#d97706', 'Loading...');
 
-    // Snapshot local state before the remote fetch so we can detect any save
-    // that fires while the fetch is in-flight.
     const _snapBefore = window._sbGetData ? JSON.stringify(window._sbGetData()) : null;
     const { data: row } = await _sb.from(window._SB_TABLE || '__').select('data').eq('user_id', _user.id).maybeSingle();
     const _snapAfter = window._sbGetData ? JSON.stringify(window._sbGetData()) : null;
 
     const localChanged = _pendingSync || (_snapBefore !== null && _snapBefore !== _snapAfter);
-
     if (localChanged) {
-      // A save happened before or during the remote fetch — push local rather
-      // than clobbering it with potentially stale remote data.
       _pendingSync = false;
       await _syncNow();
     } else {
-      // No local changes during connection — decide push vs. pull based on
-      // which side has more data. This prevents an empty or behind-on-sync
-      // Supabase row from wiping valid local data on every reload.
       const localCount  = _countItems(window._sbGetData ? window._sbGetData() : null);
       const remoteCount = _countItems(row ? row.data : null);
-
       if (localCount > remoteCount) {
-        // Local is ahead of remote (e.g. a previous sync silently failed) — push local up.
         await _syncNow();
       } else if (row && window._sbOnLoad) {
-        // Remote is at least as complete — load it.
         window._sbPaused = true;
         try { window._sbOnLoad(row.data); } finally { window._sbPaused = false; }
+        _btnStatus('#5a9e7a', 'Loaded from cloud');
+      } else {
+        _btnStatus('#5a9e7a', 'Connected');
       }
     }
-  } else if (!localStorage.getItem(K.dismissed)) {
-    showBanner();
+  } else {
+    _btnStatus('#4a4440', 'Not connected — tap to set up');
+    if (!_lsGet(K.dismissed)) showBanner();
   }
 
-  // Retry any pending sync every 15 s (catches transient network failures).
-  setInterval(() => { if (_sb && _user && _pendingSync) { _pendingSync = false; _syncNow(); } }, 15000);
+  // Retry pending syncs every 15 s; also attempt reconnect if connection was lost.
+  setInterval(async () => {
+    if (!_pendingSync) return;
+    if (!_sb || !_user) { const ok = await _tryConnect(); if (!ok) return; }
+    _pendingSync = false; _syncNow();
+  }, 15000);
 
-  // Sync when the page is hidden (iOS backgrounding the tab mid-upsert);
-  // retry when it becomes visible again if a sync is still outstanding.
   document.addEventListener('visibilitychange', () => {
     if (!_sb || !_user) return;
     if (document.visibilityState === 'hidden') _syncNow();
@@ -756,7 +814,7 @@
     <p class="header-count" id="headerCount">0 shows</p>
   </div>
   <div style="display:flex;gap:10px;align-items:center;">
-    <button class="btn btn-ghost btn-sm" onclick="window._sbOpenPanel&&window._sbOpenPanel()">
+    <button id="_sb_cloud_btn" class="btn btn-ghost btn-sm" onclick="window._sbOpenPanel&&window._sbOpenPanel()">
       <svg viewBox="0 0 24 24" width="13" height="13" style="flex-shrink:0"><path fill="currentColor" d="M19.35 10.04A7.49 7.49 0 0 0 12 4C9.11 4 6.6 5.64 5.35 8.04A5.994 5.994 0 0 0 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96z"/></svg>
       Cloud Save
     </button>
