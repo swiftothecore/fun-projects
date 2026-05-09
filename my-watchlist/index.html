@@ -679,9 +679,13 @@
   }
 
   async function _upsert(table, payload) {
-    if (!_sb || !_user) { _pendingSync = true; return; }
-    const row = { user_id: _user.id, data: payload, updated_at: new Date().toISOString() };
-    return await _sb.from(table).upsert(row, { onConflict: 'user_id' });
+    if (!_sb || !_user) { _pendingSync = true; return false; }
+    try {
+      const row = { user_id: _user.id, data: payload, updated_at: new Date().toISOString() };
+      const { error } = await _sb.from(table).upsert(row, { onConflict: 'user_id' });
+      if (error) { console.warn('[Sync] Upsert failed:', error.message); _pendingSync = true; return false; }
+      return true;
+    } catch(e) { console.warn('[Sync] Upsert error:', e.message); _pendingSync = true; return false; }
   }
 
   async function _syncNow() {
@@ -690,6 +694,14 @@
                   : window._SB_LS_KEY ? JSON.parse(localStorage.getItem(window._SB_LS_KEY) || 'null')
                   : null;
     if (payload != null) await _upsert(window._SB_TABLE, payload);
+  }
+
+  // Count total items across any data shape (array, or object of arrays like {watchlist,christmas})
+  function _countItems(data) {
+    if (!data) return 0;
+    if (Array.isArray(data)) return data.length;
+    if (typeof data === 'object') return Object.values(data).reduce((n, v) => n + (Array.isArray(v) ? v.length : 0), 0);
+    return 0;
   }
 
   window._sbSyncNow = _syncNow;
@@ -709,14 +721,32 @@
   const connected = await _tryConnect();
   if (connected) {
     hideBanner();
-    if (_pendingSync) {
-      // User saved data before the connection was ready — push local up instead of
-      // clobbering it with potentially stale remote data.
+
+    // Snapshot local state before the remote fetch so we can detect any save
+    // that fires while the fetch is in-flight.
+    const _snapBefore = window._sbGetData ? JSON.stringify(window._sbGetData()) : null;
+    const { data: row } = await _sb.from(window._SB_TABLE || '__').select('data').eq('user_id', _user.id).maybeSingle();
+    const _snapAfter = window._sbGetData ? JSON.stringify(window._sbGetData()) : null;
+
+    const localChanged = _pendingSync || (_snapBefore !== null && _snapBefore !== _snapAfter);
+
+    if (localChanged) {
+      // A save happened before or during the remote fetch — push local rather
+      // than clobbering it with potentially stale remote data.
       _pendingSync = false;
       await _syncNow();
     } else {
-      const { data: row } = await _sb.from(window._SB_TABLE || '__').select('data').eq('user_id', _user.id).maybeSingle();
-      if (row && window._sbOnLoad) {
+      // No local changes during connection — decide push vs. pull based on
+      // which side has more data. This prevents an empty or behind-on-sync
+      // Supabase row from wiping valid local data on every reload.
+      const localCount  = _countItems(window._sbGetData ? window._sbGetData() : null);
+      const remoteCount = _countItems(row ? row.data : null);
+
+      if (localCount > remoteCount) {
+        // Local is ahead of remote (e.g. a previous sync silently failed) — push local up.
+        await _syncNow();
+      } else if (row && window._sbOnLoad) {
+        // Remote is at least as complete — load it.
         window._sbPaused = true;
         try { window._sbOnLoad(row.data); } finally { window._sbPaused = false; }
       }
@@ -725,10 +755,15 @@
     showBanner();
   }
 
-  // Sync when the page is hidden (catches iOS backgrounding the tab before an
-  // in-flight or queued upsert has had a chance to fire).
+  // Retry any pending sync every 15 s (catches transient network failures).
+  setInterval(() => { if (_sb && _user && _pendingSync) { _pendingSync = false; _syncNow(); } }, 15000);
+
+  // Sync when the page is hidden (iOS backgrounding the tab mid-upsert);
+  // retry when it becomes visible again if a sync is still outstanding.
   document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'hidden' && _sb && _user) _syncNow();
+    if (!_sb || !_user) return;
+    if (document.visibilityState === 'hidden') _syncNow();
+    else if (_pendingSync) { _pendingSync = false; _syncNow(); }
   });
 })();
 </script>
