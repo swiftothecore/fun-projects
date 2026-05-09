@@ -1789,11 +1789,17 @@ window._SB_LS_KEY = 'tvshows_v1';
 
 const __sbOrigSet = localStorage.setItem.bind(localStorage);
 localStorage.setItem = function(key, value) {
-  __sbOrigSet(key, value);
+  // Wrap in try-catch: on iOS with "Block All Cookies" enabled, localStorage
+  // throws a SecurityError. We still want the Supabase sync to fire.
+  try { __sbOrigSet(key, value); } catch(e) { console.warn('[Storage] localStorage write failed:', e.message); }
   if (key === 'tvshows_v1' && window._sbSyncNow && !window._sbPaused) window._sbSyncNow();
 };
 
+// Read from the live in-memory array rather than localStorage.
+// If localStorage writes are failing (iOS restrictions etc.), the in-memory
+// array still has the correct current state, so Supabase gets accurate data.
 window._sbGetData = function() {
+  if (typeof shows !== 'undefined' && Array.isArray(shows)) return shows;
   return JSON.parse(localStorage.getItem('tvshows_v1') || '[]');
 };
 
@@ -1801,8 +1807,9 @@ window._sbOnLoad = function(data) {
   try {
     if (Array.isArray(data)) {
       const incoming = JSON.stringify(data);
-      __sbOrigSet('tvshows_v1', incoming);
+      // Update in-memory state first so it's never blocked by a localStorage failure.
       if (JSON.stringify(shows) !== incoming) { shows = data; render(); }
+      try { __sbOrigSet('tvshows_v1', incoming); } catch(e) {}
     }
   } catch(e) { console.warn('Supabase load error:', e); }
 };

@@ -2137,16 +2137,36 @@ window._SB_LS_KEY = 'watchlist_v2';
 
 const __sbOrigSet = localStorage.setItem.bind(localStorage);
 localStorage.setItem = function(key, value) {
-  __sbOrigSet(key, value);
+  // Wrap in try-catch: on iOS with "Block All Cookies" enabled, localStorage
+  // throws a SecurityError. We still want the Supabase sync to fire.
+  try { __sbOrigSet(key, value); } catch(e) { console.warn('[Storage] localStorage write failed:', e.message); }
   if ((key === 'watchlist_v2' || key === 'christmas_watchlist_v1') && window._sbSyncNow && !window._sbPaused) window._sbSyncNow();
 };
 
-// Bundle both watchlists into one Supabase row so no second table is needed
+// Read from live in-memory arrays rather than localStorage.
+// If localStorage writes are failing (iOS restrictions etc.), the in-memory
+// arrays still have the correct current state, so Supabase gets accurate data.
 window._sbGetData = function() {
-  return {
-    watchlist: JSON.parse(localStorage.getItem('watchlist_v2') || '[]'),
-    christmas: JSON.parse(localStorage.getItem('christmas_watchlist_v1') || '[]')
-  };
+  let watchlist, christmas;
+  if (typeof movies !== 'undefined') {
+    if (christmasMode) {
+      // christmas mode: movies = christmas list, _normalMovies = normal list
+      watchlist = (_normalMovies !== null && _normalMovies !== undefined)
+        ? _normalMovies
+        : JSON.parse(localStorage.getItem('watchlist_v2') || '[]');
+      christmas = movies;
+    } else {
+      // normal mode: movies = normal list, christmasMovies = christmas list
+      watchlist = movies;
+      christmas = (typeof christmasMovies !== 'undefined')
+        ? christmasMovies
+        : JSON.parse(localStorage.getItem('christmas_watchlist_v1') || '[]');
+    }
+  } else {
+    watchlist = JSON.parse(localStorage.getItem('watchlist_v2') || '[]');
+    christmas = JSON.parse(localStorage.getItem('christmas_watchlist_v1') || '[]');
+  }
+  return { watchlist, christmas };
 };
 
 window._sbOnLoad = function(data) {
@@ -2154,22 +2174,27 @@ window._sbOnLoad = function(data) {
     // Handle legacy plain-array format (just a normal watchlist, no Christmas data yet)
     if (Array.isArray(data)) {
       const incoming = JSON.stringify(data);
-      __sbOrigSet('watchlist_v2', incoming);
+      // Update in-memory state first so it's never blocked by a localStorage failure.
       if (!christmasMode && JSON.stringify(movies) !== incoming) { movies = data; render(); }
+      try { __sbOrigSet('watchlist_v2', incoming); } catch(e) {}
       return;
     }
     // Handle combined object format {watchlist, christmas}
     if (data && typeof data === 'object') {
       if (data.watchlist) {
         const wIncoming = JSON.stringify(data.watchlist);
-        __sbOrigSet('watchlist_v2', wIncoming);
-        if (!christmasMode && JSON.stringify(movies) !== wIncoming) { movies = data.watchlist; render(); }
+        if (christmasMode) {
+          _normalMovies = data.watchlist; // update the stashed normal list
+        } else if (JSON.stringify(movies) !== wIncoming) {
+          movies = data.watchlist; render();
+        }
+        try { __sbOrigSet('watchlist_v2', wIncoming); } catch(e) {}
       }
       if (data.christmas) {
         const cIncoming = JSON.stringify(data.christmas);
-        __sbOrigSet('christmas_watchlist_v1', cIncoming);
         christmasMovies = data.christmas;
         if (christmasMode && JSON.stringify(movies) !== cIncoming) { movies = data.christmas; render(); }
+        try { __sbOrigSet('christmas_watchlist_v1', cIncoming); } catch(e) {}
       }
     }
   } catch(e) { console.warn('Supabase load error:', e); }
