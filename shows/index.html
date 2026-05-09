@@ -699,7 +699,7 @@
     } catch { return false; }
   }
 
-  function _countItems(data) {
+  function _countItems(data) { // kept for _sbGetData compat; not used for conflict resolution
     if (!data) return 0;
     if (Array.isArray(data)) return data.length;
     if (typeof data === 'object') return Object.values(data).reduce((n, v) => n + (Array.isArray(v) ? v.length : 0), 0);
@@ -757,20 +757,35 @@
     hideBanner();
     _btnStatus('#d97706', 'Loading...');
 
+    // Take a snapshot of local data before the remote fetch so we can detect
+    // any save that fires while the network request is in-flight.
     const _snapBefore = window._sbGetData ? JSON.stringify(window._sbGetData()) : null;
     const { data: row } = await _sb.from(window._SB_TABLE || '__').select('data').eq('user_id', _user.id).maybeSingle();
     const _snapAfter = window._sbGetData ? JSON.stringify(window._sbGetData()) : null;
 
-    const localChanged = _pendingSync || (_snapBefore !== null && _snapBefore !== _snapAfter);
-    if (localChanged) {
+    const changedDuringFetch = _snapBefore !== null && _snapBefore !== _snapAfter;
+
+    if (_pendingSync || changedDuringFetch) {
+      // Unsaved local changes — push local up.
       _pendingSync = false;
       await _syncNow();
     } else {
-      const localCount  = _countItems(window._sbGetData ? window._sbGetData() : null);
-      const remoteCount = _countItems(row ? row.data : null);
-      if (localCount > remoteCount) {
+      // No in-session changes. Use last-modified timestamps to decide whether
+      // local or remote is the authoritative version.
+      // _sb_local_ts is written by the monkey-patch on every save(), so it
+      // reflects when THIS device last successfully called save().
+      // row.updated_at is when Supabase was last written from ANY device.
+      // Whoever is newer wins — this correctly handles adds, edits, status
+      // changes, AND deletions (unlike item-count comparison which breaks
+      // deletions by treating "fewer items" as "less up to date").
+      const localTs  = parseInt(_lsGet('_sb_local_ts') || '0');
+      const remoteTs = row ? new Date(row.updated_at).getTime() : 0;
+
+      if (localTs > remoteTs) {
+        // Local was saved more recently than Supabase was updated — push local.
         await _syncNow();
       } else if (row && window._sbOnLoad) {
+        // Supabase is current — load it.
         window._sbPaused = true;
         try { window._sbOnLoad(row.data); } finally { window._sbPaused = false; }
         _btnStatus('#5a9e7a', 'Loaded from cloud');
@@ -1850,7 +1865,12 @@ localStorage.setItem = function(key, value) {
   // Wrap in try-catch: on iOS with "Block All Cookies" enabled, localStorage
   // throws a SecurityError. We still want the Supabase sync to fire.
   try { __sbOrigSet(key, value); } catch(e) { console.warn('[Storage] localStorage write failed:', e.message); }
-  if (key === 'tvshows_v1' && window._sbSyncNow && !window._sbPaused) window._sbSyncNow();
+  if (key === 'tvshows_v1') {
+    // Stamp the local modification time so the conflict resolver knows
+    // when THIS device last saved. Used by the IIFE to decide push vs. pull.
+    try { __sbOrigSet('_sb_local_ts', String(Date.now())); } catch(e) {}
+    if (window._sbSyncNow && !window._sbPaused) window._sbSyncNow();
+  }
 };
 
 // Read from the live in-memory array rather than localStorage.
