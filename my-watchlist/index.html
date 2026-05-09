@@ -614,7 +614,7 @@
 <script>
 (async function () {
   const K = { url:'_sb_url', key:'_sb_key', email:'_sb_email', pass:'_sb_pass', dismissed:'_sb_dismissed' };
-  let _sb = null, _user = null;
+  let _sb = null, _user = null, _pendingSync = false;
 
   const wrap    = document.getElementById('_sb_wrap');
   const formRow = document.getElementById('_sb_form_row');
@@ -679,7 +679,7 @@
   }
 
   async function _upsert(table, payload) {
-    if (!_sb || !_user) return;
+    if (!_sb || !_user) { _pendingSync = true; return; }
     const row = { user_id: _user.id, data: payload, updated_at: new Date().toISOString() };
     return await _sb.from(table).upsert(row, { onConflict: 'user_id' });
   }
@@ -709,14 +709,27 @@
   const connected = await _tryConnect();
   if (connected) {
     hideBanner();
-    const { data: row } = await _sb.from(window._SB_TABLE || '__').select('data').eq('user_id', _user.id).maybeSingle();
-    if (row && window._sbOnLoad) {
-      window._sbPaused = true;
-      try { window._sbOnLoad(row.data); } finally { window._sbPaused = false; }
+    if (_pendingSync) {
+      // User saved data before the connection was ready — push local up instead of
+      // clobbering it with potentially stale remote data.
+      _pendingSync = false;
+      await _syncNow();
+    } else {
+      const { data: row } = await _sb.from(window._SB_TABLE || '__').select('data').eq('user_id', _user.id).maybeSingle();
+      if (row && window._sbOnLoad) {
+        window._sbPaused = true;
+        try { window._sbOnLoad(row.data); } finally { window._sbPaused = false; }
+      }
     }
   } else if (!localStorage.getItem(K.dismissed)) {
     showBanner();
   }
+
+  // Sync when the page is hidden (catches iOS backgrounding the tab before an
+  // in-flight or queued upsert has had a chance to fire).
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden' && _sb && _user) _syncNow();
+  });
 })();
 </script>
 
