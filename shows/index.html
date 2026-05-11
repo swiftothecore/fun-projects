@@ -699,15 +699,16 @@
     } catch { return false; }
   }
 
-  function _countItems(data) { // kept for _sbGetData compat; not used for conflict resolution
-    if (!data) return 0;
-    if (Array.isArray(data)) return data.length;
-    if (typeof data === 'object') return Object.values(data).reduce((n, v) => n + (Array.isArray(v) ? v.length : 0), 0);
-    return 0;
+  // Persist pending state across page reloads: if an upsert fails we mark
+  // _sb_pending in localStorage so that on the next load we know to push
+  // local data rather than blindly loading (potentially older) remote data.
+  function _setPending(on) {
+    _pendingSync = on;
+    try { on ? localStorage.setItem('_sb_pending','1') : localStorage.removeItem('_sb_pending'); } catch(e) {}
   }
 
   async function _upsert(table, payload) {
-    if (!_sb || !_user) { _pendingSync = true; return false; }
+    if (!_sb || !_user) { _setPending(true); return false; }
     try {
       _btnStatus('#d97706', 'Syncing...');
       const row = { user_id: _user.id, data: payload, updated_at: new Date().toISOString() };
@@ -715,13 +716,20 @@
       if (error) {
         console.warn('[Sync] Upsert failed:', error.message);
         _btnStatus('#c0392b', 'Sync failed: ' + error.message);
-        _pendingSync = true; return false;
+        _setPending(true);
+        // Short retry after 2 s — catches the "user reloads immediately after a
+        // quick action" scenario without waiting 15 s.
+        setTimeout(async () => { if (_pendingSync && _sb && _user) { _pendingSync = false; await _syncNow(); } }, 2000);
+        return false;
       }
+      _setPending(false);
       _btnStatus('#5a9e7a', 'Saved to cloud \u2713'); return true;
     } catch(e) {
       console.warn('[Sync] Upsert error:', e.message);
       _btnStatus('#c0392b', 'Sync error: ' + e.message);
-      _pendingSync = true; return false;
+      _setPending(true);
+      setTimeout(async () => { if (_pendingSync && _sb && _user) { _pendingSync = false; await _syncNow(); } }, 2000);
+      return false;
     }
   }
 
@@ -757,6 +765,9 @@
     hideBanner();
     _btnStatus('#d97706', 'Loading...');
 
+    // Check if a previous session left an unsynced save.
+    const persistedPending = _lsGet('_sb_pending') === '1';
+
     // Take a snapshot of local data before the remote fetch so we can detect
     // any save that fires while the network request is in-flight.
     const _snapBefore = window._sbGetData ? JSON.stringify(window._sbGetData()) : null;
@@ -765,27 +776,14 @@
 
     const changedDuringFetch = _snapBefore !== null && _snapBefore !== _snapAfter;
 
-    if (_pendingSync || changedDuringFetch) {
-      // Unsaved local changes — push local up.
+    if (_pendingSync || persistedPending || changedDuringFetch) {
+      // Local has unsaved changes (from this session, a previous session, or
+      // a save that snuck in mid-fetch) — push local up as the source of truth.
       _pendingSync = false;
       await _syncNow();
     } else {
-      // No in-session changes. Use last-modified timestamps to decide whether
-      // local or remote is the authoritative version.
-      // _sb_local_ts is written by the monkey-patch on every save(), so it
-      // reflects when THIS device last successfully called save().
-      // row.updated_at is when Supabase was last written from ANY device.
-      // Whoever is newer wins — this correctly handles adds, edits, status
-      // changes, AND deletions (unlike item-count comparison which breaks
-      // deletions by treating "fewer items" as "less up to date").
-      const localTs  = parseInt(_lsGet('_sb_local_ts') || '0');
-      const remoteTs = row ? new Date(row.updated_at).getTime() : 0;
-
-      if (localTs > remoteTs) {
-        // Local was saved more recently than Supabase was updated — push local.
-        await _syncNow();
-      } else if (row && window._sbOnLoad) {
-        // Supabase is current — load it.
+      // No known local changes — trust remote.
+      if (row && window._sbOnLoad) {
         window._sbPaused = true;
         try { window._sbOnLoad(row.data); } finally { window._sbPaused = false; }
         _btnStatus('#5a9e7a', 'Loaded from cloud');
@@ -798,12 +796,12 @@
     if (!_lsGet(K.dismissed)) showBanner();
   }
 
-  // Retry pending syncs every 15 s; also attempt reconnect if connection was lost.
+  // Retry every 5 s (down from 15 s); also attempt reconnect if session dropped.
   setInterval(async () => {
     if (!_pendingSync) return;
     if (!_sb || !_user) { const ok = await _tryConnect(); if (!ok) return; }
     _pendingSync = false; _syncNow();
-  }, 15000);
+  }, 5000);
 
   document.addEventListener('visibilitychange', () => {
     if (!_sb || !_user) return;
@@ -1800,6 +1798,9 @@ function showInfoToast(msg,dur=3000){
 // ── Save ──
 function save(){
   localStorage.setItem('tvshows_v1',JSON.stringify(shows));
+  // Belt-and-suspenders: also trigger sync directly in case the monkey-patch
+  // doesn't fire (e.g. if localStorage.setItem throws before reaching it).
+  if(window._sbSyncNow&&!window._sbPaused)window._sbSyncNow();
 }
 
 function esc(s){if(!s)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
