@@ -695,6 +695,96 @@
 
     .gallery-remove  { right: 10px; }
 
+    /* Collection button — top-left of card, to the left of remove */
+    .gallery-collection-top {
+      position: absolute;
+      top: 10px;
+      right: 46px; /* 10px gap + 32px remove + 4px = 46px */
+      width: 32px;
+      height: 32px;
+      border-radius: var(--r-pill);
+      border: 1px solid var(--border-hi);
+      background: rgba(16,14,11,0.55);
+      color: var(--text);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      z-index: 3;
+      opacity: 0;
+      transform: scale(0.88);
+      pointer-events: none;
+      transition: opacity 150ms ease, transform 150ms ease, border-color 150ms ease, background 150ms ease, color 150ms ease;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+
+    [data-theme="light"] .gallery-collection-top {
+      background: rgba(253,250,245,0.75);
+    }
+
+    .gallery-item:hover .gallery-collection-top,
+    .gallery-item:focus-within .gallery-collection-top {
+      opacity: 1;
+      transform: scale(1);
+      pointer-events: auto;
+    }
+
+    .gallery-collection-top:hover {
+      border-color: rgba(232,160,32,0.55);
+      background: var(--accent-dim);
+      color: var(--accent);
+    }
+
+    .gallery-collection-top.has-collections {
+      color: var(--accent);
+      border-color: rgba(232,160,32,0.4);
+    }
+
+    /* ── Deletion undo toast ────────────────────────────────── */
+    .deletion-toast {
+      position: fixed;
+      bottom: 28px;
+      left: 50%;
+      transform: translateX(-50%) translateY(10px);
+      z-index: 2000;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 11px 16px;
+      border: 1px solid var(--border-hi);
+      border-radius: var(--r-md);
+      background: #1e1b16;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.6);
+      font-size: 13px;
+      color: var(--text);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 200ms ease, transform 200ms ease;
+      white-space: nowrap;
+    }
+
+    .deletion-toast.is-visible {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+      pointer-events: auto;
+    }
+
+    .deletion-toast-undo {
+      border: 0;
+      background: transparent;
+      color: var(--accent);
+      font-family: 'Figtree', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      padding: 0;
+      letter-spacing: -0.01em;
+      transition: filter 130ms ease;
+    }
+
+    .deletion-toast-undo:hover { filter: brightness(1.15); }
+
     [data-theme="light"] .gallery-remove {
       background: rgba(253,250,245,0.75);
     }
@@ -976,6 +1066,194 @@
     .gallery-section.is-selecting .download-selected-btn {
       display: inline-flex;
     }
+
+    /* ── Collection tab bar ─────────────────────────────────── */
+    .collections-tab-bar {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      padding: 0 22px;
+      overflow-x: auto;
+      border-bottom: 1px solid var(--border);
+      scrollbar-width: none;
+    }
+    .collections-tab-bar::-webkit-scrollbar { display: none; }
+
+    .collection-tab {
+      flex-shrink: 0;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 11px 14px;
+      border: 0;
+      border-bottom: 2px solid transparent;
+      background: transparent;
+      color: var(--muted);
+      font-family: 'Figtree', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: color 150ms ease, border-color 150ms ease;
+      white-space: nowrap;
+      margin-bottom: -1px;
+      letter-spacing: -0.01em;
+    }
+    .collection-tab:hover { color: var(--text); }
+    .collection-tab.is-active { color: var(--text); border-bottom-color: var(--accent); }
+
+    .collection-tab-count {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: var(--r-pill);
+      background: var(--surface-2);
+      color: var(--faint);
+      transition: background 150ms ease, color 150ms ease;
+    }
+    .collection-tab.is-active .collection-tab-count {
+      background: var(--accent-dim);
+      color: var(--accent);
+    }
+
+    .collection-tab-delete {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      border: 0;
+      background: transparent;
+      color: var(--faint);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      padding: 0;
+      transition: color 150ms ease, background 150ms ease;
+      flex-shrink: 0;
+    }
+    .collection-tab-delete:hover { color: #fff; background: rgba(239,68,68,0.55); }
+
+    .collection-add-tab {
+      flex-shrink: 0;
+      width: 28px;
+      height: 28px;
+      border-radius: var(--r-sm);
+      border: 1px dashed var(--border-hi);
+      background: transparent;
+      color: var(--muted);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: color 150ms ease, border-color 150ms ease, background 150ms ease;
+      margin-left: 6px;
+    }
+    .collection-add-tab:hover { color: var(--accent); border-color: var(--accent); background: var(--accent-dim); }
+
+    /* ── New collection input row ───────────────────────────── */
+    .collection-new-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 22px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+    }
+
+    .collection-new-input {
+      flex: 1;
+      min-width: 0;
+      padding: 8px 12px;
+      border: 1px solid var(--border-hi);
+      border-radius: var(--r-sm);
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Figtree', sans-serif;
+      font-size: 13px;
+      outline: none;
+      transition: border-color 150ms ease, box-shadow 150ms ease;
+    }
+    .collection-new-input:focus {
+      border-color: rgba(232,160,32,0.6);
+      box-shadow: 0 0 0 2px var(--accent-dim);
+    }
+    .collection-new-input::placeholder { color: var(--faint); }
+
+    /* ── Collection popover ───────────────────────────────────── */
+    .collection-popover {
+      position: fixed;
+      z-index: 1200;
+      min-width: 192px;
+      max-width: 256px;
+      border: 1px solid var(--border-hi);
+      border-radius: var(--r-md);
+      background: #1e1b16;
+      box-shadow: 0 16px 48px rgba(0,0,0,0.65), 0 4px 12px rgba(0,0,0,0.35);
+      padding: 5px;
+      display: none;
+      transform-origin: top left;
+    }
+    .collection-popover.is-open {
+      display: block;
+      animation: popoverIn 140ms cubic-bezier(0.2,0.85,0.3,1);
+    }
+
+    @keyframes popoverIn {
+      from { opacity: 0; transform: scale(0.94) translateY(-4px); }
+      to   { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    .collection-popover-header {
+      padding: 5px 10px 3px;
+      font-size: 10.5px;
+      font-weight: 700;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      color: var(--faint);
+    }
+
+    .collection-popover-item {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      width: 100%;
+      padding: 8px 10px;
+      border: 0;
+      border-radius: var(--r-sm);
+      background: transparent;
+      color: var(--text);
+      font-family: 'Figtree', sans-serif;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      text-align: left;
+      transition: background 120ms ease;
+    }
+    .collection-popover-item:hover { background: var(--surface-2); }
+
+    .collection-popover-check {
+      width: 15px;
+      height: 15px;
+      flex-shrink: 0;
+      color: var(--accent);
+      opacity: 0;
+      transition: opacity 120ms ease;
+    }
+    .collection-popover-check.is-checked { opacity: 1; }
+
+    .collection-popover-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    .collection-popover-divider {
+      height: 1px;
+      background: var(--border);
+      margin: 4px 0;
+    }
+
+    .collection-popover-new { color: var(--muted); font-style: italic; }
+    .collection-popover-new:hover { color: var(--accent); background: var(--accent-dim); }
+
+    /* Add-to-collection button state: has items */
+    .gallery-collection-btn.has-collections { color: var(--accent); }
+    .gallery-collection-btn.has-collections svg path { fill: currentColor; }
 
     /* ── Animations ──────────────────────────────────────────── */
     @keyframes starPop {
@@ -1416,24 +1694,24 @@
       </div>
     </section>
 
-    <!-- ── Favourites ──────────────────────────────────────── -->
-    <section class="card gallery-section">
+    <!-- ── Collections ──────────────────────────────────────── -->
+    <section class="card gallery-section" id="collectionsSection">
       <div class="card-head">
         <div class="card-title">
-          <strong>Favourites</strong>
-          <span>Star a saved item to pin it here. Unstarring only removes it from favourites — not from saved downloads.</span>
+          <strong>Collections</strong>
+          <span>Organise palettes into collections. Star an item to add it to Favourites, or use the folder button to add to any collection.</span>
         </div>
         <div class="gallery-head-actions">
-          <div class="badge" id="favouritesBadge">0 favourites</div>
-          <button class="btn secondary select-mode-btn" id="favouritesSelectBtn" type="button" title="Select items to download">
+          <div class="badge" id="collectionsBadge">0 items</div>
+          <button class="btn secondary select-mode-btn" id="collectionsSelectBtn" type="button" title="Select items to download">
             <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" focusable="false"><path fill="currentColor" d="M19 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2Zm0 2v14H5V5h14Zm-8.94 9.06L8 12l-1.41 1.41L10.06 17 17 9.41 15.59 8l-5.53 6.06Z"/></svg>
             <span>Select</span>
           </button>
-          <button class="btn download-selected-btn" id="downloadSelectedFavouritesBtn" type="button" disabled title="Download selected items as .zip">
+          <button class="btn download-selected-btn" id="downloadSelectedCollectionBtn" type="button" disabled title="Download selected items as .zip">
             <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M12 3a1 1 0 0 1 1 1v8.59l2.3-2.3a1 1 0 1 1 1.4 1.42l-4.01 4a1 1 0 0 1-1.38 0l-4.01-4a1 1 0 1 1 1.4-1.42L11 12.59V4a1 1 0 0 1 1-1Zm-7 13a1 1 0 0 1 1 1v2h12v-2a1 1 0 1 1 2 0v3a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1Z"/></svg>
-            <span id="downloadSelectedFavouritesLabel">Download selected</span>
+            <span id="downloadSelectedCollectionLabel">Download selected</span>
           </button>
-          <button class="btn secondary gallery-download-all" id="downloadFavouritesBtn" type="button" disabled aria-label="Download all favourite items as a zip" title="Download favourites as .zip">
+          <button class="btn secondary gallery-download-all" id="downloadCollectionBtn" type="button" disabled aria-label="Download all items in this collection as a zip" title="Download all as .zip">
             <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
               <path fill="currentColor" d="M12 3a1 1 0 0 1 1 1v8.59l2.3-2.3a1 1 0 1 1 1.4 1.42l-4.01 4a1 1 0 0 1-1.38 0l-4.01-4a1 1 0 1 1 1.4-1.42L11 12.59V4a1 1 0 0 1 1-1Zm-7 13a1 1 0 0 1 1 1v2h12v-2a1 1 0 1 1 2 0v3a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1Z"/>
             </svg>
@@ -1441,11 +1719,24 @@
           </button>
         </div>
       </div>
+      <!-- Collection tab bar -->
+      <div class="collections-tab-bar" id="collectionsTabBar">
+        <!-- tabs rendered dynamically -->
+        <button class="collection-add-tab" id="addCollectionBtn" type="button" title="New collection" aria-label="Create new collection">
+          <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" focusable="false"><path fill="currentColor" d="M12 5a1 1 0 0 1 1 1v5h5a1 1 0 1 1 0 2h-5v5a1 1 0 1 1-2 0v-5H6a1 1 0 1 1 0-2h5V6a1 1 0 0 1 1-1Z"/></svg>
+        </button>
+      </div>
+      <!-- New collection name input (hidden by default) -->
+      <div class="collection-new-row" id="collectionNewRow" style="display:none;">
+        <input class="collection-new-input" id="collectionNameInput" type="text" placeholder="Collection name…" autocomplete="off" spellcheck="false" maxlength="60" />
+        <button class="btn" id="collectionNameConfirm" type="button" style="padding:8px 16px;font-size:13px;">Create</button>
+        <button class="btn secondary" id="collectionNameCancel" type="button" style="padding:8px 14px;font-size:13px;">Cancel</button>
+      </div>
       <div class="card-body">
-        <div class="gallery-empty" id="favouritesEmpty">
-          Nothing favourited yet. Tap the star on a saved item to add it here.
+        <div class="gallery-empty" id="collectionsEmpty">
+          Nothing here yet. Star items to add them to Favourites, or use the folder button on any saved palette to add it to a collection.
         </div>
-        <div class="gallery-grid" id="favouritesGrid" aria-live="polite"></div>
+        <div class="gallery-grid" id="collectionsGrid" aria-live="polite"></div>
       </div>
     </section>
 
@@ -1470,17 +1761,25 @@
     const galleryEmpty = document.getElementById('galleryEmpty');
     const galleryBadge = document.getElementById('galleryBadge');
     const downloadAllBtn = document.getElementById('downloadAllBtn');
-    const favouritesGrid = document.getElementById('favouritesGrid');
-    const favouritesEmpty = document.getElementById('favouritesEmpty');
-    const favouritesBadge = document.getElementById('favouritesBadge');
-    const downloadFavouritesBtn = document.getElementById('downloadFavouritesBtn');
     const filenameSaveBtn = document.getElementById('filenameSaveBtn');
     const gallerySelectBtn = document.getElementById('gallerySelectBtn');
     const downloadSelectedGalleryBtn = document.getElementById('downloadSelectedGalleryBtn');
     const downloadSelectedGalleryLabel = document.getElementById('downloadSelectedGalleryLabel');
-    const favouritesSelectBtn = document.getElementById('favouritesSelectBtn');
-    const downloadSelectedFavouritesBtn = document.getElementById('downloadSelectedFavouritesBtn');
-    const downloadSelectedFavouritesLabel = document.getElementById('downloadSelectedFavouritesLabel');
+    // Collections section elements
+    const collectionsSection = document.getElementById('collectionsSection');
+    const collectionsTabBar = document.getElementById('collectionsTabBar');
+    const collectionsGrid = document.getElementById('collectionsGrid');
+    const collectionsEmpty = document.getElementById('collectionsEmpty');
+    const collectionsBadge = document.getElementById('collectionsBadge');
+    const downloadCollectionBtn = document.getElementById('downloadCollectionBtn');
+    const collectionsSelectBtn = document.getElementById('collectionsSelectBtn');
+    const downloadSelectedCollectionBtn = document.getElementById('downloadSelectedCollectionBtn');
+    const downloadSelectedCollectionLabel = document.getElementById('downloadSelectedCollectionLabel');
+    const addCollectionBtn = document.getElementById('addCollectionBtn');
+    const collectionNewRow = document.getElementById('collectionNewRow');
+    const collectionNameInput = document.getElementById('collectionNameInput');
+    const collectionNameConfirm = document.getElementById('collectionNameConfirm');
+    const collectionNameCancel = document.getElementById('collectionNameCancel');
 
     const svg = preview.querySelector('svg');
     const sectionPaths = Array.from(svg.querySelectorAll('g:first-of-type > path'));
@@ -1490,16 +1789,23 @@
     const MAX_SECTIONS = 12;
     const STORAGE_KEY = 'svgHexSavedDownloads';
     const FAVOURITES_KEY = 'svgHexFavouriteDownloads';
+    const COLLECTIONS_KEY = 'svgHexCollections';
 
     let previousText = null;
     let draggedGalleryItem = null;
-    let draggedFavouriteItem = null;
+    let draggedCollectionItem = null;
     let redoText = null;
     let isFlipped = false;
-    let favouritesRenderedOnce = false;
-    const favouriteRemovalTimers = new WeakMap();
+    let activeCollectionId = 'favourites';
+    let collectionsRenderedOnce = false;
+    const collectionRemovalTimers = new WeakMap();
     const gallerySelectedIds = new Set();
-    const favouritesSelectedIds = new Set();
+    const collectionsSelectedIds = new Set();
+
+    // ── Deletion undo/redo ────────────────────────────────────────
+    const deletionUndoStack = []; // each entry: { items: [...], label: string }
+    const deletionRedoStack = [];
+    const MAX_DELETION_HISTORY = 30;
 
     const sampleText = `Deep Emerald — #0B3D2E
 Witch's Forest — #145A3A
@@ -1778,7 +2084,7 @@ Crystal Rose — #D94B87`;
       const nextIds = ids.includes(id) ? ids.filter((item) => item !== id) : [...ids, id];
       persistFavouriteIds(nextIds);
       renderGallery();
-      renderFavorites();
+      renderCollections();
     }
 
     function isFavourite(id) {
@@ -2002,7 +2308,22 @@ Crystal Rose — #D94B87`;
       const savedItems = normalizeSavedDownloads(safeParseSavedDownloads(), true);
       const favouriteIds = new Set(syncFavouriteIds(savedItems));
       const items = savedItems.filter((item) => favouriteIds.has(item.id));
-      await downloadRecordsAsZip(items, 'favourite-downloads.zip');
+      await downloadRecordsAsZip(items, collectionZipFilename('Favourites'));
+    }
+
+    async function downloadActiveCollection() {
+      const savedItems = normalizeSavedDownloads(safeParseSavedDownloads(), true);
+      const itemsById = new Map(savedItems.map((item) => [item.id, item]));
+      let items = [];
+      const col = getCollectionById(activeCollectionId);
+      if (!col) return;
+      if (activeCollectionId === 'favourites') {
+        const favIds = new Set(syncFavouriteIds(savedItems));
+        items = savedItems.filter((item) => favIds.has(item.id));
+      } else {
+        items = col.itemIds.map((id) => itemsById.get(id)).filter(Boolean);
+      }
+      await downloadRecordsAsZip(items, collectionZipFilename(col.name));
     }
 
     function downloadSavedRecord(record) {
@@ -2063,8 +2384,61 @@ Crystal Rose — #D94B87`;
       const items = normalizeSavedDownloads([...safeParseSavedDownloads(), record]);
       persistSavedDownloads(items);
       renderGallery();
-      renderFavorites();
+      renderCollections();
     }
+
+    function undoDelete() {
+      if (!deletionUndoStack.length) return;
+      const { items: prevItems } = deletionUndoStack.pop();
+      const currentItems = normalizeSavedDownloads(safeParseSavedDownloads(), true);
+      deletionRedoStack.push({ items: JSON.parse(JSON.stringify(currentItems)) });
+      persistSavedDownloads(normalizeSavedDownloads(prevItems, true));
+      renderGallery();
+      renderCollections();
+      hideDeletionToast();
+    }
+
+    function redoDelete() {
+      if (!deletionRedoStack.length) return;
+      const { items: nextItems } = deletionRedoStack.pop();
+      const currentItems = normalizeSavedDownloads(safeParseSavedDownloads(), true);
+      deletionUndoStack.push({ items: JSON.parse(JSON.stringify(currentItems)), label: '' });
+      persistSavedDownloads(normalizeSavedDownloads(nextItems, true));
+      renderGallery();
+      renderCollections();
+    }
+
+    // ── Deletion toast ────────────────────────────────────────────
+    const deletionToast = (() => {
+      const el = document.createElement('div');
+      el.className = 'deletion-toast';
+      el.innerHTML = `
+        <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" style="flex-shrink:0;color:var(--muted)">
+          <path fill="currentColor" d="M19 6H5a1 1 0 0 0 0 2h1v11a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V8h1a1 1 0 0 0 0-2Zm-3 13H8V8h8v11Zm-4-15h2a1 1 0 0 1 1 1H9a1 1 0 0 1 1-1Z"/>
+        </svg>
+        <span class="deletion-toast-name" style="color:var(--muted);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:inline-block;"></span>
+        <span style="color:var(--faint)">deleted</span>
+        <button class="deletion-toast-undo" type="button">Undo</button>
+        <kbd style="font-size:10px;padding:2px 5px;border-radius:4px;background:var(--surface-2);border:1px solid var(--border-hi);color:var(--faint);font-family:inherit;letter-spacing:0;">⌘Z</kbd>`;
+      document.body.appendChild(el);
+      return el;
+    })();
+
+    let toastDismissTimer = null;
+
+    function showDeletionToast(filename) {
+      window.clearTimeout(toastDismissTimer);
+      deletionToast.querySelector('.deletion-toast-name').textContent = filename;
+      deletionToast.classList.add('is-visible');
+      toastDismissTimer = window.setTimeout(hideDeletionToast, 5000);
+    }
+
+    function hideDeletionToast() {
+      window.clearTimeout(toastDismissTimer);
+      deletionToast.classList.remove('is-visible');
+    }
+
+    deletionToast.querySelector('.deletion-toast-undo').addEventListener('click', undoDelete);
 
     function renameDownloadRecord(id, newFilename) {
       const items = normalizeSavedDownloads(
@@ -2076,17 +2450,22 @@ Crystal Rose — #D94B87`;
       );
       persistSavedDownloads(items);
       renderGallery();
-      renderFavorites();
+      renderCollections();
     }
 
     function removeDownloadRecord(id) {
-      const items = normalizeSavedDownloads(
-        safeParseSavedDownloads().filter((item) => item.id !== id),
-        true,
-      );
-      persistSavedDownloads(items);
+      const currentItems = normalizeSavedDownloads(safeParseSavedDownloads(), true);
+      const deleted = currentItems.find((item) => item.id === id);
+      if (deleted) {
+        deletionUndoStack.push({ items: JSON.parse(JSON.stringify(currentItems)), label: deleted.filename });
+        if (deletionUndoStack.length > MAX_DELETION_HISTORY) deletionUndoStack.shift();
+        deletionRedoStack.length = 0;
+        showDeletionToast(deleted.filename);
+      }
+      const newItems = normalizeSavedDownloads(currentItems.filter((item) => item.id !== id), true);
+      persistSavedDownloads(newItems);
       renderGallery();
-      renderFavorites();
+      renderCollections();
     }
 
     function persistGalleryOrder() {
@@ -2095,7 +2474,7 @@ Crystal Rose — #D94B87`;
       const orderedItems = currentIds.map((id) => itemsById.get(id)).filter(Boolean);
       persistSavedDownloads(normalizeSavedDownloads(orderedItems, true));
       renderGallery();
-      renderFavorites();
+      renderCollections();
     }
 
     function formatSavedDate(iso) {
@@ -2158,59 +2537,10 @@ Crystal Rose — #D94B87`;
       return { target, before };
     }
 
-    function clearFavouriteDropIndicators(container) {
-      container.querySelectorAll('.drag-over, .drop-before, .drop-after').forEach((el) => {
-        el.classList.remove('drag-over', 'drop-before', 'drop-after');
-      });
-    }
-
-    function getFavouriteDropTarget(container, x, y) {
-      const draggableElements = [...container.querySelectorAll('.gallery-item:not(.is-dragging)')];
-      if (!draggableElements.length) return { target: null, before: false };
-
-      // First: find the item the cursor is directly over (rect hit-test)
-      let target = null;
-      for (const child of draggableElements) {
-        const box = child.getBoundingClientRect();
-        if (x >= box.left && x <= box.right && y >= box.top && y <= box.bottom) {
-          target = child;
-          break;
-        }
-      }
-
-      // Fallback: find closest item by centre distance
-      if (!target) {
-        let closestDistance = Number.POSITIVE_INFINITY;
-        for (const child of draggableElements) {
-          const box = child.getBoundingClientRect();
-          const cx = box.left + box.width / 2;
-          const cy = box.top + box.height / 2;
-          const d = Math.hypot(x - cx, y - cy);
-          if (d < closestDistance) { closestDistance = d; target = child; }
-        }
-      }
-
-      // Determine before/after by horizontal position: left half → before, right half → after
-      const box = target.getBoundingClientRect();
-      const relX = (x - box.left) / box.width; // 0–1
-      const before = relX < 0.5;
-
-      return { target, before };
-    }
-
-    function persistFavouriteOrder() {
-      const items = normalizeSavedDownloads(safeParseSavedDownloads(), true);
-      const itemsById = new Map(items.map((item) => [item.id, item]));
-      const currentIds = [...favouritesGrid.querySelectorAll('.gallery-item')].map((item) => item.dataset.recordId);
-      const orderedIds = currentIds.filter((id) => itemsById.has(id));
-      const normalized = normalizeFavouriteIds(orderedIds);
-
-      persistFavouriteIds(normalized);
-      renderFavorites();
-    }
 
     function updateRecordCard(card, record) {
       const favouriteBtn = card.querySelector('.gallery-favourite');
+      const collectionBtn = card.querySelector('.gallery-collection-btn');
       const downloadBtn = card.querySelector('.gallery-download');
       const filenameDisplay = card.querySelector('.gallery-filename-display');
       const filenameEdit = card.querySelector('.gallery-filename-edit');
@@ -2220,9 +2550,7 @@ Crystal Rose — #D94B87`;
 
       if (previewImg) {
         const previewUrl = buildThumbnailUrl(record);
-        if (previewUrl) {
-          previewImg.src = previewUrl;
-        }
+        if (previewUrl) previewImg.src = previewUrl;
         previewImg.alt = `${record.filename} preview`;
       }
 
@@ -2239,7 +2567,6 @@ Crystal Rose — #D94B87`;
       if (metaSpan) {
         metaSpan.textContent = `${record.type.toUpperCase()} · ${formatSavedDate(record.createdAt)}`;
       }
-
 
       if (removeBtn) {
         removeBtn.setAttribute('aria-label', `Delete ${record.filename}`);
@@ -2259,12 +2586,19 @@ Crystal Rose — #D94B87`;
           favouriteActive ? `Remove ${record.filename} from favourites` : `Add ${record.filename} to favourites`,
         );
         favouriteBtn.title = favouriteActive ? 'Remove from favourites' : 'Add to favourites';
-
         const pathEl = favouriteBtn.querySelector('svg path');
         if (pathEl) {
           pathEl.setAttribute('fill', favouriteActive ? 'currentColor' : 'none');
           pathEl.setAttribute('stroke', 'currentColor');
         }
+      }
+
+      if (collectionBtn) {
+        const hasCustomCollections = getCustomCollectionsForItem(record.id).length > 0;
+        collectionBtn.classList.toggle('has-collections', hasCustomCollections);
+        // Update the folder path fill (first path in the SVG)
+        const folderPath = collectionBtn.querySelector('svg path:first-child');
+        if (folderPath) folderPath.setAttribute('fill', hasCustomCollections ? 'currentColor' : 'none');
       }
     }
 
@@ -2286,11 +2620,18 @@ Crystal Rose — #D94B87`;
       const favouriteActive = isFavourite(record.id);
       const favouriteTitle = favouriteActive ? 'Remove from favourites' : 'Add to favourites';
       const favouriteLabel = favouriteActive ? `Remove ${record.filename} from favourites` : `Add ${record.filename} to favourites`;
+      const hasCollections = getCustomCollectionsForItem(record.id).length > 0;
 
       card.innerHTML = `
           <div class="select-checkbox" aria-hidden="true">
             <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="#0e0d0b" d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg>
           </div>
+          <button class="gallery-collection-top gallery-collection-btn${hasCollections ? ' has-collections' : ''}" type="button" aria-label="Add to collection" title="Add to collection">
+            <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" focusable="false">
+              <path fill="${hasCollections ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"/>
+              <path fill="currentColor" d="M12 10a1 1 0 0 1 1 1v1h1a1 1 0 1 1 0 2h-1v1a1 1 0 1 1-2 0v-1h-1a1 1 0 1 1 0-2h1v-1a1 1 0 0 1 1-1Z"/>
+            </svg>
+          </button>
           <button class="gallery-remove" type="button" aria-label="Delete ${record.filename}" title="Delete file">
             <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false">
               <path fill="currentColor" d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Zm4.3 13.3a1 1 0 0 1-1.4 1.4L12 13.41l-2.9 2.3a1 1 0 0 1-1.4-1.4L10.59 12 7.7 9.7a1 1 0 0 1 1.4-1.4L12 10.59l2.9-2.3a1 1 0 1 1 1.4 1.4L13.41 12Z"/>
@@ -2326,6 +2667,7 @@ Crystal Rose — #D94B87`;
 
       const removeBtn = card.querySelector('.gallery-remove');
       const favouriteBtn = card.querySelector('.gallery-favourite');
+      const collectionBtn = card.querySelector('.gallery-collection-btn');
       const downloadBtn = card.querySelector('.gallery-download');
       const filenameDisplay = card.querySelector('.gallery-filename-display');
       const filenameEdit = card.querySelector('.gallery-filename-edit');
@@ -2394,6 +2736,11 @@ Crystal Rose — #D94B87`;
         toggleFavourite(record.id);
       });
 
+      collectionBtn.addEventListener('click', (event) => {
+        event.stopPropagation();
+        openCollectionPopover(collectionBtn, record.id);
+      });
+
       downloadBtn.addEventListener('click', (event) => {
         event.stopPropagation();
         downloadSavedRecord(record);
@@ -2404,8 +2751,8 @@ Crystal Rose — #D94B87`;
           event.preventDefault();
           return;
         }
-        if (collection === 'favourites') {
-          draggedFavouriteItem = card;
+        if (collection === 'collections') {
+          draggedCollectionItem = card;
         } else {
           draggedGalleryItem = card;
         }
@@ -2421,10 +2768,10 @@ Crystal Rose — #D94B87`;
         card.classList.remove('is-dragging');
         card.setAttribute('aria-grabbed', 'false');
 
-        if (collection === 'favourites') {
-          clearFavouriteDropIndicators(favouritesGrid);
-          persistFavouriteOrder();
-          draggedFavouriteItem = null;
+        if (collection === 'collections') {
+          clearCollectionDropIndicators(collectionsGrid);
+          persistCollectionOrder();
+          draggedCollectionItem = null;
         } else {
           clearGalleryDropIndicators(galleryGrid);
           persistGalleryOrder();
@@ -2447,16 +2794,16 @@ Crystal Rose — #D94B87`;
     // ── Select mode ───────────────────────────────────────────────
 
     function updateDownloadSelectedBtn(collection) {
-      const selectedIds = collection === 'favourites' ? favouritesSelectedIds : gallerySelectedIds;
-      const btn = collection === 'favourites' ? downloadSelectedFavouritesBtn : downloadSelectedGalleryBtn;
-      const label = collection === 'favourites' ? downloadSelectedFavouritesLabel : downloadSelectedGalleryLabel;
+      const selectedIds = collection === 'collections' ? collectionsSelectedIds : gallerySelectedIds;
+      const btn = collection === 'collections' ? downloadSelectedCollectionBtn : downloadSelectedGalleryBtn;
+      const label = collection === 'collections' ? downloadSelectedCollectionLabel : downloadSelectedGalleryLabel;
       const count = selectedIds.size;
       btn.disabled = count === 0;
       label.textContent = count > 0 ? `Download selected (${count})` : 'Download selected';
     }
 
     function toggleCardSelection(card, id, collection) {
-      const selectedIds = collection === 'favourites' ? favouritesSelectedIds : gallerySelectedIds;
+      const selectedIds = collection === 'collections' ? collectionsSelectedIds : gallerySelectedIds;
       if (selectedIds.has(id)) {
         selectedIds.delete(id);
         card.classList.remove('is-selected');
@@ -2468,33 +2815,37 @@ Crystal Rose — #D94B87`;
     }
 
     function exitSelectMode(collection) {
-      const grid = collection === 'favourites' ? favouritesGrid : galleryGrid;
-      const section = grid.closest('.gallery-section');
-      const selectBtn = collection === 'favourites' ? favouritesSelectBtn : gallerySelectBtn;
-      const selectedIds = collection === 'favourites' ? favouritesSelectedIds : gallerySelectedIds;
+      const grid = collection === 'collections' ? collectionsGrid : galleryGrid;
+      const section = grid ? grid.closest('.gallery-section') : null;
+      const selectBtn = collection === 'collections' ? collectionsSelectBtn : gallerySelectBtn;
+      const selectedIds = collection === 'collections' ? collectionsSelectedIds : gallerySelectedIds;
 
-      section.classList.remove('is-selecting');
-      selectBtn.classList.remove('is-active');
-      selectBtn.querySelector('span').textContent = 'Select';
+      if (section) section.classList.remove('is-selecting');
+      if (selectBtn) {
+        selectBtn.classList.remove('is-active');
+        selectBtn.querySelector('span').textContent = 'Select';
+      }
       selectedIds.clear();
-      grid.querySelectorAll('.gallery-item.is-selected').forEach((el) => el.classList.remove('is-selected'));
+      if (grid) grid.querySelectorAll('.gallery-item.is-selected').forEach((el) => el.classList.remove('is-selected'));
       updateDownloadSelectedBtn(collection);
     }
 
     function enterSelectMode(collection) {
-      const grid = collection === 'favourites' ? favouritesGrid : galleryGrid;
-      const section = grid.closest('.gallery-section');
-      const selectBtn = collection === 'favourites' ? favouritesSelectBtn : gallerySelectBtn;
+      const grid = collection === 'collections' ? collectionsGrid : galleryGrid;
+      const section = grid ? grid.closest('.gallery-section') : null;
+      const selectBtn = collection === 'collections' ? collectionsSelectBtn : gallerySelectBtn;
 
-      section.classList.add('is-selecting');
-      selectBtn.classList.add('is-active');
-      selectBtn.querySelector('span').textContent = 'Cancel';
+      if (section) section.classList.add('is-selecting');
+      if (selectBtn) {
+        selectBtn.classList.add('is-active');
+        selectBtn.querySelector('span').textContent = 'Cancel';
+      }
     }
 
     function toggleSelectMode(collection) {
-      const grid = collection === 'favourites' ? favouritesGrid : galleryGrid;
-      const section = grid.closest('.gallery-section');
-      if (section.classList.contains('is-selecting')) {
+      const grid = collection === 'collections' ? collectionsGrid : galleryGrid;
+      const section = grid ? grid.closest('.gallery-section') : null;
+      if (section && section.classList.contains('is-selecting')) {
         exitSelectMode(collection);
       } else {
         enterSelectMode(collection);
@@ -2502,11 +2853,15 @@ Crystal Rose — #D94B87`;
     }
 
     async function downloadSelected(collection) {
-      const selectedIds = collection === 'favourites' ? favouritesSelectedIds : gallerySelectedIds;
+      const selectedIds = collection === 'collections' ? collectionsSelectedIds : gallerySelectedIds;
       if (!selectedIds.size) return;
       const allItems = normalizeSavedDownloads(safeParseSavedDownloads(), true);
       const items = allItems.filter((item) => selectedIds.has(item.id));
-      const zipName = collection === 'favourites' ? 'selected-favourites.zip' : 'selected-downloads.zip';
+      const col = getCollectionById(activeCollectionId);
+      const colName = collection === 'collections' && col ? col.name : 'downloads';
+      const zipName = collection === 'collections'
+        ? collectionZipFilename(`selected-${colName}`)
+        : 'selected-downloads.zip';
       await downloadRecordsAsZip(items, zipName);
     }
 
@@ -2526,66 +2881,416 @@ Crystal Rose — #D94B87`;
       });
     }
 
-    function renderFavorites() {
-      exitSelectMode('favourites');
-      const items = normalizeSavedDownloads(safeParseSavedDownloads(), true);
-      const favouriteIds = syncFavouriteIds(items);
-      const itemsById = new Map(items.map((item) => [item.id, item]));
-      const favouriteItems = favouriteIds.map((id) => itemsById.get(id)).filter(Boolean);
-      const nextFavouriteIds = favouriteItems.map((item) => item.id);
-      const nextFavouriteSet = new Set(nextFavouriteIds);
-      const existingCards = new Map(
-        [...favouritesGrid.querySelectorAll('.gallery-item')].map((item) => [item.dataset.recordId, item]),
-      );
+    // ── Collections storage functions ─────────────────────────────
 
-      favouritesBadge.textContent = `${favouriteItems.length} favourites`;
-      downloadFavouritesBtn.disabled = !favouriteItems.length;
-      downloadFavouritesBtn.classList.toggle('download-ready', favouriteItems.length > 0);
+    function safeParseCollections() {
+      try {
+        const raw = localStorage.getItem(COLLECTIONS_KEY);
+        const parsed = raw ? JSON.parse(raw) : [];
+        return Array.isArray(parsed) ? parsed : [];
+      } catch (e) {
+        return [];
+      }
+    }
+
+    function persistCollections(collections) {
+      try {
+        localStorage.setItem(COLLECTIONS_KEY, JSON.stringify(collections));
+      } catch (e) {
+        console.warn('Could not save collections to browser storage.', e);
+      }
+    }
+
+    function getAllCollections() {
+      return [
+        { id: 'favourites', name: 'Favourites', itemIds: safeParseFavouriteIds() },
+        ...safeParseCollections(),
+      ];
+    }
+
+    function getCollectionById(id) {
+      if (id === 'favourites') {
+        return { id: 'favourites', name: 'Favourites', itemIds: safeParseFavouriteIds() };
+      }
+      return safeParseCollections().find((c) => c.id === id) || null;
+    }
+
+    function getCustomCollectionsForItem(itemId) {
+      return safeParseCollections().filter((c) => c.itemIds.includes(itemId));
+    }
+
+    function collectionZipFilename(name) {
+      return name.trim().toLowerCase().replace(/\s+/g, '-') + '-collection.zip';
+    }
+
+    function createCollectionEntry(name) {
+      const id = `col-${Date.now()}-${Math.random().toString(16).slice(2, 6)}`;
+      const collections = safeParseCollections();
+      collections.push({ id, name: name.trim(), itemIds: [] });
+      persistCollections(collections);
+      return id;
+    }
+
+    function deleteCollectionEntry(id) {
+      if (id === 'favourites') return;
+      const collections = safeParseCollections().filter((c) => c.id !== id);
+      persistCollections(collections);
+    }
+
+    function isInCollection(collectionId, itemId) {
+      if (collectionId === 'favourites') return isFavourite(itemId);
+      const col = safeParseCollections().find((c) => c.id === collectionId);
+      return col ? col.itemIds.includes(itemId) : false;
+    }
+
+    function toggleCollectionMembership(collectionId, itemId) {
+      if (collectionId === 'favourites') {
+        toggleFavourite(itemId);
+        return;
+      }
+      const collections = safeParseCollections();
+      const col = collections.find((c) => c.id === collectionId);
+      if (!col) return;
+      if (col.itemIds.includes(itemId)) {
+        col.itemIds = col.itemIds.filter((id) => id !== itemId);
+      } else {
+        col.itemIds.push(itemId);
+      }
+      persistCollections(collections);
+      renderGallery();
+      renderCollections();
+    }
+
+    function persistCollectionOrder() {
+      const currentIds = [...collectionsGrid.querySelectorAll('.gallery-item')].map((item) => item.dataset.recordId);
+      if (activeCollectionId === 'favourites') {
+        const normalized = normalizeFavouriteIds(currentIds);
+        persistFavouriteIds(normalized);
+      } else {
+        const collections = safeParseCollections();
+        const col = collections.find((c) => c.id === activeCollectionId);
+        if (col) {
+          col.itemIds = currentIds.filter((id) => col.itemIds.includes(id));
+          persistCollections(collections);
+        }
+      }
+      renderCollections();
+    }
+
+    // ── Collection popover ────────────────────────────────────────
+
+    const collectionPopover = (() => {
+      const el = document.createElement('div');
+      el.className = 'collection-popover';
+      el.setAttribute('role', 'dialog');
+      el.setAttribute('aria-label', 'Add to collection');
+      document.body.appendChild(el);
+      return el;
+    })();
+
+    let popoverTargetId = null;
+
+    function openCollectionPopover(anchorBtn, recordId) {
+      popoverTargetId = recordId;
+      const allCollections = getAllCollections();
+      collectionPopover.innerHTML = '';
+
+      // Header
+      const header = document.createElement('div');
+      header.className = 'collection-popover-header';
+      header.textContent = 'Add to collection';
+      collectionPopover.appendChild(header);
+
+      allCollections.forEach((col) => {
+        const inCol = isInCollection(col.id, recordId);
+        const item = document.createElement('button');
+        item.type = 'button';
+        item.className = 'collection-popover-item';
+
+        const checkSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        checkSvg.setAttribute('viewBox', '0 0 24 24');
+        checkSvg.setAttribute('width', '14');
+        checkSvg.setAttribute('height', '14');
+        checkSvg.setAttribute('aria-hidden', 'true');
+        checkSvg.setAttribute('focusable', 'false');
+        checkSvg.setAttribute('class', `collection-popover-check${inCol ? ' is-checked' : ''}`);
+        const checkPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        checkPath.setAttribute('fill', 'currentColor');
+        checkPath.setAttribute('d', 'M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z');
+        checkSvg.appendChild(checkPath);
+
+        const label = document.createElement('span');
+        label.className = 'collection-popover-label';
+        label.textContent = col.name;
+
+        item.appendChild(checkSvg);
+        item.appendChild(label);
+
+        item.addEventListener('click', (e) => {
+          e.stopPropagation();
+          toggleCollectionMembership(col.id, recordId);
+          // Refresh just the check state without full reopen (avoids animation flicker)
+          const nowIn = isInCollection(col.id, recordId);
+          checkSvg.classList.toggle('is-checked', nowIn);
+          // Refresh gallery card states
+          document.querySelectorAll(`.gallery-item[data-record-id="${recordId}"]`).forEach((card) => {
+            const saved = safeParseSavedDownloads().find((s) => s.id === recordId);
+            if (saved) updateRecordCard(card, saved);
+          });
+        });
+
+        collectionPopover.appendChild(item);
+      });
+
+      const divider = document.createElement('div');
+      divider.className = 'collection-popover-divider';
+      collectionPopover.appendChild(divider);
+
+      const newBtn = document.createElement('button');
+      newBtn.type = 'button';
+      newBtn.className = 'collection-popover-item collection-popover-new';
+      newBtn.innerHTML = `<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" style="flex-shrink:0;opacity:0.55"><path fill="currentColor" d="M12 5a1 1 0 0 1 1 1v5h5a1 1 0 1 1 0 2h-5v5a1 1 0 1 1-2 0v-5H6a1 1 0 1 1 0-2h5V6a1 1 0 0 1 1-1Z"/></svg><span class="collection-popover-label">New collection\u2026</span>`;
+      newBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        closeCollectionPopover();
+        openNewCollectionInput();
+        collectionNameInput.dataset.pendingItemId = recordId;
+      });
+      collectionPopover.appendChild(newBtn);
+
+      // Position dropdown below the anchor button (position:fixed so use viewport coords only)
+      collectionPopover.classList.add('is-open');
+      const rect = anchorBtn.getBoundingClientRect();
+      const popW = collectionPopover.offsetWidth || 200;
+      const popH = collectionPopover.offsetHeight || 160;
+      let top = rect.bottom + 6;
+      let left = rect.left;
+      if (left + popW > window.innerWidth - 8) left = rect.right - popW;
+      if (left < 8) left = 8;
+      if (top + popH > window.innerHeight - 8) top = rect.top - popH - 6;
+      collectionPopover.style.top = `${top}px`;
+      collectionPopover.style.left = `${left}px`;
+    }
+
+    function closeCollectionPopover() {
+      collectionPopover.classList.remove('is-open');
+      popoverTargetId = null;
+    }
+
+    document.addEventListener('click', (e) => {
+      if (collectionPopover.classList.contains('is-open') &&
+          !collectionPopover.contains(e.target) &&
+          !e.target.closest('.gallery-collection-btn')) {
+        closeCollectionPopover();
+      }
+    });
+
+    // ── New collection input helpers ──────────────────────────────
+
+    function openNewCollectionInput() {
+      collectionNewRow.style.display = 'flex';
+      collectionNameInput.value = '';
+      collectionNameInput.dataset.pendingItemId = '';
+      window.requestAnimationFrame(() => collectionNameInput.focus());
+      // Scroll tab bar into view
+      collectionsTabBar.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }
+
+    function closeNewCollectionInput() {
+      collectionNewRow.style.display = 'none';
+      collectionNameInput.value = '';
+      collectionNameInput.dataset.pendingItemId = '';
+    }
+
+    function confirmNewCollection() {
+      const name = collectionNameInput.value.trim();
+      if (!name) return;
+      const newId = createCollectionEntry(name);
+      const pendingItemId = collectionNameInput.dataset.pendingItemId;
+      if (pendingItemId) {
+        const collections = safeParseCollections();
+        const col = collections.find((c) => c.id === newId);
+        if (col) {
+          col.itemIds.push(pendingItemId);
+          persistCollections(collections);
+        }
+      }
+      closeNewCollectionInput();
+      activeCollectionId = newId;
+      renderGallery();
+      renderCollections();
+    }
+
+    addCollectionBtn.addEventListener('click', openNewCollectionInput);
+
+    collectionNameConfirm.addEventListener('click', confirmNewCollection);
+
+    collectionNameCancel.addEventListener('click', closeNewCollectionInput);
+
+    collectionNameInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); confirmNewCollection(); }
+      if (e.key === 'Escape') { e.preventDefault(); closeNewCollectionInput(); }
+    });
+
+    // ── Drop indicators for collections grid ──────────────────────
+
+    function clearCollectionDropIndicators(container) {
+      container.querySelectorAll('.drag-over, .drop-before, .drop-after').forEach((el) => {
+        el.classList.remove('drag-over', 'drop-before', 'drop-after');
+      });
+    }
+
+    function getCollectionDropTarget(container, x, y) {
+      const draggableElements = [...container.querySelectorAll('.gallery-item:not(.is-dragging)')];
+      if (!draggableElements.length) return { target: null, before: false };
+      let target = null;
+      for (const child of draggableElements) {
+        const box = child.getBoundingClientRect();
+        if (x >= box.left && x <= box.right && y >= box.top && y <= box.bottom) { target = child; break; }
+      }
+      if (!target) {
+        let closestDistance = Number.POSITIVE_INFINITY;
+        for (const child of draggableElements) {
+          const box = child.getBoundingClientRect();
+          const cx = box.left + box.width / 2;
+          const cy = box.top + box.height / 2;
+          const d = Math.hypot(x - cx, y - cy);
+          if (d < closestDistance) { closestDistance = d; target = child; }
+        }
+      }
+      const box = target.getBoundingClientRect();
+      const before = (x - box.left) / box.width < 0.5;
+      return { target, before };
+    }
+
+    // ── Render collections ────────────────────────────────────────
+
+    function renderCollectionsTabBar() {
+      Array.from(collectionsTabBar.querySelectorAll('.collection-tab')).forEach((el) => el.remove());
+      const allCollections = getAllCollections();
+      const savedItems = normalizeSavedDownloads(safeParseSavedDownloads(), true);
+      const validIds = new Set(savedItems.map((item) => item.id));
+
+      allCollections.forEach((col) => {
+        const count = col.id === 'favourites'
+          ? syncFavouriteIds(savedItems).length
+          : col.itemIds.filter((id) => validIds.has(id)).length;
+
+        const tab = document.createElement('button');
+        tab.type = 'button';
+        tab.className = `collection-tab${col.id === activeCollectionId ? ' is-active' : ''}`;
+        tab.dataset.collectionId = col.id;
+
+        const nameSpan = document.createElement('span');
+        nameSpan.textContent = col.name;
+        tab.appendChild(nameSpan);
+
+        const countBadgeEl = document.createElement('span');
+        countBadgeEl.className = 'collection-tab-count';
+        countBadgeEl.textContent = count;
+        tab.appendChild(countBadgeEl);
+
+        if (col.id !== 'favourites') {
+          const del = document.createElement('button');
+          del.type = 'button';
+          del.className = 'collection-tab-delete';
+          del.title = `Delete \u201c${col.name}\u201d`;
+          del.setAttribute('aria-label', `Delete collection \u201c${col.name}\u201d`);
+          del.innerHTML = `<svg viewBox="0 0 24 24" width="9" height="9" aria-hidden="true"><path stroke="currentColor" stroke-width="2.5" stroke-linecap="round" d="M6 18L18 6M6 6l12 12"/></svg>`;
+          del.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (activeCollectionId === col.id) activeCollectionId = 'favourites';
+            deleteCollectionEntry(col.id);
+            renderGallery();
+            renderCollections();
+          });
+          tab.appendChild(del);
+        }
+
+        tab.addEventListener('click', (e) => {
+          if (e.target.closest('.collection-tab-delete')) return;
+          activeCollectionId = col.id;
+          renderCollections();
+          closeNewCollectionInput();
+        });
+
+        collectionsTabBar.insertBefore(tab, addCollectionBtn);
+      });
+    }
+
+    function renderCollections() {
+      exitSelectMode('collections');
+      renderCollectionsTabBar();
+
+      const savedItems = normalizeSavedDownloads(safeParseSavedDownloads(), true);
+      const itemsById = new Map(savedItems.map((item) => [item.id, item]));
+      let activeItems = [];
+
+      if (activeCollectionId === 'favourites') {
+        const favIds = syncFavouriteIds(savedItems);
+        activeItems = favIds.map((id) => itemsById.get(id)).filter(Boolean);
+      } else {
+        const collections = safeParseCollections();
+        const col = collections.find((c) => c.id === activeCollectionId);
+        if (!col) {
+          activeCollectionId = 'favourites';
+          renderCollections();
+          return;
+        }
+        // Sync: prune IDs that no longer exist in saved downloads
+        const prunedIds = col.itemIds.filter((id) => itemsById.has(id));
+        if (prunedIds.length !== col.itemIds.length) {
+          col.itemIds = prunedIds;
+          persistCollections(collections);
+        }
+        activeItems = prunedIds.map((id) => itemsById.get(id)).filter(Boolean);
+      }
+
+      collectionsBadge.textContent = `${activeItems.length} item${activeItems.length === 1 ? '' : 's'}`;
+      downloadCollectionBtn.disabled = !activeItems.length;
+      downloadCollectionBtn.classList.toggle('download-ready', activeItems.length > 0);
+      collectionsEmpty.style.display = activeItems.length ? 'none' : 'block';
+
+      // Diff-render: carry over existing cards with animation
+      const existingCards = new Map(
+        [...collectionsGrid.querySelectorAll('.gallery-item')].map((el) => [el.dataset.recordId, el])
+      );
+      const nextSet = new Set(activeItems.map((item) => item.id));
 
       existingCards.forEach((card, id) => {
-        if (!nextFavouriteSet.has(id)) {
+        if (!nextSet.has(id)) {
           if (!card.classList.contains('is-favourite-leaving')) {
             card.classList.add('is-favourite-leaving');
             const timer = window.setTimeout(() => {
-              if (card.isConnected && card.dataset.recordId === id && !nextFavouriteSet.has(id)) {
-                card.remove();
-              }
-              favouriteRemovalTimers.delete(card);
-              favouritesEmpty.style.display = favouritesGrid.querySelector('.gallery-item') ? 'none' : 'block';
+              if (card.isConnected) card.remove();
+              collectionRemovalTimers.delete(card);
+              collectionsEmpty.style.display = collectionsGrid.querySelector('.gallery-item') ? 'none' : 'block';
             }, 220);
-            favouriteRemovalTimers.set(card, timer);
+            collectionRemovalTimers.set(card, timer);
           }
         }
       });
 
-      favouriteItems.forEach((record, index) => {
+      activeItems.forEach((record, index) => {
         let card = existingCards.get(record.id);
         if (card) {
-          const timer = favouriteRemovalTimers.get(card);
-          if (timer) {
-            window.clearTimeout(timer);
-            favouriteRemovalTimers.delete(card);
-          }
+          const timer = collectionRemovalTimers.get(card);
+          if (timer) { window.clearTimeout(timer); collectionRemovalTimers.delete(card); }
           card.classList.remove('is-favourite-leaving');
           updateRecordCard(card, record);
         } else {
-          card = createRecordCard(record, { collection: 'favourites' });
-          if (favouritesRenderedOnce) {
+          card = createRecordCard(record, { collection: 'collections' });
+          if (collectionsRenderedOnce) {
             card.classList.add('is-favourite-entering');
-            card.addEventListener('animationend', () => {
-              card.classList.remove('is-favourite-entering');
-            }, { once: true });
+            card.addEventListener('animationend', () => card.classList.remove('is-favourite-entering'), { once: true });
           }
         }
-
-        const currentChild = favouritesGrid.children[index];
-        if (currentChild !== card) {
-          favouritesGrid.insertBefore(card, currentChild || null);
-        }
+        const currentChild = collectionsGrid.children[index];
+        if (currentChild !== card) collectionsGrid.insertBefore(card, currentChild || null);
       });
 
-      favouritesEmpty.style.display = favouriteItems.length || favouritesGrid.querySelector('.gallery-item') ? 'none' : 'block';
-      favouritesRenderedOnce = true;
+      collectionsEmpty.style.display = activeItems.length || collectionsGrid.querySelector('.gallery-item') ? 'none' : 'block';
+      collectionsRenderedOnce = true;
     }
 
     function getSvgString() {
@@ -2758,9 +3463,6 @@ Crystal Rose — #D94B87`;
     downloadAllBtn.addEventListener('click', () => {
       downloadAllSavedDownloads();
     });
-    downloadFavouritesBtn.addEventListener('click', () => {
-      downloadAllFavouriteDownloads();
-    });
     flipBtn.addEventListener('click', () => {
       isFlipped = !isFlipped;
       flipBtn.setAttribute('aria-pressed', String(isFlipped));
@@ -2787,16 +3489,32 @@ Crystal Rose — #D94B87`;
 
       if (isOtherEditable) return;
 
-      if (isUndoShortcut && previousText !== null) {
-        event.preventDefault();
-        undoClean();
-        return;
+      if (isUndoShortcut) {
+        // Text-clean undo takes priority when available
+        if (previousText !== null) {
+          event.preventDefault();
+          undoClean();
+          return;
+        }
+        // Deletion undo when no text undo is pending
+        if (deletionUndoStack.length > 0) {
+          event.preventDefault();
+          undoDelete();
+          return;
+        }
       }
 
-      if (isRedoShortcut && redoText !== null) {
-        event.preventDefault();
-        redoClean();
-        return;
+      if (isRedoShortcut) {
+        if (redoText !== null) {
+          event.preventDefault();
+          redoClean();
+          return;
+        }
+        if (deletionRedoStack.length > 0) {
+          event.preventDefault();
+          redoDelete();
+          return;
+        }
       }
     }, true);
 
@@ -2834,9 +3552,10 @@ Crystal Rose — #D94B87`;
     filenameSaveBtn.addEventListener('click', saveToGallery);
 
     gallerySelectBtn.addEventListener('click', () => toggleSelectMode('gallery'));
-    favouritesSelectBtn.addEventListener('click', () => toggleSelectMode('favourites'));
+    collectionsSelectBtn.addEventListener('click', () => toggleSelectMode('collections'));
     downloadSelectedGalleryBtn.addEventListener('click', () => downloadSelected('gallery'));
-    downloadSelectedFavouritesBtn.addEventListener('click', () => downloadSelected('favourites'));
+    downloadSelectedCollectionBtn.addEventListener('click', () => downloadSelected('collections'));
+    downloadCollectionBtn.addEventListener('click', downloadActiveCollection);
 
     // ── Header favicon: click to recolour with palette colours 1, 4, 7, 10 ──
     (function() {
@@ -2945,39 +3664,35 @@ Crystal Rose — #D94B87`;
       persistGalleryOrder();
     });
 
-    favouritesGrid.addEventListener('dragover', (event) => {
-      if (!draggedFavouriteItem) return;
+    collectionsGrid.addEventListener('dragover', (event) => {
+      if (!draggedCollectionItem) return;
       event.preventDefault();
-      if (event.dataTransfer) {
-        event.dataTransfer.dropEffect = 'move';
-      }
+      if (event.dataTransfer) event.dataTransfer.dropEffect = 'move';
 
-      const { target, before } = getFavouriteDropTarget(favouritesGrid, event.clientX, event.clientY);
-      clearFavouriteDropIndicators(favouritesGrid);
+      const { target, before } = getCollectionDropTarget(collectionsGrid, event.clientX, event.clientY);
+      clearCollectionDropIndicators(collectionsGrid);
 
-      if (!target || target === draggedFavouriteItem) {
-        return;
-      }
+      if (!target || target === draggedCollectionItem) return;
 
       target.classList.add('drag-over');
       target.classList.add(before ? 'drop-before' : 'drop-after');
 
       if (before) {
-        favouritesGrid.insertBefore(draggedFavouriteItem, target);
+        collectionsGrid.insertBefore(draggedCollectionItem, target);
       } else {
-        favouritesGrid.insertBefore(draggedFavouriteItem, target.nextElementSibling);
+        collectionsGrid.insertBefore(draggedCollectionItem, target.nextElementSibling);
       }
     });
 
-    favouritesGrid.addEventListener('drop', (event) => {
-      if (!draggedFavouriteItem) return;
+    collectionsGrid.addEventListener('drop', (event) => {
+      if (!draggedCollectionItem) return;
       event.preventDefault();
-      clearFavouriteDropIndicators(favouritesGrid);
-      persistFavouriteOrder();
+      clearCollectionDropIndicators(collectionsGrid);
+      persistCollectionOrder();
     });
 
     renderGallery();
-    renderFavorites();
+    renderCollections();
     input.value = sampleText;
     processInput(false);
   </script>
@@ -2988,13 +3703,18 @@ window._SB_TABLE = 'palette_gallery';
 window._sbGetData = function() {
   const g = localStorage.getItem('svgHexSavedDownloads');
   const f = localStorage.getItem('svgHexFavouriteDownloads');
-  return { gallery: g ? JSON.parse(g) : [], favourites: f ? JSON.parse(f) : [] };
+  const c = localStorage.getItem('svgHexCollections');
+  return {
+    gallery: g ? JSON.parse(g) : [],
+    favourites: f ? JSON.parse(f) : [],
+    collections: c ? JSON.parse(c) : [],
+  };
 };
 
 const __sbOrigSet = localStorage.setItem.bind(localStorage);
 localStorage.setItem = function(key, value) {
   __sbOrigSet(key, value);
-  if ((key === 'svgHexSavedDownloads' || key === 'svgHexFavouriteDownloads') && window._sbSyncNow && !window._sbPaused) {
+  if ((key === 'svgHexSavedDownloads' || key === 'svgHexFavouriteDownloads' || key === 'svgHexCollections') && window._sbSyncNow && !window._sbPaused) {
     window._sbSyncNow();
   }
 };
@@ -3003,8 +3723,9 @@ window._sbOnLoad = function(data) {
   try {
     if (data.gallery)     __sbOrigSet('svgHexSavedDownloads',       JSON.stringify(data.gallery));
     if (data.favourites)  __sbOrigSet('svgHexFavouriteDownloads',    JSON.stringify(data.favourites));
-    if (typeof renderGallery   === 'function') renderGallery();
-    if (typeof renderFavorites === 'function') renderFavorites();
+    if (data.collections) __sbOrigSet('svgHexCollections',           JSON.stringify(data.collections));
+    if (typeof renderGallery    === 'function') renderGallery();
+    if (typeof renderCollections === 'function') renderCollections();
   } catch(e) { console.warn('Supabase load error:', e); }
 };
 </script>
