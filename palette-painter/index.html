@@ -1291,6 +1291,11 @@
     }
 
     @media (max-width: 620px) {
+      /* Prevent iOS Safari from zooming on input focus (triggered when font-size < 16px).
+         !important is necessary here because class selectors have higher specificity
+         than the element selector and would otherwise override this. */
+      input, textarea, select { font-size: 16px !important; }
+
       .app { padding: 20px 16px 40px; }
 
       .header { flex-direction: column; }

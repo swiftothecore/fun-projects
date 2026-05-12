@@ -687,6 +687,11 @@ input, textarea { user-select: text; }
 }
 
 @media (max-width: 600px) {
+  /* Prevent iOS Safari from zooming on input focus (triggered when font-size < 16px).
+     !important is necessary here because class selectors have higher specificity
+     than the element selector and would otherwise override this. */
+  input, textarea, select { font-size: 16px !important; }
+
   #sections { grid-template-columns: 1fr; }
   .section-col { border-right: none; border-bottom: 1px solid var(--parchment-dk); }
   .section-col:last-child { border-bottom: none; }
