@@ -1390,8 +1390,8 @@ function addBook(doc, targetSectionId) {
   hideResults();
 
   /* Cache the cover in the background; swap in the blob URL once stored */
-  if (book.coverId) {
-    resolveCoverUrl(book.coverId).then(url => {
+  if (doc.cover_i) {
+    resolveCoverUrl(doc.cover_i).then(url => {
       if (url) renderSectionBody(targetSectionId);
     });
   }

@@ -1240,15 +1240,7 @@ viewToggleBtn.addEventListener("click", () => {
     currentView = currentView === "kanban" ? "grid" : "kanban";
   }
   applyViewState();
-  if (currentView === "grid") enableGridCardClicks();
 });
-
-function enableGridCardClicks() {
-  /* Cards in grid view open the context menu on card click (not the ⋯ btn) */
-  document.querySelectorAll(".album-card").forEach(card => {
-    card.addEventListener("click", gridCardClick);
-  });
-}
 
 
 function gridCardClick(e) {
