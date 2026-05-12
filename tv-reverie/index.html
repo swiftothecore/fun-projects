@@ -19,6 +19,7 @@
     }
     html { scroll-behavior: smooth; }
     body { background:var(--bg); color:var(--text); font-family:'DM Sans',sans-serif; font-weight:300; min-height:100vh; background-image:radial-gradient(ellipse 80% 50% at 50% -10%,rgba(96,165,250,0.07) 0%,transparent 60%); }
+    body.modal-open { overflow:hidden; position:fixed; width:100%; top:var(--scroll-y,0); }
     body::before { content:''; position:fixed; inset:0; background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E"); pointer-events:none; z-index:9999; opacity:0.4; }
 
     /* ── Supabase banner ── */
@@ -1568,6 +1569,7 @@ function openDetail(id){
       </div>
     </div>`;
   document.getElementById('detailModal').classList.add('open');
+  lockScroll();
   // Auto-unclamp notes if they fit (matches film app)
   const dn=document.getElementById('detailNotes');
   const dw=document.getElementById('detailNotesWrap');
@@ -1599,11 +1601,53 @@ function toggleDetailNotes(){
   if(btn)btn.textContent=w.classList.contains('clamped')?'...':'Less';
 }
 
-function closeDetail(){document.getElementById('detailModal').classList.remove('open');}
+function closeDetail(){document.getElementById('detailModal').classList.remove('open');unlockScroll();}
 function handleDetailOverlay(e){if(e.target===document.getElementById('detailModal'))closeDetail();}
 function openEditFromDetail(id){closeDetail();setTimeout(()=>openEditModal(id),100);}
 
-// ── Show status ──
+// ── Scroll lock (prevents background scroll while any modal is open) ──────
+let _scrollLockY = 0, _scrollLockCount = 0;
+function lockScroll() {
+  if (_scrollLockCount === 0) {
+    _scrollLockY = window.scrollY;
+    document.body.style.setProperty('--scroll-y', `-${_scrollLockY}px`);
+    document.body.classList.add('modal-open');
+  }
+  _scrollLockCount++;
+}
+function unlockScroll() {
+  _scrollLockCount = Math.max(0, _scrollLockCount - 1);
+  if (_scrollLockCount === 0) {
+    document.body.classList.remove('modal-open');
+    document.body.style.removeProperty('--scroll-y');
+    window.scrollTo(0, _scrollLockY);
+  }
+}
+
+// ── Add/Edit modal ──
+function openAddModal(){
+  editingId=null;document.getElementById('modalTitle').textContent='Add Show';clearForm();
+  document.getElementById('deleteRow').style.display='none';
+  document.getElementById('addModal').classList.add('open');
+  lockScroll();
+  updateModalJustWatch();expandMovieDetails();
+  if(tmdbKey)setTimeout(()=>document.getElementById('searchInput').focus(),80);
+  else document.getElementById('fTitle').focus();
+}
+function openEditModal(id){
+  const m=shows.find(x=>x.id===id);if(!m)return;
+  editingId=id;document.getElementById('modalTitle').textContent='Edit Show';
+  document.getElementById('deleteRow').style.display='flex';
+  populateForm(m);document.getElementById('addModal').classList.add('open');lockScroll();updateModalJustWatch();
+  expandMovieDetails();
+}
+function closeAddModal(){
+  document.getElementById('addModal').classList.remove('open');
+  document.getElementById('searchResults').classList.remove('open');
+  document.getElementById('searchHint').classList.remove('visible');
+  editingId=null;
+  unlockScroll();
+}
 function setShowStatus(id,status){
   const m=shows.find(x=>x.id===id);if(!m)return;
   m.watching=false;m.watched=false;m.watchStatus=null;
@@ -1896,6 +1940,103 @@ window._sbOnLoad = function(data) {
     }
   } catch(e) { console.warn('Supabase load error:', e); }
 };
+
+// ── Drag-to-dismiss for mobile bottom sheets ─────────────────────────────
+function initSheetDrag(modalId, closeFn) {
+  const isMobile  = () => window.matchMedia('(max-width:600px)').matches;
+  const overlay   = document.getElementById(modalId);
+  const sheet     = overlay.querySelector('.modal');
+  const body      = overlay.querySelector('.modal-body');
+
+  const DISMISS_THRESHOLD = 100; // px dragged before auto-dismiss fires
+  const HANDLE_ZONE       = 56;  // px from top of sheet treated as the handle area
+
+  let startY    = null;
+  let currentDY = 0;
+  let dragging  = false;
+  let eligible  = false;
+
+  function snapBack() {
+    sheet.style.transition = 'transform 0.3s cubic-bezier(0.34,1.56,0.64,1)';
+    sheet.style.transform  = '';
+    setTimeout(() => { sheet.style.transition = ''; }, 300);
+  }
+
+  sheet.addEventListener('touchstart', e => {
+    if (!isMobile()) return;
+    const touch  = e.touches[0];
+    const rect   = sheet.getBoundingClientRect();
+    const localY = touch.clientY - rect.top;
+    const bodyScrolled = body ? body.scrollTop > 0 : false;
+
+    // Eligible when touching the handle zone, OR touching the body while at scroll top
+    eligible  = localY < HANDLE_ZONE || !bodyScrolled;
+    if (!eligible) return;
+
+    startY    = touch.clientY;
+    currentDY = 0;
+    dragging  = false;
+    sheet.style.transition = 'none';
+  }, { passive: true });
+
+  sheet.addEventListener('touchmove', e => {
+    if (!eligible || startY === null) return;
+
+    const dy = e.touches[0].clientY - startY;
+
+    // Upward drag or body was scrolled — abandon the gesture
+    if (dy < 0 || (!dragging && body && body.scrollTop > 0)) {
+      eligible = false;
+      snapBack();
+      return;
+    }
+
+    dragging  = true;
+    currentDY = dy;
+    e.preventDefault();
+    sheet.style.transform = `translateY(${dy}px)`;
+  }, { passive: false });
+
+  function onEnd() {
+    if (!eligible || !dragging) {
+      eligible = dragging = false;
+      startY = null;
+      return;
+    }
+
+    const dy  = currentDY;
+    eligible  = dragging = false;
+    startY    = null;
+    currentDY = 0;
+
+    if (dy >= DISMISS_THRESHOLD) {
+      sheet.style.transition = 'transform 0.22s cubic-bezier(0.32,0,0.67,0)';
+      sheet.style.transform  = 'translateY(110%)';
+      setTimeout(() => {
+        sheet.style.transform  = '';
+        sheet.style.transition = '';
+        closeFn();
+      }, 220);
+    } else {
+      snapBack();
+    }
+  }
+
+  sheet.addEventListener('touchend',    onEnd, { passive: true });
+  sheet.addEventListener('touchcancel', onEnd, { passive: true });
+}
+
+(function() {
+  function setup() {
+    initSheetDrag('detailModal', closeDetail);
+    initSheetDrag('addModal',    closeAddModal);
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setup);
+  } else {
+    setup();
+  }
+})();
 </script>
 
 </body>
