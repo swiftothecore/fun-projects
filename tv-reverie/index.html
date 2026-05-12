@@ -204,7 +204,7 @@
     .result-info { flex:1; min-width:0; }
     .result-title { font-size:0.85rem; font-weight:500; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
     .result-meta { font-size:0.72rem; color:var(--text-dim); margin-top:2px; }
-    .result-overview { font-size:0.7rem; color:var(--text-muted); margin-top:3px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+    .result-overview { font-size:0.7rem; color:var(--text-muted); margin-top:3px; display:-webkit-box; -webkit-line-clamp:2; line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
     .search-no-results { padding:20px; text-align:center; font-size:0.8rem; color:var(--text-muted); }
     .search-hint { font-size:0.7rem; color:var(--text-muted); margin-top:6px; display:none; }
     .search-hint.visible { display:block; }
@@ -272,7 +272,7 @@
     #movieDetailsCollapsible.collapsed { display:none; }
     input[type=number]::-webkit-inner-spin-button,
     input[type=number]::-webkit-outer-spin-button { -webkit-appearance:none; margin:0; }
-    input[type=number] { -moz-appearance:textfield; }
+    input[type=number] { appearance:textfield; -moz-appearance:textfield; }
     ::-webkit-scrollbar { width:4px; }
     ::-webkit-scrollbar-track { background:transparent; }
     ::-webkit-scrollbar-thumb { background:#3a3628; border-radius:2px; }
@@ -309,7 +309,7 @@
     .detail-meta { font-size:0.78rem; color:var(--text-dim); margin-bottom:8px; line-height:1.5; }
     .detail-notes { font-size:0.82rem; color:var(--text-dim); line-height:1.6; font-style:italic; }
     .detail-notes-wrap { position:relative; }
-    .detail-notes-wrap.clamped .detail-notes { display:-webkit-box; -webkit-line-clamp:4; -webkit-box-orient:vertical; overflow:hidden; }
+    .detail-notes-wrap.clamped .detail-notes { display:-webkit-box; line-clamp:4; -webkit-line-clamp:4; -webkit-box-orient:vertical; overflow:hidden; }
     .detail-notes-expander { position:absolute; bottom:0; right:0; padding-left:48px; background:linear-gradient(to right, transparent, var(--surface) 42%); font-size:0.82rem; color:var(--text-dim); font-style:italic; line-height:1.6; cursor:pointer; border:none; font-family:'DM Sans',sans-serif; transition:color 0.15s; }
     .detail-notes-expander:hover { color:var(--text); }
     .detail-notes-wrap:not(.clamped) .detail-notes-expander { display:none; }
