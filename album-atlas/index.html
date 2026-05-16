@@ -584,7 +584,6 @@
   .menu-divider { border-top: 1px solid #2a2820; }
 
   .menu-remove {
-    font-family: system-ui, sans-serif;
     padding: 0.45rem 0.85rem;
     cursor: pointer;
     font-size: 0.8rem;
@@ -593,7 +592,9 @@
   }
 
   .menu-set-date {
-    font-family: system-ui, sans-serif;
+    display: flex;
+    align-items: center;
+    gap: 9px;
     padding: 0.45rem 0.85rem;
     cursor: pointer;
     font-size: 0.8rem;
@@ -836,8 +837,14 @@
     border-radius: 6px;
     cursor: pointer;
     position: relative;
-    overflow: hidden;
+    /* overflow: hidden removed — it clipped the context menu.
+       The album art image has its own border-radius so this is safe. */
   }
+
+  /* .menu-open: class used by JS for tracking only — no z-index here.
+     The .card-menu itself has z-index: 600 in the root stacking context,
+     which already beats section-head z-index: 50. Adding z-index to the
+     card would create a new stacking context that traps the menu below 50. */
 
   #sections.grid-view .album-inner {
     padding: 0;
@@ -917,11 +924,15 @@
   #sections.grid-view .album-card[data-age="old"]::after     { background: #C84A3A; }
   #sections.grid-view .album-card[data-age="unknown"]::after { background: #3a3428; }
 
-  /* Grid card context menu — triggered by click on card */
+  /* Grid card context menu — triggered by click on card.
+     Positioned below the card. Default left-aligned (extends rightward) so
+     cards near the left edge don't overflow off-screen. JS flips to right:0
+     for cards near the right edge. */
   #sections.grid-view .album-card .card-menu {
-    top: auto;
-    bottom: 4px;
-    right: 4px;
+    top: calc(100% + 4px);
+    bottom: auto;
+    left: 0;
+    right: auto;
   }
 
   /* Transition between views */
@@ -1660,7 +1671,7 @@ function createCard(album, sectionId) {
       <div class="menu-header">Move to</div>
       ${moveItems}
       <div class="menu-divider">
-        ${sectionId === "listen" ? `<div class="menu-set-date">&#128337; Set date added…</div><div class="date-pick-panel"><span class="date-pick-label">Date added</span><input type="date" class="date-pick-input"><button class="date-pick-confirm">Set</button></div>` : ""}
+        ${sectionId === "listen" ? `<div class="menu-set-date"><span>&#128337;</span> Set date added…</div><div class="date-pick-panel"><span class="date-pick-label">Date added</span><input type="date" class="date-pick-input"><button class="date-pick-confirm">Set</button></div>` : ""}
         <div class="menu-remove">Remove</div>
       </div>
     </div>
@@ -1684,7 +1695,7 @@ function createCard(album, sectionId) {
     e.stopPropagation();
     const isOpen = menu.style.display === "block";
     closeAllMenus();
-    if (!isOpen) menu.style.display = "block";
+    if (!isOpen) openMenu(card, menu);
   });
   card.querySelectorAll("[data-move]").forEach(el =>
     el.addEventListener("click", e => { e.stopPropagation(); moveAlbum(album.id, sectionId, el.dataset.move); })
@@ -1753,7 +1764,7 @@ function createCard(album, sectionId) {
       const menu   = this.querySelector(".card-menu");
       const isOpen = menu.style.display === "block";
       closeAllMenus();
-      if (!isOpen) menu.style.display = "block";
+      if (!isOpen) openMenu(this, menu);
     } else if (currentView === "list") {
       // List: click anywhere on card body to close open menus
       closeAllMenus();
@@ -1763,8 +1774,41 @@ function createCard(album, sectionId) {
   return card;
 }
 
+/* Open a card menu and correct its position if it overflows the viewport.
+   Works for both grid (left:0 default) and kanban (right:4px default). */
+function openMenu(card, menu) {
+  // Clear any previously JS-applied overrides so we measure from the CSS default
+  menu.style.left  = "";
+  menu.style.right = "";
+  menu.style.display = "block";
+  card.classList.add("menu-open");
+
+  const MARGIN = 8; // min px gap from screen edge
+  const r = menu.getBoundingClientRect();
+
+  if (r.right > window.innerWidth - MARGIN) {
+    // Overflows the right edge — right-align to the card instead
+    menu.style.left  = "auto";
+    menu.style.right = "0";
+  }
+  // Re-measure after any right-side correction, then check left edge
+  const r2 = menu.getBoundingClientRect();
+  if (r2.left < MARGIN) {
+    // Overflows the left edge — pin to viewport left with a small gap
+    const cardLeft = card.getBoundingClientRect().left;
+    menu.style.left  = `${MARGIN - cardLeft}px`;
+    menu.style.right = "auto";
+  }
+}
+
+
 function closeAllMenus() {
-  document.querySelectorAll(".card-menu").forEach(m => m.style.display = "none");
+  document.querySelectorAll(".card-menu").forEach(m => {
+    m.style.display = "none";
+    m.style.left    = "";
+    m.style.right   = "";
+  });
+  document.querySelectorAll(".album-card.menu-open").forEach(c => c.classList.remove("menu-open"));
 }
 
 /* ---------- Drag and drop ---------- */
