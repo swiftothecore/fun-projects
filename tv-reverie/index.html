@@ -1568,8 +1568,9 @@ function openDetail(id){
         ${primaryBtn}
       </div>
     </div>`;
+  const _detailWasOpen=document.getElementById('detailModal').classList.contains('open');
   document.getElementById('detailModal').classList.add('open');
-  lockScroll();
+  if(!_detailWasOpen)lockScroll();
   // Auto-unclamp notes if they fit (matches film app)
   const dn=document.getElementById('detailNotes');
   const dw=document.getElementById('detailNotesWrap');
@@ -1620,7 +1621,7 @@ function unlockScroll() {
   if (_scrollLockCount === 0) {
     document.body.classList.remove('modal-open');
     document.body.style.removeProperty('--scroll-y');
-    window.scrollTo(0, _scrollLockY);
+    window.scrollTo({ top: _scrollLockY, behavior: 'instant' });
   }
 }
 
