@@ -1128,12 +1128,21 @@
       if (u || k) { r.url=u; r.key=k; r.email=e; r.pass=p; return r; }
     }
     // 3. Magic detection by pattern
+    const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
     const um = text.match(/https:\/\/[a-z0-9]{8,}\.supabase\.co/i);
-    const jm = text.match(/eyJ[A-Za-z0-9_\-]{30,}\.[A-Za-z0-9_\-]{30,}\.[A-Za-z0-9_\-]{10,}/);
+    // Matches JWT-style keys (old format: eyJ...) and new sb_publishable_/sb_secret_ style keys
+    const jm = text.match(/eyJ[A-Za-z0-9_\-]{30,}\.[A-Za-z0-9_\-]{30,}\.[A-Za-z0-9_\-]{10,}/) ||
+               text.match(/sb_[a-z]+_[A-Za-z0-9_\-]{10,}/i);
     const em = text.match(/[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/);
-    const pm = text.match(/(?:pass(?:word)?|pwd|sb[_\-]pass)\s*[=:]\s*(.+)/i);
     if (um) r.url = um[0]; if (jm) r.key = jm[0]; if (em) r.email = em[0];
+    // Labelled password line
+    const pm = text.match(/(?:pass(?:word)?|pwd|sb[_\-]pass)\s*[=:]\s*(.+)/i);
     if (pm) r.pass = pm[1].trim().replace(/^['"]|['"]$/g,'');
+    // Leftover strategy: if there's exactly one line we couldn\'t identify, it must be the password
+    if (!r.pass) {
+      const leftover = lines.filter(l => l !== r.url && l !== r.key && l !== r.email);
+      if (leftover.length === 1) r.pass = leftover[0];
+    }
     return r;
   }
 
