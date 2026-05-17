@@ -1388,6 +1388,14 @@
 #_sb_form_row input:focus { border-color: #3a3a3a; }
 #_sb_form_row input::placeholder { color: #3a3a3a; }
 #_sb_url_in { width: 210px; } #_sb_key_in { width: 230px; } #_sb_email_in { width: 165px; } #_sb_pass_in { width: 130px; }
+#_sb_paste_row { display:none; width:100%; flex-basis:100%; order:-1; padding-bottom:4px; }
+#_sb_paste_area { width:100%; min-height:72px; resize:vertical; background:#111; border:1px dashed #2e2e2e; border-radius:6px; color:#aaa; padding:8px 10px; font-size:0.74rem; font-family:monospace; outline:none; box-sizing:border-box; transition:border-color 0.15s; }
+#_sb_paste_area:focus { border-color:#3d3d3d; }
+#_sb_paste_area::placeholder { color:#2d2d2d; }
+#_sb_paste_toggle { background:transparent; border:1px dashed #2a2a2a; border-radius:6px; color:#555; padding:5px 10px; font-size:0.74rem; font-family:system-ui,sans-serif; cursor:pointer; white-space:nowrap; transition:border-color 0.15s,color 0.15s; }
+#_sb_paste_toggle:hover { border-color:#555; color:#bbb; }
+#_sb_copy_cfg { display:none; background:transparent; border:1px solid #2a5a3a; border-radius:6px; color:#4a8a5a; padding:5px 10px; font-size:0.74rem; font-family:system-ui,sans-serif; cursor:pointer; white-space:nowrap; transition:border-color 0.15s,color 0.15s; }
+#_sb_copy_cfg:hover { border-color:#5a9a6a; color:#7abf8a; }
 #_sb_save_btn { background: #1e1e1e; border: 1px solid #2e2e2e; border-radius: 6px; color: #bbb; padding: 6px 14px; font-size: 0.78rem; font-family: system-ui, sans-serif; cursor: pointer; white-space: nowrap; transition: background 0.15s, border-color 0.15s; }
 #_sb_save_btn:hover { background: #252525; border-color: #444; }
 #_sb_status { font-size: 0.75rem; color: #555; }
@@ -1401,11 +1409,14 @@
     <button id="_sb_dismiss_btn" title="Dismiss">&times;</button>
   </div>
   <div id="_sb_form_row">
+    <div id="_sb_paste_row"><textarea id="_sb_paste_area" placeholder="Paste anything here — .env snippet, JSON, or plain text containing your project URL, anon key, email and password. Fields fill automatically."></textarea></div>
     <input id="_sb_url_in"   placeholder="Project URL  (https://xxx.supabase.co)">
     <input id="_sb_key_in"   placeholder="Anon public key">
     <input id="_sb_email_in" placeholder="Email">
     <input id="_sb_pass_in"  type="password" placeholder="Password">
+    <button id="_sb_paste_toggle" title="Paste a config snippet to fill all fields at once">Paste config</button>
     <button id="_sb_save_btn">Save &amp; Connect</button>
+    <button id="_sb_copy_cfg" title="Copy credentials as a portable snippet to use on another device">Copy config</button>
     <span id="_sb_status"></span>
   </div>
 </div>
@@ -1464,6 +1475,7 @@
     document.getElementById('_sb_key_in').value   = _lsGet(K.key)   || '';
     document.getElementById('_sb_email_in').value = _lsGet(K.email) || '';
     document.getElementById('_sb_pass_in').value  = _lsGet(K.pass)  || '';
+    if (_lsGet(K.url) && _lsGet(K.key)) document.getElementById('_sb_copy_cfg').style.display = 'inline-flex';
   };
 
   document.getElementById('_sb_save_btn').onclick = async () => {
@@ -1490,6 +1502,81 @@
       setTimeout(hideBanner, 1500);
     } catch (e) { setStatus('Error: ' + e.message, 'err'); }
   };
+
+  // ── Smart paste / copy config ────────────────────────────────────────────
+  function _parseConfig(text) {
+    const r = {};
+    // 1. Try JSON
+    try {
+      const j = JSON.parse(text.trim());
+      const pick = (ps) => { for (const k of Object.keys(j)) { if (ps.some(p => k.toLowerCase().includes(p))) return String(j[k]); } return ''; };
+      r.url = pick(['url']); r.key = pick(['key','anon']); r.email = pick(['email','mail']); r.pass = pick(['pass','pwd','password']);
+      if (r.url || r.key) return r;
+    } catch(e) {}
+    // 2. Try key=value pairs (.env style, handles NEXT_PUBLIC_ / VITE_ / REACT_APP_ prefixes)
+    const kv = {};
+    text.replace(/^([A-Za-z_][A-Za-z0-9_]*)\s*[=:]\s*(.+)$/gm, (_, k, v) => {
+      kv[k.toLowerCase().replace(/^(next_public_|vite_|react_app_)/,'')] = v.trim().replace(/^['"]|['"]$/g,'');
+    });
+    if (Object.keys(kv).length) {
+      const pick = (ps) => { for (const k of Object.keys(kv)) { if (ps.some(p => k.includes(p))) return kv[k]; } return ''; };
+      const u = pick(['supabase_url','project_url']) || pick(['url']);
+      const k = pick(['anon_key','anon','key']);
+      const e = pick(['email','mail','user']);
+      const p = pick(['password','pass','pwd']);
+      if (u || k) { r.url=u; r.key=k; r.email=e; r.pass=p; return r; }
+    }
+    // 3. Magic detection by pattern
+    const um = text.match(/https:\/\/[a-z0-9]{8,}\.supabase\.co/i);
+    const jm = text.match(/eyJ[A-Za-z0-9_\-]{30,}\.[A-Za-z0-9_\-]{30,}\.[A-Za-z0-9_\-]{10,}/);
+    const em = text.match(/[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/);
+    const pm = text.match(/(?:pass(?:word)?|pwd|sb[_\-]pass)\s*[=:]\s*(.+)/i);
+    if (um) r.url = um[0]; if (jm) r.key = jm[0]; if (em) r.email = em[0];
+    if (pm) r.pass = pm[1].trim().replace(/^['"]|['"]$/g,'');
+    return r;
+  }
+
+  function _applyConfig(cfg) {
+    if (cfg.url)   document.getElementById('_sb_url_in').value   = cfg.url;
+    if (cfg.key)   document.getElementById('_sb_key_in').value   = cfg.key;
+    if (cfg.email) document.getElementById('_sb_email_in').value = cfg.email;
+    if (cfg.pass)  document.getElementById('_sb_pass_in').value  = cfg.pass;
+    const n = [cfg.url,cfg.key,cfg.email,cfg.pass].filter(Boolean).length;
+    setStatus(n === 4 ? 'All fields filled — save to connect.' : n + '/4 fields detected — fill the rest manually.', n === 4 ? 'ok' : '');
+  }
+
+  const pasteRow    = document.getElementById('_sb_paste_row');
+  const pasteArea   = document.getElementById('_sb_paste_area');
+  const pasteToggle = document.getElementById('_sb_paste_toggle');
+  const copyCfgBtn  = document.getElementById('_sb_copy_cfg');
+
+  pasteToggle.onclick = () => {
+    const open = pasteRow.style.display === 'block';
+    pasteRow.style.display = open ? 'none' : 'block';
+    pasteToggle.textContent = open ? 'Paste config' : 'Hide paste';
+    if (!open) pasteArea.focus();
+  };
+
+  function _tryApplyPaste() {
+    const cfg = _parseConfig(pasteArea.value);
+    if (cfg.url || cfg.key || cfg.email) {
+      _applyConfig(cfg);
+      // Auto-collapse paste area after successful fill
+      setTimeout(() => { pasteRow.style.display='none'; pasteToggle.textContent='Paste config'; pasteArea.value=''; }, 400);
+    }
+  }
+
+  pasteArea.addEventListener('paste', () => setTimeout(_tryApplyPaste, 30));
+  pasteArea.addEventListener('input', () => { if (pasteArea.value.trim().length > 30) _tryApplyPaste(); });
+
+  copyCfgBtn.onclick = () => {
+    const url = _lsGet(K.url)||'', key = _lsGet(K.key)||'', email = _lsGet(K.email)||'', pass = _lsGet(K.pass)||'';
+    const snippet = `SUPABASE_URL=${url}\nSUPABASE_ANON_KEY=${key}\nSUPABASE_EMAIL=${email}\nSUPABASE_PASS=${pass}`;
+    navigator.clipboard.writeText(snippet)
+      .then(() => { copyCfgBtn.textContent = 'Copied ✓'; setTimeout(() => { copyCfgBtn.textContent = 'Copy config'; }, 2200); })
+      .catch(() => { const t = prompt('Copy this config and paste it on your other device:', snippet); });
+  };
+  // ─────────────────────────────────────────────────────────────────────────
 
   async function _tryConnect() {
     const url = _lsGet(K.url), key = _lsGet(K.key), email = _lsGet(K.email), pass = _lsGet(K.pass);
