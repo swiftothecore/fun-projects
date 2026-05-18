@@ -1193,7 +1193,7 @@ const TMDB_IMG='https://image.tmdb.org/t/p/w500';
 const TMDB_SM='https://image.tmdb.org/t/p/w92';
 
 var shows=JSON.parse(localStorage.getItem('tvshows_v1')||'[]');
-let currentFilter='all',currentCategory=null,editingId=null,searchTimer=null,searchHighlightIndex=-1,_pendingTmdbId=null;
+let currentFilter='all',currentCategory=null,currentDetailId=null,editingId=null,searchTimer=null,searchHighlightIndex=-1,_pendingTmdbId=null;
 let currentView=localStorage.getItem('tvshows_view')||'grid';
 let tmdbKey=localStorage.getItem('tmdb_api_key')||'';
 let undoStack=[],redoStack=[];
@@ -1957,6 +1957,7 @@ function openDetail(id){
     </div>`;
   const _detailWasOpen=document.getElementById('detailModal').classList.contains('open');
   document.getElementById('detailModal').classList.add('open');
+  currentDetailId=id;
   if(!_detailWasOpen)lockScroll();
   // Auto-unclamp notes if they fit (matches film app)
   const dn=document.getElementById('detailNotes');
@@ -1989,7 +1990,7 @@ function toggleDetailNotes(){
   if(btn)btn.textContent=w.classList.contains('clamped')?'...':'Less';
 }
 
-function closeDetail(){document.getElementById('detailModal').classList.remove('open');unlockScroll();}
+function closeDetail(){document.getElementById('detailModal').classList.remove('open');currentDetailId=null;unlockScroll();}
 function handleDetailOverlay(e){if(e.target===document.getElementById('detailModal'))closeDetail();}
 function openEditFromDetail(id){closeDetail();setTimeout(()=>openEditModal(id),100);}
 
@@ -2253,6 +2254,50 @@ document.addEventListener('keydown',e=>{
     }
   }
   const inField=document.activeElement.tagName==='INPUT'||document.activeElement.tagName==='TEXTAREA';
+  // ── Detail modal shortcuts ──
+  if(document.getElementById('detailModal').classList.contains('open')&&!document.getElementById('addModal').classList.contains('open')){
+    if(!inField&&!e.metaKey&&!e.ctrlKey&&!e.altKey){
+      if(e.key.toUpperCase()==='J'){
+        e.preventDefault();
+        const jw=document.querySelector('#detailContent .btn-justwatch');
+        if(jw)jw.click();
+        return;
+      }
+      if(e.key==='Enter'){
+        const m=currentDetailId?shows.find(x=>x.id===currentDetailId):null;
+        if(m&&!m.graveyard){
+          e.preventDefault();
+          if(!m.watching&&!m.watched){setShowStatus(currentDetailId,'watching');openDetail(currentDetailId);}
+          else if(m.watching){showDetailStatusPicker(currentDetailId);}
+          else{setShowStatus(currentDetailId,'unwatched');openDetail(currentDetailId);}
+        }
+        return;
+      }
+    }
+  }
+  // ── Add modal shortcuts ──
+  if(document.getElementById('addModal').classList.contains('open')&&!inField&&!e.metaKey&&!e.ctrlKey&&!e.altKey){
+    if(e.key.toUpperCase()==='J'){
+      e.preventDefault();
+      const jw=document.getElementById('modalJustWatch');
+      if(jw&&jw.style.pointerEvents!=='none')jw.click();
+      return;
+    }
+    const svcMap={'N':'netflix','D':'disney','P':'prime','H':'hbomax','A':'appletv','O':'other'};
+    const svc=svcMap[e.key.toUpperCase()];
+    if(svc){
+      e.preventDefault();
+      const tile=document.querySelector(`.streaming-tile[data-service="${svc}"]`);
+      if(tile)toggleTile(tile);
+      return;
+    }
+  }
+  // ── Global: A opens Add Show ──
+  if(!inField&&!e.metaKey&&!e.ctrlKey&&!e.altKey&&e.key.toUpperCase()==='A'){
+    if(!document.getElementById('addModal').classList.contains('open')&&!document.getElementById('detailModal').classList.contains('open')){
+      e.preventDefault();openAddModal();return;
+    }
+  }
   if(e.key==='z'&&(e.metaKey||e.ctrlKey)&&!e.shiftKey&&!inField){
     e.preventDefault();
     if(undoStack.length){redoStack.push(JSON.parse(JSON.stringify(shows)));shows=undoStack.pop();save();render();document.querySelectorAll('.toast').forEach(t=>dismissToast(t));showInfoToast('Deletion undone.',3000);}
