@@ -1181,7 +1181,7 @@
     /* ── Collection popover ───────────────────────────────────── */
     .collection-popover {
       position: fixed;
-      z-index: 1200;
+      z-index: 1700;
       min-width: 192px;
       max-width: 256px;
       border: 1px solid var(--border-hi);
@@ -1368,6 +1368,465 @@
 
   .hf-path.hf-flashing {
     animation: hf-path-flash 0.45s ease both;
+  }
+
+  /* ── Compare button ────────────────────────────────────────── */
+  .compare-selected-btn {
+    display: none;
+    white-space: nowrap;
+  }
+  .compare-selected-btn svg { width: 15px; height: 15px; flex-shrink: 0; }
+  .gallery-section.is-selecting .compare-selected-btn.compare-ready {
+    display: inline-flex;
+  }
+
+  /* ── Compare overlay & modal ───────────────────────────────── */
+  .compare-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1600;
+    background: rgba(8,7,5,0.82);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 200ms ease;
+  }
+  .compare-overlay.is-open {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .compare-modal {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 1080px;
+    height: min(840px, calc(100vh - 48px));
+    border: 1px solid var(--border-hi);
+    border-radius: var(--r-xl);
+    background: var(--card);
+    box-shadow: 0 40px 100px rgba(0,0,0,0.75), 0 4px 16px rgba(0,0,0,0.4);
+    overflow: hidden;
+    transform: translateY(20px) scale(0.97);
+    transition: transform 220ms cubic-bezier(0.2,0.85,0.3,1);
+  }
+  .compare-overlay.is-open .compare-modal {
+    transform: none;
+  }
+  /* Modal header */
+  .compare-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .compare-header-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .compare-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border: 1px solid var(--border-hi);
+    border-radius: var(--r-pill);
+    background: var(--surface);
+    color: var(--accent);
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+  }
+  .compare-eyebrow::before {
+    content: '';
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: currentColor;
+    flex-shrink: 0;
+  }
+  .compare-header-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--muted);
+    letter-spacing: -0.01em;
+  }
+  .compare-close-btn {
+    width: 30px;
+    height: 30px;
+    border-radius: var(--r-pill);
+    border: 1px solid var(--border-hi);
+    background: var(--surface);
+    color: var(--muted);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: border-color 150ms ease, background 150ms ease, color 150ms ease;
+  }
+  .compare-close-btn:hover {
+    border-color: rgba(239,68,68,0.5);
+    background: rgba(239,68,68,0.12);
+    color: var(--text);
+  }
+  .compare-header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .compare-download-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px;
+    border: 1px solid var(--border-hi);
+    border-radius: var(--r-pill);
+    background: var(--surface);
+    color: var(--muted);
+    font-family: 'Figtree', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: border-color 150ms ease, background 150ms ease, color 150ms ease;
+  }
+  .compare-download-btn svg { width: 13px; height: 13px; flex-shrink: 0; }
+  .compare-download-btn:hover {
+    border-color: rgba(232,160,32,0.5);
+    background: var(--accent-dim);
+    color: var(--text);
+  }
+  /* Panel action row (fav + collection buttons) */
+  .compare-panel-actions {
+    display: flex;
+    gap: 6px;
+    margin-top: -4px;
+  }
+  .compare-action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 11px;
+    border: 1px solid var(--border);
+    border-radius: var(--r-pill);
+    background: var(--surface);
+    color: var(--muted);
+    font-family: 'Figtree', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: border-color 150ms ease, background 150ms ease, color 150ms ease;
+  }
+  .compare-action-btn svg { width: 13px; height: 13px; flex-shrink: 0; }
+  .compare-action-btn:hover {
+    border-color: var(--border-hi);
+    background: var(--surface-2);
+    color: var(--text);
+  }
+  .compare-action-btn.is-fav {
+    border-color: rgba(251,191,36,0.45);
+    background: rgba(251,191,36,0.10);
+    color: var(--warn);
+  }
+  .compare-action-btn.is-fav svg path { fill: currentColor; }
+  /* Modal body: two panels + divider */
+  .compare-body {
+    display: flex;
+    flex-direction: row;
+    flex: 1 1 0;
+    min-height: 0;
+    overflow: hidden;
+  }
+  .compare-panel {
+    flex: 1 1 0;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    min-width: 0;
+    min-height: 0;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(245,240,230,0.12) transparent;
+  }
+  .compare-body-divider {
+    width: 1px;
+    flex-shrink: 0;
+    background: var(--border);
+    align-self: stretch;
+  }
+  /* Preview image area */
+  .compare-preview {
+    flex: 1 1 auto;
+    min-height: 120px;
+    overflow: hidden;
+    background: var(--bg);
+    position: relative;
+  }
+  .compare-preview img,
+  .compare-preview svg {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+  }
+  .compare-preview::after {
+    display: none;
+  }
+  .compare-panel-tag {
+    position: absolute;
+    top: 10px;
+    left: 12px;
+    z-index: 2;
+    width: 24px;
+    height: 24px;
+    border-radius: 7px;
+    border: 1px solid rgba(255,255,255,0.18);
+    background: rgba(16,14,11,0.62);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    color: var(--text);
+    font-size: 11px;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .compare-preview-dl {
+    position: absolute;
+    top: 10px;
+    right: 12px;
+    z-index: 2;
+    width: 28px;
+    height: 28px;
+    border-radius: var(--r-pill);
+    border: 1px solid rgba(255,255,255,0.18);
+    background: rgba(16,14,11,0.62);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 150ms ease, border-color 150ms ease;
+  }
+  .compare-preview-dl svg { width: 13px; height: 13px; flex-shrink: 0; }
+  .compare-preview-dl:hover {
+    background: rgba(232,160,32,0.22);
+    border-color: rgba(232,160,32,0.55);
+  }
+  /* Panel info */
+  .compare-panel-info {
+    padding: 14px 18px 20px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .compare-name {
+    font-size: 0.97rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.3;
+    word-break: break-word;
+    margin: 0;
+  }
+  .compare-meta-row {
+    display: flex;
+    gap: 7px;
+    flex-wrap: wrap;
+    align-items: center;
+    margin-top: -6px;
+  }
+  .compare-meta-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 8px;
+    border-radius: var(--r-pill);
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 600;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  /* Colour swatches */
+  .compare-swatches-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--faint);
+    margin-bottom: 8px;
+  }
+  .compare-swatches {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: 6px;
+  }
+  .compare-swatch {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    cursor: default;
+  }
+  .compare-swatch-dot {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.10);
+    transition: transform 130ms ease;
+    flex-shrink: 0;
+  }
+  .compare-swatch:hover .compare-swatch-dot { transform: scale(1.18) translateY(-1px); }
+  .compare-swatch-dot.is-shared {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(232,160,32,0.22);
+  }
+  .compare-swatch-dot.is-unique { opacity: 1; }
+  .compare-swatch-hex {
+    display: none;
+  }
+
+  /* Floating tooltip for swatch hex codes */
+  .compare-tooltip {
+    position: fixed;
+    z-index: 1700;
+    padding: 4px 9px;
+    background: #1e1b16;
+    border: 1px solid var(--border-hi);
+    border-radius: 6px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text);
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 100ms ease;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.45);
+  }
+  .compare-tooltip.is-visible { opacity: 1; }
+
+  /* Copied flash on swatch dot */
+  .compare-swatch-dot.is-copied {
+    border-color: rgba(74,222,128,0.8) !important;
+    box-shadow: 0 0 0 2px rgba(74,222,128,0.22) !important;
+  }
+  .compare-swatch { cursor: pointer; }
+  /* Legend */
+  .compare-legend {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .compare-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    color: var(--faint);
+  }
+  .compare-legend-pip {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .compare-legend-pip.shared {
+    background: var(--accent);
+    box-shadow: 0 0 0 2px rgba(232,160,32,0.22);
+  }
+  .compare-legend-pip.unique {
+    background: var(--border-hi);
+    opacity: 0.4;
+  }
+  /* Footer: shared colours */
+  .compare-footer {
+    border-top: 1px solid var(--border);
+    padding: 14px 18px 16px;
+    flex-shrink: 0;
+    background: var(--bg-2);
+  }
+  .compare-footer-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .compare-footer-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--faint);
+  }
+  .compare-shared-count {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: var(--r-pill);
+    background: var(--accent-dim);
+    border: 1px solid rgba(232,160,32,0.28);
+    color: var(--accent);
+    font-size: 11px;
+    font-weight: 700;
+  }
+  .compare-no-shared {
+    font-size: 13px;
+    color: var(--faint);
+    font-style: italic;
+  }
+  .compare-shared-swatches {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .compare-shared-pill {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 5px 11px 5px 7px;
+    border: 1px solid rgba(232,160,32,0.25);
+    border-radius: var(--r-pill);
+    background: var(--accent-dim);
+    cursor: default;
+    transition: border-color 130ms ease, background 130ms ease;
+  }
+  .compare-shared-pill:hover {
+    border-color: rgba(232,160,32,0.5);
+    background: rgba(232,160,32,0.14);
+  }
+  .compare-shared-dot {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 1px solid rgba(255,255,255,0.14);
+    flex-shrink: 0;
+  }
+  .compare-shared-hex {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  @media (max-width: 680px) {
+    .compare-overlay { padding: 12px; }
+    .compare-body {
+      flex-direction: column;
+    }
+    .compare-body-divider { width: auto; height: 1px; }
+    .compare-preview { height: 120px; }
   }
 </style>
 </head>
@@ -1855,6 +2314,12 @@
           <button class="btn download-selected-btn" id="downloadSelectedGalleryBtn" type="button" disabled title="Download selected items as .zip">
             <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M12 3a1 1 0 0 1 1 1v8.59l2.3-2.3a1 1 0 1 1 1.4 1.42l-4.01 4a1 1 0 0 1-1.38 0l-4.01-4a1 1 0 1 1 1.4-1.42L11 12.59V4a1 1 0 0 1 1-1Zm-7 13a1 1 0 0 1 1 1v2h12v-2a1 1 0 1 1 2 0v3a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1Z"/></svg>
             <span id="downloadSelectedGalleryLabel">Download selected</span>
+          </button>
+          <button class="btn secondary compare-selected-btn" id="compareSelectedGalleryBtn" type="button" title="Compare two selected palettes">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path fill="currentColor" d="M9 3H4a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h5a1 1 0 0 0 1-1V4a1 1 0 0 0-1-1Zm0 16H4V5h5v14Zm11-16h-5a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h5a1 1 0 0 0 1-1V4a1 1 0 0 0-1-1Zm0 16h-5V5h5v14Z"/>
+            </svg>
+            <span>Compare</span>
           </button>
           <button class="btn secondary gallery-download-all" id="downloadAllBtn" type="button" disabled aria-label="Download all saved items as a zip" title="Download all as .zip">
             <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
@@ -2639,6 +3104,9 @@ Crystal Rose — #D94B87`;
         if (deletionUndoStack.length > MAX_DELETION_HISTORY) deletionUndoStack.shift();
         deletionRedoStack.length = 0;
         showDeletionToast(deleted.filename);
+        // Clear text-clean undo state so Cmd+Z immediately hits the deletion undo
+        previousText = null;
+        redoText = null;
       }
       const newItems = normalizeSavedDownloads(currentItems.filter((item) => item.id !== id), true);
       persistSavedDownloads(newItems);
@@ -2978,6 +3446,14 @@ Crystal Rose — #D94B87`;
       const count = selectedIds.size;
       btn.disabled = count === 0;
       label.textContent = count > 0 ? `Download selected (${count})` : 'Download selected';
+
+      // Compare button: gallery only, exactly 2 selected
+      if (collection === 'gallery') {
+        const compareBtn = document.getElementById('compareSelectedGalleryBtn');
+        if (compareBtn) {
+          compareBtn.classList.toggle('compare-ready', count === 2);
+        }
+      }
     }
 
     function toggleCardSelection(card, id, collection) {
@@ -3006,6 +3482,10 @@ Crystal Rose — #D94B87`;
       selectedIds.clear();
       if (grid) grid.querySelectorAll('.gallery-item.is-selected').forEach((el) => el.classList.remove('is-selected'));
       updateDownloadSelectedBtn(collection);
+      // Re-enable drag now that select mode is off
+      if (grid) grid.querySelectorAll('.gallery-item').forEach(item => {
+        if (!item.classList.contains('is-editing')) item.draggable = true;
+      });
     }
 
     function enterSelectMode(collection) {
@@ -3018,6 +3498,8 @@ Crystal Rose — #D94B87`;
         selectBtn.classList.add('is-active');
         selectBtn.querySelector('span').textContent = 'Cancel';
       }
+      // Disable drag while in select mode
+      if (grid) grid.querySelectorAll('.gallery-item').forEach(item => { item.draggable = false; });
     }
 
     function toggleSelectMode(collection) {
@@ -3042,6 +3524,376 @@ Crystal Rose — #D94B87`;
         : 'selected-downloads.zip';
       await downloadRecordsAsZip(items, zipName);
     }
+
+    // ── Compare modal ─────────────────────────────────────────────
+
+    const compareOverlay = (() => {
+      const el = document.createElement('div');
+      el.className = 'compare-overlay';
+      el.setAttribute('role', 'dialog');
+      el.setAttribute('aria-modal', 'true');
+      el.setAttribute('aria-label', 'Compare palettes');
+      document.body.appendChild(el);
+      return el;
+    })();
+
+    function closeCompareModal() {
+      compareOverlay.classList.remove('is-open');
+      document.removeEventListener('keydown', _compareEscHandler);
+      exitSelectMode('gallery');
+    }
+
+    function _compareEscHandler(e) {
+      if (e.key === 'Escape') closeCompareModal();
+    }
+
+    function _generateComparisonSvg(recordA, recordB, sharedSet, sharedCodes) {
+      const W = 960, PAD = 40, PANEL_W = (W - PAD * 3) / 2;
+      const DOT_R = 14, DOT_GAP = 10, COLS = 12;
+      const BG = '#100e0b', BG2 = '#1a1714', BORDER = 'rgba(245,238,224,0.10)';
+      const TEXT = '#f5f0e6', MUTED = 'rgba(245,240,230,0.55)', FAINT = 'rgba(245,240,230,0.32)';
+      const ACCENT = '#e8a020', ACCENT_DIM = 'rgba(232,160,32,0.15)';
+
+      const codesA = Array.isArray(recordA.codes) ? recordA.codes : [];
+      const codesB = Array.isArray(recordB.codes) ? recordB.codes : [];
+
+      function escapeSvgText(str) {
+        return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+      }
+
+      function swatchRow(codes, xOff, yOff) {
+        const rowCount = Math.ceil(codes.length / COLS);
+        let out = '';
+        codes.forEach((hex, i) => {
+          const col = i % COLS;
+          const row = Math.floor(i / COLS);
+          const cx = xOff + col * (DOT_R * 2 + DOT_GAP) + DOT_R;
+          const cy = yOff + row * (DOT_R * 2 + DOT_GAP) + DOT_R;
+          const norm = _normaliseHex(hex);
+          const isShared = sharedSet.has(norm);
+          const strokeCol = isShared ? ACCENT : 'rgba(255,255,255,0.12)';
+          const strokeW = isShared ? 2 : 1.5;
+          out += `<circle cx="${cx}" cy="${cy}" r="${DOT_R}" fill="${hex}" stroke="${strokeCol}" stroke-width="${strokeW}"/>`;
+          if (isShared) {
+            out += `<circle cx="${cx}" cy="${cy}" r="${DOT_R + 4}" fill="none" stroke="${ACCENT}" stroke-width="1" opacity="0.35"/>`;
+          }
+        });
+        return { svg: out, rows: rowCount };
+      }
+
+      function panel(record, codes, xOff, label) {
+        let y = 60;
+        let out = '';
+        // Label tag
+        out += `<rect x="${xOff}" y="${y}" width="22" height="22" rx="5" fill="${BG2}" stroke="${BORDER}" stroke-width="1"/>`;
+        out += `<text x="${xOff + 11}" y="${y + 15}" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" font-weight="800" fill="${TEXT}">${label}</text>`;
+        // Filename
+        const name = escapeSvgText(record.filename || '');
+        out += `<text x="${xOff + 32}" y="${y + 16}" font-family="system-ui,sans-serif" font-size="14" font-weight="700" fill="${TEXT}">${name.length > 36 ? name.slice(0, 33) + '…' : name}</text>`;
+        y += 40;
+        // Meta badges
+        const meta = `${(record.type || 'SVG').toUpperCase()}  ·  ${codes.length} colours  ·  ${formatSavedDate(record.createdAt)}`;
+        out += `<text x="${xOff}" y="${y}" font-family="system-ui,sans-serif" font-size="11" fill="${MUTED}">${escapeSvgText(meta)}</text>`;
+        y += 22;
+        // Palette label
+        out += `<text x="${xOff}" y="${y}" font-family="system-ui,sans-serif" font-size="9" font-weight="700" letter-spacing="1.2" fill="${FAINT}">PALETTE</text>`;
+        y += 14;
+        // Swatches
+        const { svg: swSvg, rows } = swatchRow(codes, xOff, y);
+        out += swSvg;
+        y += rows * (DOT_R * 2 + DOT_GAP);
+        return { svg: out, endY: y };
+      }
+
+      const panelAX = PAD;
+      const panelBX = PAD * 2 + PANEL_W;
+      const { svg: svgA, endY: endYA } = panel(recordA, codesA, panelAX, 'A');
+      const { svg: svgB, endY: endYB } = panel(recordB, codesB, panelBX, 'B');
+
+      let contentEndY = Math.max(endYA, endYB) + 24;
+
+      // Footer: shared colours
+      let footerSvg = '';
+      let footerEndY = contentEndY;
+      footerSvg += `<line x1="${PAD}" y1="${contentEndY}" x2="${W - PAD}" y2="${contentEndY}" stroke="${BORDER}" stroke-width="1"/>`;
+      contentEndY += 20;
+      footerSvg += `<text x="${PAD}" y="${contentEndY}" font-family="system-ui,sans-serif" font-size="9" font-weight="700" letter-spacing="1.2" fill="${FAINT}">COLOURS IN COMMON</text>`;
+      if (sharedCodes.length) {
+        footerSvg += `<rect x="${PAD + 156}" y="${contentEndY - 11}" width="22" height="16" rx="8" fill="${ACCENT_DIM}" stroke="${ACCENT}" stroke-width="0.8" opacity="0.7"/>`;
+        footerSvg += `<text x="${PAD + 167}" y="${contentEndY}" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" font-weight="700" fill="${ACCENT}">${sharedCodes.length}</text>`;
+        contentEndY += 16;
+        const { svg: sharedSvg, rows } = swatchRow(sharedCodes, PAD, contentEndY);
+        footerSvg += sharedSvg;
+        contentEndY += rows * (DOT_R * 2 + DOT_GAP);
+      } else {
+        contentEndY += 12;
+        footerSvg += `<text x="${PAD}" y="${contentEndY}" font-family="system-ui,sans-serif" font-size="12" fill="${FAINT}" font-style="italic">No colours in common between these two palettes.</text>`;
+        contentEndY += 16;
+      }
+      footerEndY = contentEndY;
+
+      const H = footerEndY + PAD;
+      const divX = PAD + PANEL_W + PAD / 2;
+
+      return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
+  <rect width="${W}" height="${H}" fill="${BG}" rx="20"/>
+  <rect x="1" y="1" width="${W - 2}" height="${H - 2}" fill="none" stroke="${BORDER}" stroke-width="1" rx="19"/>
+  <text x="${W / 2}" y="36" text-anchor="middle" font-family="system-ui,sans-serif" font-size="13" font-weight="700" fill="${MUTED}" letter-spacing="0.5">Palette Comparison</text>
+  <line x1="${divX}" y1="52" x2="${divX}" y2="${contentEndY - 36}" stroke="${BORDER}" stroke-width="1"/>
+  ${svgA}
+  ${svgB}
+  ${footerSvg}
+</svg>`;
+    }
+
+    function _normaliseHex(hex) {
+      return (hex || '').toUpperCase().trim();
+    }
+
+    function _buildPanelHTML(record, label, sharedSet) {
+      const codes = Array.isArray(record.codes) ? record.codes : [];
+      const previewUrl = record.previewDataUrl || (record.type === 'svg' && record.svgString
+        ? `data:image/svg+xml;charset=utf-8,${encodeURIComponent(record.svgString)}`
+        : '');
+
+      const previewMarkup = previewUrl
+        ? `<img src="${previewUrl}" alt="${record.filename} preview" />`
+        : `<div style="width:100%;height:100%;background:var(--surface-2);display:flex;align-items:center;justify-content:center;color:var(--faint);font-size:12px;">No preview</div>`;
+
+      const swatchesHTML = codes.length
+        ? codes.map(hex => {
+            const norm = _normaliseHex(hex);
+            const isShared = sharedSet.has(norm);
+            return `<div class="compare-swatch" data-hex="${norm}" title="${norm}">
+              <div class="compare-swatch-dot${isShared ? ' is-shared' : ' is-unique'}" style="background:${hex};"></div>
+              <span class="compare-swatch-hex">${norm}</span>
+            </div>`;
+          }).join('')
+        : `<span style="color:var(--faint);font-size:13px;font-style:italic;">No colour data</span>`;
+
+      const sharedCount = codes.filter(h => sharedSet.has(_normaliseHex(h))).length;
+      const uniqueCount = codes.length - sharedCount;
+      const hasLegend = codes.length > 0 && sharedSet.size > 0;
+
+      let legendHTML = '';
+      if (hasLegend) {
+        legendHTML = `<div class="compare-legend">
+          <span class="compare-legend-item"><span class="compare-legend-pip shared"></span>Shared (${sharedCount})</span>
+          <span class="compare-legend-item"><span class="compare-legend-pip unique"></span>Unique (${uniqueCount})</span>
+        </div>`;
+      }
+
+      const isFav = isFavourite(record.id);
+
+      return `
+        <div class="compare-preview">
+          <div class="compare-panel-tag">${label}</div>
+          <button class="compare-preview-dl" data-id="${record.id}" type="button" aria-label="Download ${record.filename}">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path fill="currentColor" d="M12 3a1 1 0 0 1 1 1v8.59l2.3-2.3a1 1 0 1 1 1.4 1.42l-4.01 4a1 1 0 0 1-1.38 0l-4.01-4a1 1 0 1 1 1.4-1.42L11 12.59V4a1 1 0 0 1 1-1Zm-7 13a1 1 0 0 1 1 1v2h12v-2a1 1 0 1 1 2 0v3a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1Z"/>
+            </svg>
+          </button>
+          ${previewMarkup}
+        </div>
+        <div class="compare-panel-info">
+          <p class="compare-name">${record.filename}</p>
+          <div class="compare-meta-row">
+            <span class="compare-meta-badge">${(record.type || 'SVG').toUpperCase()}</span>
+            <span class="compare-meta-badge">${codes.length} colour${codes.length === 1 ? '' : 's'}</span>
+            <span class="compare-meta-badge">${formatSavedDate(record.createdAt)}</span>
+          </div>
+          <div class="compare-panel-actions">
+            <button class="compare-action-btn compare-fav-btn${isFav ? ' is-fav' : ''}" data-id="${record.id}" type="button" aria-label="${isFav ? 'Remove from favourites' : 'Add to favourites'}">
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path fill="${isFav ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>
+              </svg>
+              ${isFav ? 'Unfavourite' : 'Favourite'}
+            </button>
+            <button class="compare-action-btn compare-col-btn gallery-collection-btn" data-id="${record.id}" type="button" aria-label="Add to collection">
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"/>
+                <path fill="currentColor" d="M12 10a1 1 0 0 1 1 1v1h1a1 1 0 1 1 0 2h-1v1a1 1 0 1 1-2 0v-1h-1a1 1 0 1 1 0-2h1v-1a1 1 0 0 1 1-1Z"/>
+              </svg>
+              Collection
+            </button>
+          </div>
+          <div>
+            <div class="compare-swatches-label">Palette</div>
+            <div class="compare-swatches">${swatchesHTML}</div>
+          </div>
+          ${legendHTML}
+        </div>`;
+    }
+
+    function openCompareModal(recordA, recordB) {
+      const codesA = (Array.isArray(recordA.codes) ? recordA.codes : []).map(_normaliseHex);
+      const codesB = (Array.isArray(recordB.codes) ? recordB.codes : []).map(_normaliseHex);
+      const setA = new Set(codesA);
+      const setB = new Set(codesB);
+      const sharedCodes = [...setA].filter(h => setB.has(h));
+      const sharedSet = new Set(sharedCodes);
+
+      const sharedFooterHTML = sharedCodes.length
+        ? `<div class="compare-shared-swatches">
+            ${sharedCodes.map(hex => `
+              <div class="compare-shared-pill" title="${hex}">
+                <div class="compare-shared-dot" style="background:${hex};"></div>
+                <span class="compare-shared-hex">${hex}</span>
+              </div>`).join('')}
+          </div>`
+        : `<p class="compare-no-shared">No colours in common between these two palettes.</p>`;
+
+      compareOverlay.innerHTML = `
+        <div class="compare-modal">
+          <div class="compare-header">
+            <div class="compare-header-left">
+              <span class="compare-eyebrow">Compare</span>
+              <span class="compare-header-title">Palette comparison</span>
+            </div>
+            <div class="compare-header-right">
+              <button class="compare-close-btn" type="button" aria-label="Close comparison">
+                <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
+                  <path stroke="currentColor" stroke-width="2.2" stroke-linecap="round" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+          <div class="compare-body">
+            <div class="compare-panel" id="comparePanelA">
+              ${_buildPanelHTML(recordA, 'A', sharedSet)}
+            </div>
+            <div class="compare-body-divider"></div>
+            <div class="compare-panel" id="comparePanelB">
+              ${_buildPanelHTML(recordB, 'B', sharedSet)}
+            </div>
+          </div>
+          <div class="compare-footer">
+            <div class="compare-footer-head">
+              <span class="compare-footer-label">Colours in common</span>
+              ${sharedCodes.length
+                ? `<span class="compare-shared-count">${sharedCodes.length}</span>`
+                : ''}
+            </div>
+            ${sharedFooterHTML}
+          </div>
+        </div>`;
+
+      compareOverlay.querySelector('.compare-close-btn').addEventListener('click', closeCompareModal);
+      compareOverlay.addEventListener('click', (e) => {
+        if (e.target === compareOverlay) closeCompareModal();
+      });
+
+      // ── Per-panel download buttons ───────────────────────────────
+      const allItems = safeParseSavedDownloads();
+      compareOverlay.querySelectorAll('.compare-preview-dl').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const record = allItems.find(r => r.id === btn.dataset.id);
+          if (record) downloadSavedRecord(record);
+        });
+      });
+
+      // ── Favourite buttons ────────────────────────────────────────
+      compareOverlay.querySelectorAll('.compare-fav-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const id = btn.dataset.id;
+          toggleFavourite(id);
+          const nowFav = isFavourite(id);
+          btn.classList.toggle('is-fav', nowFav);
+          btn.setAttribute('aria-label', nowFav ? 'Remove from favourites' : 'Add to favourites');
+          btn.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path fill="${nowFav ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>
+          </svg>${nowFav ? 'Unfavourite' : 'Favourite'}`;
+        });
+      });
+
+      // ── Collection buttons ───────────────────────────────────────
+      compareOverlay.querySelectorAll('.compare-col-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          openCollectionPopover(btn, btn.dataset.id);
+        });
+      });
+
+      // ── Swatch tooltip + click-to-copy ──────────────────────────
+      const tooltip = (() => {
+        const el = document.createElement('div');
+        el.className = 'compare-tooltip';
+        compareOverlay.appendChild(el);
+        return el;
+      })();
+
+      let tooltipHideTimer = null;
+
+      compareOverlay.querySelectorAll('.compare-swatch').forEach((swatch) => {
+        const hex = swatch.dataset.hex;
+        const dot = swatch.querySelector('.compare-swatch-dot');
+
+        swatch.addEventListener('mouseenter', () => {
+          clearTimeout(tooltipHideTimer);
+          tooltip.textContent = hex;
+          tooltip.classList.add('is-visible');
+          const r = swatch.getBoundingClientRect();
+          const tw = tooltip.offsetWidth;
+          let left = r.left + r.width / 2 - tw / 2;
+          left = Math.max(8, Math.min(left, window.innerWidth - tw - 8));
+          tooltip.style.left = `${left}px`;
+          tooltip.style.top = `${r.top - tooltip.offsetHeight - 6}px`;
+        });
+
+        swatch.addEventListener('mousemove', () => {
+          const r = swatch.getBoundingClientRect();
+          const tw = tooltip.offsetWidth;
+          let left = r.left + r.width / 2 - tw / 2;
+          left = Math.max(8, Math.min(left, window.innerWidth - tw - 8));
+          tooltip.style.left = `${left}px`;
+          tooltip.style.top = `${r.top - tooltip.offsetHeight - 6}px`;
+        });
+
+        swatch.addEventListener('mouseleave', () => {
+          tooltipHideTimer = setTimeout(() => tooltip.classList.remove('is-visible'), 80);
+        });
+
+        swatch.addEventListener('click', async () => {
+          try {
+            await navigator.clipboard.writeText(hex);
+          } catch {
+            const ta = document.createElement('textarea');
+            ta.value = hex;
+            ta.style.cssText = 'position:fixed;opacity:0';
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            ta.remove();
+          }
+          tooltip.textContent = 'Copied!';
+          dot.classList.add('is-copied');
+          clearTimeout(dot._copyTimer);
+          dot._copyTimer = setTimeout(() => {
+            dot.classList.remove('is-copied');
+            tooltip.textContent = hex;
+          }, 1200);
+        });
+      });
+
+      // Animate open
+      requestAnimationFrame(() => {
+        compareOverlay.classList.add('is-open');
+      });
+
+      document.addEventListener('keydown', _compareEscHandler);
+    }
+
+    document.getElementById('compareSelectedGalleryBtn').addEventListener('click', () => {
+      if (gallerySelectedIds.size !== 2) return;
+      const [idA, idB] = [...gallerySelectedIds];
+      const allItems = safeParseSavedDownloads();
+      const recordA = allItems.find(item => item.id === idA);
+      const recordB = allItems.find(item => item.id === idB);
+      if (!recordA || !recordB) return;
+      openCompareModal(recordA, recordB);
+    });
 
     function renderGallery() {
       exitSelectMode('gallery');
