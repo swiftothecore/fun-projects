@@ -163,6 +163,8 @@
     .search-result-item { display:flex; gap:12px; align-items:center; padding:10px 14px; cursor:pointer; transition:background 0.1s; border-bottom:1px solid var(--border); }
     .search-result-item:last-child { border-bottom:none; }
     .search-result-item:hover { background:var(--surface2); }
+    .search-result-item.already-added { opacity:0.45; }
+    .result-in-list { display:inline-block; font-size:0.62rem; letter-spacing:0.07em; text-transform:uppercase; color:var(--gold-dim); background:rgba(201,168,76,0.08); border:1px solid rgba(201,168,76,0.2); border-radius:100px; padding:1px 7px; margin-top:3px; }
     .search-result-item.keyboard-active { background:var(--surface2); outline:1px solid var(--border-hi); outline-offset:-1px; }
     .result-thumb { width:36px; height:54px; object-fit:cover; border-radius:3px; background:var(--surface2); flex-shrink:0; }
     .result-thumb-placeholder { width:36px; height:54px; background:var(--surface2); border-radius:3px; display:flex; align-items:center; justify-content:center; color:var(--text-muted); font-size:1rem; flex-shrink:0; }
@@ -555,9 +557,70 @@
   ::-webkit-scrollbar-thumb { background: #3a3628; border-radius: 2px; }
   * { scrollbar-width: thin; scrollbar-color: #3a3628 transparent; }
 
+  /* ── Categories bar ── */
+  #categoryBar { padding:14px 48px 0; display:none; }
+  #categoryBar.visible { display:block; }
+  .category-bar-heading { display:flex; align-items:center; gap:12px; margin-bottom:12px; }
+  .category-bar-label { font-size:0.7rem; letter-spacing:0.18em; text-transform:uppercase; color:var(--gold-dim); }
+  .category-bar-line { flex:1; height:1px; background:rgba(201,168,76,0.15); }
+  .category-pill-strip { display:flex; gap:8px; flex-wrap:wrap; }
+  .category-pill { background:transparent; border:1px solid var(--border); color:var(--text-dim); padding:6px 14px; border-radius:100px; font-family:'DM Sans',sans-serif; font-size:0.74rem; letter-spacing:0.07em; text-transform:uppercase; cursor:pointer; transition:all 0.15s; display:inline-flex; align-items:center; gap:7px; }
+  .category-pill:hover { border-color:var(--gold-dim); color:var(--text); }
+  .category-pill.active { border-color:var(--gold); color:var(--gold); background:rgba(201,168,76,0.08); }
+  .category-pill-count { font-size:0.62rem; opacity:0.65; letter-spacing:0.04em; }
+  .category-empty-state { padding:60px 48px; text-align:center; color:var(--text-muted); }
+  .category-empty-state .empty-icon { font-size:2.5rem; display:block; margin-bottom:14px; opacity:0.35; }
+  .category-empty-state p { font-size:0.85rem; line-height:1.6; }
+  #duplicateWarning { padding:9px 14px; background:rgba(201,168,76,0.07); border:1px solid rgba(201,168,76,0.25); border-radius:var(--radius); font-size:0.78rem; color:var(--text-dim); display:flex; align-items:flex-start; gap:8px; line-height:1.5; }
+  #duplicateWarning .dup-icon { flex-shrink:0; margin-top:1px; }
+  .dup-match { color:var(--gold); cursor:pointer; text-decoration:underline; text-underline-offset:2px; white-space:nowrap; }
+  .dup-match:hover { color:var(--text); } font-size:0.82rem; color:var(--text-dim); cursor:pointer; font-family:'DM Sans',sans-serif; font-weight:300; display:flex; align-items:center; gap:8px; transition:background 0.1s; }
+  #categoryDropdown .cat-suggestion:hover, #categoryDropdown .cat-suggestion.active { background:rgba(201,168,76,0.08); color:var(--text); }
+  #categoryDropdown .cat-suggestion .cat-icon { font-size:0.75rem; opacity:0.5; }
+  #categoryDropdown .cat-suggestion + .cat-suggestion { border-top:1px solid var(--border); }
+  @media(max-width:640px){
+    #categoryBar{padding-left:20px;padding-right:20px;}
+    .category-empty-state{padding:40px 20px;}
+  }
+
+  .category-pill.detached { border-style:dashed; opacity:0.8; }
+  .category-pill.detached.active { opacity:1; }
+  .pill-menu-btn { display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:3px;margin-left:4px;margin-right:-2px;font-size:0.82rem;line-height:1;color:var(--text-muted);transition:background 0.1s,color 0.1s;vertical-align:middle;flex-shrink:0; }
+  .category-pill.active .pill-menu-btn { color:rgba(201,168,76,0.55); }
+  .pill-menu-btn:hover { color:var(--gold) !important; background:rgba(201,168,76,0.15); }
+  #categoryPillPopover { position:absolute;z-index:400;background:var(--surface2);border:1px solid var(--border-hi);border-radius:var(--radius);padding:12px 16px;box-shadow:0 8px 28px rgba(0,0,0,0.55);min-width:196px;display:none; }
+  #categoryPillPopover .popover-label { font-size:0.65rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-muted);margin-bottom:10px; }
+  #categoryOptions { padding:10px 48px 0; display:none; }
+  #categoryOptions.visible { display:block; }
+  .category-options-row { display:flex; align-items:center; gap:12px; padding:10px 14px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); }
+  .category-options-label { font-size:0.7rem; letter-spacing:0.1em; text-transform:uppercase; color:var(--text-dim); flex:1; }
+  .category-options-desc { font-size:0.68rem; color:var(--text-muted); margin-top:2px; }
+  @media(max-width:640px){#categoryOptions{padding-left:20px;padding-right:20px;}}
+
+  /* ── Christmas visual effects ── */
+  @keyframes xmasTwinkle {
+    0%,100% { opacity:1; }
+    45%,55% { opacity:0.07; }
+  }
+  #christmasLights { overflow:visible; line-height:0; width:100%; clip-path:inset(0 0 -60px 0); padding-top:5px; }
+  body.christmas-mode .card {
+    background:linear-gradient(145deg,rgba(22,26,40,0.97) 0%,var(--surface) 60%);
+    border-color:rgba(140,175,220,0.22);
+    box-shadow:inset 0 0 30px rgba(140,175,220,0.03);
+  }
+  body.christmas-mode .card:hover {
+    border-color:rgba(200,48,74,0.55)!important;
+    box-shadow:0 16px 40px rgba(0,0,0,0.5),0 0 0 1px rgba(200,48,74,0.15),inset 0 0 30px rgba(140,175,220,0.03)!important;
+  }
+
   /* ── Christmas Mode ── */
   body.christmas-mode { --gold:#c8304a; --gold-dim:#8c1f2f; background-image:radial-gradient(ellipse 80% 50% at 50% -10%,rgba(200,48,74,0.08) 0%,transparent 60%); }
+  body.christmas-mode .header-title::after { content:' 🎄'; }
   body.christmas-mode .header-title span { color:#c8304a; font-style:italic; }
+  body.christmas-mode .filter-btn:hover { border-color:#3ecf7a; color:#3ecf7a; }
+  body.christmas-mode .btn-primary:hover { background:#2db866; transform:translateY(-1px); }
+  body.christmas-mode .btn-ghost:hover { border-color:#3ecf7a; color:#3ecf7a; }
+  body.christmas-mode .stepper-btn:hover { background:rgba(62,207,122,0.1); color:#3ecf7a; border-color:#3ecf7a; }
   .christmas-banner { display:none; padding:8px 48px; background:rgba(200,48,74,0.08); border-bottom:1px solid rgba(200,48,74,0.22); align-items:center; gap:12px; }
   .christmas-banner.visible { display:flex; }
   .christmas-banner-label { font-size:0.68rem; letter-spacing:0.13em; text-transform:uppercase; color:#c8304a; flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
@@ -942,6 +1005,8 @@
   </div>
 </header>
 
+<div id="christmasLights" style="display:none;"></div>
+
 <div class="controls">
   <div class="filter-bar">
     <button class="filter-btn active" onclick="setFilter('all',this)">All</button>
@@ -955,6 +1020,7 @@
     <button class="filter-btn" onclick="setFilter('unwatched',this)">Unwatched</button>
     <button class="filter-btn" onclick="setFilter('watched',this)">Watched</button>
     <button class="filter-btn" onclick="setFilter('graveyard',this)">💀 Graveyard</button>
+    <button class="filter-btn" id="filterCategories" onclick="setFilter('categories',this)">&#128196; Categories</button>
   </div>
   <div class="view-toggle">
     <button id="viewGrid" class="view-toggle-btn active" onclick="setView('grid')" title="Grid view">
@@ -966,6 +1032,18 @@
   </div>
 </div>
 
+<div id="categoryBar">
+  <div class="category-bar-heading">
+    <span class="category-bar-label">&#9658; Categories</span>
+    <span class="category-bar-line" aria-hidden="true"></span>
+  </div>
+  <div class="category-pill-strip" id="categoryPillStrip"></div>
+</div>
+
+<div id="categoryOptions">
+  <!-- populated by renderCategoriesView when a category is selected -->
+</div>
+
 <div id="soonSection">
   <div class="soon-heading"><span class="soon-heading-text">&#9658; Watching Soon</span><span class="soon-heading-line" aria-hidden="true"></span><span class="soon-scroll-hint" aria-hidden="true"></span></div>
   <div class="soon-strip" id="soonStrip"></div>
@@ -973,6 +1051,7 @@
 <hr class="soon-divider" id="soonDivider" style="display:none;">
 
 <div id="movieGrid"></div>
+<div id="categoryPillPopover"></div>
 <div id="toastContainer"></div>
 
 <!-- ADD/EDIT MODAL -->
@@ -1028,16 +1107,14 @@
         <div class="field" style="position:relative;">
           <label>Collection</label>
           <input type="text" id="fCollection" placeholder="e.g. Hunger Games Series" autocomplete="off"
-            oninput="filterCollectionSuggestions()" onfocus="filterCollectionSuggestions()" onblur="setTimeout(hideCollectionSuggestions,150);suggestCollectionOrder()">
+            oninput="filterCollectionSuggestions()" onfocus="filterCollectionSuggestions()" onblur="setTimeout(hideCollectionSuggestions,150)" onkeydown="onCollectionKeyDown(event)">
           <div id="collectionDropdown" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:9999;background:var(--surface2);border:1px solid var(--border-hi);border-radius:var(--radius);margin-top:4px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,0.5);"></div>
         </div>
-        <div class="field">
-          <label>Order in collection</label>
-          <div class="number-stepper">
-            <button type="button" class="stepper-btn" onclick="stepCollectionOrder(-1)">&#8722;</button>
-            <input type="number" id="fCollectionOrder" placeholder="1" min="1" max="99" style="text-align:center;">
-            <button type="button" class="stepper-btn" onclick="stepCollectionOrder(1)">&#43;</button>
-          </div>
+        <div class="field" style="position:relative;">
+          <label>Category</label>
+          <input type="text" id="fCategory" placeholder="e.g. Sci-Fi, Date Night..." autocomplete="off"
+            oninput="filterCategorySuggestions()" onfocus="filterCategorySuggestions()" onblur="setTimeout(hideCategorySuggestions,150)" onkeydown="onCategoryKeyDown(event)">
+          <div id="categoryDropdown" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:9999;background:var(--surface2);border:1px solid var(--border-hi);border-radius:var(--radius);margin-top:4px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,0.5);"></div>
         </div>
       </div>
 
@@ -1127,11 +1204,13 @@ var movies=JSON.parse(localStorage.getItem('watchlist_v2')||'[]');
 let christmasMovies=JSON.parse(localStorage.getItem('christmas_watchlist_v1')||'[]');
 let christmasMode=localStorage.getItem('christmas_mode_active')==='true';
 let _normalMovies=null;
-let currentFilter='all',editingId=null,searchTimer=null,searchHighlightIndex=-1;
+let currentFilter='all',currentCategory=null,currentDetailId=null,editingId=null,searchTimer=null,searchHighlightIndex=-1,_pendingTmdbId=null;
 let _preloadId=null,_preloadPromise=null;
 let currentView=localStorage.getItem('watchlist_view')||'grid';
 let tmdbKey=localStorage.getItem('tmdb_api_key')||'';
 let undoStack=[],redoStack=[];
+let categorySettings=JSON.parse(localStorage.getItem('category_settings_v1')||'{}');
+let categoryOptionsDismissed=localStorage.getItem('category_options_dismissed')==='1';
 
 // Service metadata for grouped "All" view
 const SERVICE_META={
@@ -1170,12 +1249,42 @@ function toggleChristmasMode(){
   document.body.classList.toggle('christmas-mode',christmasMode);
   document.getElementById('christmasToggleBtn').classList.toggle('active',christmasMode);
   document.getElementById('christmasBanner').classList.toggle('visible',christmasMode);
+  if(christmasMode)startChristmasEffects();else stopChristmasEffects();
   // Reset filter to All
-  currentFilter='all';
+  currentFilter='all';currentCategory=null;
+  document.getElementById('categoryBar').classList.remove('visible');
+  document.getElementById('categoryOptions').classList.remove('visible');
   document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
   document.querySelector('.filter-btn[onclick*="\'all\'"]')?.classList.add('active');
   render();
   showInfoToast(christmasMode?'🎄 Christmas Mode — films here are completely separate from your main watchlist.':'Returned to your main watchlist.',4000);
+}
+
+function adjustFilterBar(){
+  // Mobile uses a horizontally scrolling single row — no adjustment needed
+  if(window.innerWidth<=640)return;
+  const soonBtn=document.querySelector('.filter-btn[onclick*="\'soon\'"]');
+  const filterBar=document.querySelector('.filter-bar');
+  if(!soonBtn||!filterBar)return;
+
+  // Ensure "Watching Soon" is visible so we can measure whether it causes wrapping
+  soonBtn.style.display='';
+
+  // getBoundingClientRect forces a synchronous layout, giving accurate positions
+  const buttons=Array.from(filterBar.querySelectorAll('.filter-btn'));
+  if(buttons.length<2)return;
+  const firstTop=buttons[0].getBoundingClientRect().top;
+  const wraps=buttons.some(btn=>btn.getBoundingClientRect().top>firstTop+4);
+
+  soonBtn.style.display=wraps?'none':'';
+
+  // If "Watching Soon" was the active filter and we just hid it, fall back to All
+  if(wraps&&currentFilter==='soon'){
+    currentFilter='all';
+    document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelector('.filter-btn[onclick*="\'all\'"]')?.classList.add('active');
+    render();
+  }
 }
 
 function init(){
@@ -1190,12 +1299,17 @@ function init(){
     document.getElementById('christmasBanner').classList.add('visible');
   }
   render();
+  requestAnimationFrame(adjustFilterBar);
+  if(christmasMode)requestAnimationFrame(startChristmasEffects);
 }
 
+let _filterBarResizeTimer=null;
 window.addEventListener('resize',()=>{
   if(window.innerWidth<=640&&currentView!=='list'){
     currentView='list';applyViewToggleUI();render();
   }
+  clearTimeout(_filterBarResizeTimer);
+  _filterBarResizeTimer=setTimeout(adjustFilterBar,80);
 });
 
 function setView(v){
@@ -1270,7 +1384,11 @@ async function searchTMDB(q){
       const yr=m.release_date?m.release_date.slice(0,4):'?';
       const th=m.poster_path?`<img class="result-thumb" src="${TMDB_SM}${m.poster_path}" alt="" loading="lazy">`:`<div class="result-thumb-placeholder">&#127917;</div>`;
       const ov=m.overview?`<div class="result-overview">${esc(m.overview)}</div>`:'';
-      return`<div class="search-result-item" data-movie-id="${m.id}" onclick="selectMovie(${m.id})" onmouseenter="preloadMovie(${m.id})">${th}<div class="result-info"><div class="result-title">${esc(m.title)}</div><div class="result-meta">${yr}${m.vote_average?' &middot; &#9733; '+m.vote_average.toFixed(1):''}</div>${ov}</div></div>`;
+      const pool=_allMoviesPool();
+      const inList=pool.some(x=>(x.tmdbId&&x.tmdbId===m.id)||(x.title.toLowerCase()===m.title.toLowerCase()&&x.year==yr));
+      const alreadyCls=inList?' already-added':'';
+      const inListBadge=inList?`<div class="result-in-list">&#10003; In your list</div>`:'';
+      return`<div class="search-result-item${alreadyCls}" data-movie-id="${m.id}" onclick="selectMovie(${m.id})" onmouseenter="preloadMovie(${m.id})">${th}<div class="result-info"><div class="result-title">${esc(m.title)}</div><div class="result-meta">${yr}${m.vote_average?' &middot; &#9733; '+m.vote_average.toFixed(1):''}</div>${ov}${inListBadge}</div></div>`;
     }).join('');
     searchHighlightIndex=-1;
     r.classList.add('open');
@@ -1359,6 +1477,7 @@ async function selectMovie(id){
   document.getElementById('fPoster').value=p;updatePosterPreview(p);
   if(!document.getElementById('fNotes').value)document.getElementById('fNotes').value=d.overview||'';
   document.getElementById('searchInput').value='';
+  _pendingTmdbId=id;
   h.textContent=`Filled from TMDB: "${d.title}". Edit details below.`;h.classList.add('visible');
   updateModalJustWatch();
   collapseMovieDetails();
@@ -1557,12 +1676,14 @@ function buildListGrouped(allMovies){
 
 // ── Render ──
 function render(){
-  const cnt=movies.filter(m=>!m.graveyard).length;
+  const cnt=movies.filter(m=>!m.graveyard&&!isDetachedMovie(m)).length;
   document.getElementById('headerCount').textContent=christmasMode?(cnt===1?'1 Christmas film':`${cnt} Christmas films`):(cnt===1?'1 film':`${cnt} films`);
   const soon=movies.filter(m=>m.watchingSoon&&!m.graveyard);
   const ss=document.getElementById('soonSection'),sd=document.getElementById('soonDivider'),sr=document.getElementById('soonStrip');
   if(soon.length&&currentFilter==='all'){ss.classList.add('visible');sd.style.display='none';sr.innerHTML=soon.map((m,i)=>buildSoonCard(m,i)).join('');}
   else{ss.classList.remove('visible');sd.style.display='none';}
+
+  if(currentFilter==='categories'){renderCategoriesView();return;}
 
   const g=document.getElementById('movieGrid');
   const emptyIcon=christmasMode?'🎄':'🎬';
@@ -1574,7 +1695,7 @@ function render(){
   if(currentView==='list'){
     g.className='list-container';
     if(currentFilter==='all'){
-      const base=movies.filter(m=>!m.watchingSoon&&!m.graveyard&&!isArchivedWatched(m));
+      const base=movies.filter(m=>!m.watchingSoon&&!m.graveyard&&!isArchivedWatched(m)&&!isDetachedMovie(m));
       g.innerHTML=base.length?buildListGrouped(base):emptyAll;
     }else{
       const f=getFiltered();
@@ -1586,7 +1707,7 @@ function render(){
 
   if(currentFilter==='all'){
     g.className='movie-container';
-    const base=movies.filter(m=>!m.watchingSoon&&!m.graveyard&&!isArchivedWatched(m));
+    const base=movies.filter(m=>!m.watchingSoon&&!m.graveyard&&!isArchivedWatched(m)&&!isDetachedMovie(m));
     const grouped=buildGrouped(base);
     g.innerHTML=grouped||emptyAll;
   }else{
@@ -1595,6 +1716,96 @@ function render(){
     if(!f.length){g.innerHTML=emptyFilter;return;}
     g.innerHTML=renderItems(groupIntoRenderItems(f));
   }
+}
+
+// ── Categories view ──
+function getCategoryNames(){
+  // Returns category names sorted by the earliest dateAdded of any movie in each category
+  const map={};
+  for(const m of movies){
+    if(!m.category)continue;
+    const t=m.dateAdded?new Date(m.dateAdded).getTime():Infinity;
+    if(!(m.category in map)||t<map[m.category])map[m.category]=t;
+  }
+  return Object.keys(map).sort((a,b)=>map[a]-map[b]);
+}
+
+function renderCategoriesView(){
+  const g=document.getElementById('movieGrid');
+  const strip=document.getElementById('categoryPillStrip');
+  const opts=document.getElementById('categoryOptions');
+  const cats=getCategoryNames();
+
+  // Render pill strip — active pill gets a ⋯ menu button; all pills support right-click
+  const addPill=`<button class="category-pill" style="border-color:var(--text-muted);gap:5px;" onclick="openAddModalWithCategory('${currentCategory?currentCategory.replace(/'/g,"\\'"):''}')">&#43; Add Film</button>`;
+  strip.innerHTML=addPill+cats.map(c=>{
+    const count=movies.filter(m=>m.category===c).length;
+    const active=currentCategory===c?'active':'';
+    const detached=categorySettings[c]?.detached;
+    const detachedCls=detached?'detached':'';
+    const lockPrefix=detached?'🔒 ':'';
+    const menuBtn=active?`<span class="pill-menu-btn" onclick="openPillMenu(event,this,'${c.replace(/'/g,"\\'")}')" title="Category options">&middot;&middot;&middot;</span>`:'';
+    return`<button class="category-pill ${active} ${detachedCls}" onclick="selectCategory('${c.replace(/'/g,"\\'")}')" oncontextmenu="openPillMenu(event,this,'${c.replace(/'/g,"\\'")}');return false;">${lockPrefix}${esc(c)}<span class="category-pill-count">${count}</span>${menuBtn}</button>`;
+  }).join('');
+
+  if(!cats.length){
+    opts.classList.remove('visible');opts.innerHTML='';
+    g.className='grid';
+    g.innerHTML=`<div class="category-empty-state"><span class="empty-icon">📂</span><p>No categories yet.<br>Add a category to a film when editing or adding it.</p></div>`;
+    return;
+  }
+
+  if(!currentCategory){
+    opts.classList.remove('visible');opts.innerHTML='';
+    g.className='grid';
+    g.innerHTML=`<div class="category-empty-state"><span class="empty-icon">👆</span><p>Select a category above to browse its films.</p></div>`;
+    return;
+  }
+
+  // Options area — detached row shown unless dismissed
+  const isDetached=!!(categorySettings[currentCategory]?.detached);
+  const catEsc=currentCategory.replace(/'/g,"\\'");
+  if(!categoryOptionsDismissed){
+    opts.innerHTML=`<div class="category-options-row">
+      <div style="display:flex;align-items:center;gap:12px;flex:1;min-width:0;">
+        <div>
+          <div class="category-options-label">Detached</div>
+          <div class="category-options-desc">Hidden from all tabs except Watching Soon</div>
+        </div>
+        <label class="toggle-row" style="margin:0;flex-shrink:0;">
+          <input type="checkbox" id="categoryDetachedToggle" onchange="toggleCategoryDetached()" ${isDetached?'checked':''}>
+          <span class="track"></span>
+        </label>
+      </div>
+      <button onclick="dismissCategoryOptions()" title="Dismiss" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:1.2rem;line-height:1;padding:2px 6px;margin-left:4px;transition:color 0.15s;flex-shrink:0;" onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color=''">&times;</button>
+    </div>`;
+    opts.classList.add('visible');
+  }else{
+    opts.classList.remove('visible');opts.innerHTML='';
+  }
+
+  // Show movies in the selected category, sorted by release year
+  const inCat=movies.filter(m=>m.category===currentCategory);
+  const sorted=inCat.slice().sort((a,b)=>(parseInt(a.year)||Infinity)-(parseInt(b.year)||Infinity));
+
+  if(!sorted.length){
+    g.className='grid';
+    g.innerHTML=`<div class="category-empty-state"><span class="empty-icon">🎬</span><p>No films in this category yet.</p></div>`;
+    return;
+  }
+
+  if(currentView==='list'){
+    g.className='list-container';
+    g.innerHTML=`<div class="list-rows">${buildListItems(groupIntoRenderItems(sorted))}</div>`;
+  }else{
+    g.className='grid';
+    g.innerHTML=renderItems(groupIntoRenderItems(sorted));
+  }
+}
+
+function selectCategory(name){
+  currentCategory=(currentCategory===name)?null:name;
+  render();
 }
 
 // Sort oldest-first (longest in list appears first, most recently added appears last)
@@ -1615,15 +1826,13 @@ function collectionDateMap(){
   return map;
 }
 
-// Sort an array by effective date (collection's earliest across all movies), then collectionOrder within a group
+// Sort an array by effective date (collection's earliest across all movies)
 function sortWithCollections(arr,cdMap){
   if(!cdMap)cdMap=collectionDateMap();
   return arr.slice().sort((a,b)=>{
     const ta=a.collection&&cdMap[a.collection]!==undefined?cdMap[a.collection]:(a.dateAdded?new Date(a.dateAdded).getTime():Infinity);
     const tb=b.collection&&cdMap[b.collection]!==undefined?cdMap[b.collection]:(b.dateAdded?new Date(b.dateAdded).getTime():Infinity);
-    if(ta!==tb)return ta-tb;
-    if(a.collection&&a.collection===b.collection)return(a.collectionOrder||0)-(b.collectionOrder||0);
-    return 0;
+    return ta-tb;
   });
 }
 
@@ -1634,7 +1843,11 @@ function groupIntoRenderItems(sorted){
     if(m.collection){
       if(seen.has(m.collection))continue;
       seen.add(m.collection);
-      const group=sorted.filter(x=>x.collection===m.collection).sort((a,b)=>(a.collectionOrder||0)-(b.collectionOrder||0));
+      const group=sorted.filter(x=>x.collection===m.collection).sort((a,b)=>{
+        const ya=parseInt(a.year)||Infinity;
+        const yb=parseInt(b.year)||Infinity;
+        return ya-yb;
+      });
       items.push({type:'group',name:m.collection,movies:group});
     }else{
       items.push({type:'card',movie:m});
@@ -1714,19 +1927,19 @@ function buildGrouped(allMovies){
 function getFiltered(){
   const cdMap=collectionDateMap();
   let result;
-  if(currentFilter==='all')result=movies.filter(m=>!m.watchingSoon&&!m.graveyard&&!isArchivedWatched(m));
-  else if(currentFilter==='soon')result=movies.filter(m=>m.watchingSoon&&!m.graveyard);
-  else if(currentFilter==='watched')result=movies.filter(m=>m.watched&&!m.graveyard);
-  else if(currentFilter==='unwatched')result=movies.filter(m=>!m.watched&&!m.graveyard);
-  else if(currentFilter==='graveyard'){result=movies.filter(m=>m.graveyard);return sortWithCollections(result,cdMap);}
-  else if(currentFilter==='vpn')result=movies.filter(m=>!m.graveyard&&SERVICES.some(s=>m.streaming?.[s]?.vpn));
+  if(currentFilter==='all')result=movies.filter(m=>!m.watchingSoon&&!m.graveyard&&!isArchivedWatched(m)&&!isDetachedMovie(m));
+  else if(currentFilter==='soon')result=movies.filter(m=>m.watchingSoon&&!m.graveyard); // detached movies CAN appear in watching soon
+  else if(currentFilter==='watched')result=movies.filter(m=>m.watched&&!m.graveyard&&!isDetachedMovie(m));
+  else if(currentFilter==='unwatched')result=movies.filter(m=>!m.watched&&!m.graveyard&&!isDetachedMovie(m));
+  else if(currentFilter==='graveyard'){result=movies.filter(m=>m.graveyard&&!isDetachedMovie(m));return sortWithCollections(result,cdMap);}
+  else if(currentFilter==='vpn')result=movies.filter(m=>!m.graveyard&&!isDetachedMovie(m)&&SERVICES.some(s=>m.streaming?.[s]?.vpn));
   else if(currentFilter==='cinema'){
-    result=movies.filter(m=>!m.graveyard&&(m.streaming?.cinema?.direct||m.streaming?.cinema?.coming));
+    result=movies.filter(m=>!m.graveyard&&!isDetachedMovie(m)&&(m.streaming?.cinema?.direct||m.streaming?.cinema?.coming));
     const unwatched=sortWithCollections(result.filter(m=>!m.watched),cdMap);
     const watched=sortWithCollections(result.filter(m=>m.watched),cdMap);
     return[...unwatched,...watched];
   } else {
-    result=movies.filter(m=>!m.graveyard&&(m.streaming?.[currentFilter]?.direct||m.streaming?.[currentFilter]?.vpn));
+    result=movies.filter(m=>!m.graveyard&&!isDetachedMovie(m)&&(m.streaming?.[currentFilter]?.direct||m.streaming?.[currentFilter]?.vpn));
     const directUnwatched=sortWithCollections(result.filter(m=>!m.watched&&m.streaming?.[currentFilter]?.direct),cdMap);
     const vpnUnwatched=sortWithCollections(result.filter(m=>!m.watched&&!m.streaming?.[currentFilter]?.direct&&m.streaming?.[currentFilter]?.vpn),cdMap);
     const watched=sortWithCollections(result.filter(m=>m.watched),cdMap);
@@ -1772,14 +1985,17 @@ function buildBadges(m,c){
 
 function setFilter(f,btn){
   if(currentFilter===f&&f!=='all'){
-    currentFilter='all';
+    currentFilter='all';currentCategory=null;
     document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
     document.querySelector('.filter-btn[onclick*="\'all\'"]').classList.add('active');
   }else{
     currentFilter=f;
+    if(f!=='categories')currentCategory=null;
     document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
     btn.classList.add('active');
   }
+  document.getElementById('categoryBar').classList.toggle('visible',currentFilter==='categories');
+  document.getElementById('categoryOptions').classList.toggle('visible',currentFilter==='categories'&&!!currentCategory);
   render();
 }
 
@@ -1821,6 +2037,7 @@ function openDetail(id){
     </div>`;
   const _detailWasOpen=document.getElementById('detailModal').classList.contains('open');
   document.getElementById('detailModal').classList.add('open');
+  currentDetailId=id;
   if(!_detailWasOpen)lockScroll();
   const dn=document.getElementById('detailNotes');
   const dw=document.getElementById('detailNotesWrap');
@@ -1843,7 +2060,7 @@ function buildDetailSvc(m){
   return o||`<span class="detail-service-pill other">Other</span>`;
 }
 
-function closeDetail(){document.getElementById('detailModal').classList.remove('open');unlockScroll();}
+function closeDetail(){document.getElementById('detailModal').classList.remove('open');currentDetailId=null;unlockScroll();}
 function handleDetailOverlay(e){if(e.target===document.getElementById('detailModal'))closeDetail();}
 
 
@@ -1901,60 +2118,109 @@ function openAddModal(){
   document.getElementById('deleteRow').style.display='none';
   document.getElementById('addModal').classList.add('open');
   lockScroll();
-  updateModalJustWatch();populateCollectionSuggestions();
+  updateModalJustWatch();populateCollectionSuggestions();populateCategorySuggestions();
   expandMovieDetails();
   if(tmdbKey)setTimeout(()=>document.getElementById('searchInput').focus(),80);
   else document.getElementById('fTitle').focus();
 }
 
 let _collectionNames=[];
-function stepCollectionOrder(delta){
-  const el=document.getElementById('fCollectionOrder');
-  const val=parseInt(el.value)||0;
-  const next=Math.max(1,Math.min(99,val+delta));
-  el.value=next;
-}
+let _categoryNames=[];
+let collectionHighlightIndex=-1;
+let categoryHighlightIndex=-1;
 
 function populateCollectionSuggestions(){
   _collectionNames=[...new Set(movies.map(m=>m.collection).filter(Boolean))].sort();
 }
-function nextCollectionOrder(collectionName, excludeId){
-  if(!collectionName)return 1;
-  const orders=movies
-    .filter(m=>m.collection===collectionName&&m.id!==excludeId&&m.collectionOrder)
-    .map(m=>m.collectionOrder);
-  return orders.length?Math.max(...orders)+1:1;
-}
-
-function suggestCollectionOrder(){
-  const col=document.getElementById('fCollection').value.trim();
-  const orderEl=document.getElementById('fCollectionOrder');
-  if(!col||orderEl.value)return;
-  orderEl.value=nextCollectionOrder(col,editingId);
+function populateCategorySuggestions(){
+  _categoryNames=[...new Set(movies.map(m=>m.category).filter(Boolean))].sort();
 }
 
 function filterCollectionSuggestions(){
   const dd=document.getElementById('collectionDropdown');
   const q=document.getElementById('fCollection').value.trim().toLowerCase();
   const matches=q?_collectionNames.filter(n=>n.toLowerCase().includes(q)):_collectionNames;
+  collectionHighlightIndex=-1;
   if(!matches.length){dd.style.display='none';return;}
-  dd.innerHTML=matches.map(n=>`<div class="col-suggestion" onmousedown="pickCollection('${n.replace(/'/g,"\\'")}')"><span class="col-icon">&#127916;</span>${esc(n)}</div>`).join('');
+  dd.innerHTML=matches.map(n=>`<div class="col-suggestion" data-name="${esc(n)}" onmousedown="pickCollection('${n.replace(/'/g,"\\'")}')"><span class="col-icon">&#127916;</span>${esc(n)}</div>`).join('');
   dd.style.display='';
 }
 function hideCollectionSuggestions(){
+  collectionHighlightIndex=-1;
   document.getElementById('collectionDropdown').style.display='none';
 }
 function pickCollection(name){
   document.getElementById('fCollection').value=name;
   hideCollectionSuggestions();
-  suggestCollectionOrder();
+}
+function onCollectionKeyDown(e){
+  const dd=document.getElementById('collectionDropdown');
+  if(dd.style.display==='none')return;
+  const items=dd.querySelectorAll('.col-suggestion');
+  if(!items.length)return;
+  if(e.key==='ArrowDown'){
+    e.preventDefault();
+    collectionHighlightIndex=Math.min(collectionHighlightIndex+1,items.length-1);
+    updateCollectionHighlight(items);
+  }else if(e.key==='ArrowUp'){
+    e.preventDefault();
+    collectionHighlightIndex=Math.max(collectionHighlightIndex-1,-1);
+    updateCollectionHighlight(items);
+  }else if(e.key==='Enter'){
+    const target=collectionHighlightIndex>=0?items[collectionHighlightIndex]:items[0];
+    if(target){e.preventDefault();e.stopPropagation();pickCollection(target.dataset.name);}
+  }
+}
+function updateCollectionHighlight(items){
+  items.forEach((el,i)=>el.classList.toggle('active',i===collectionHighlightIndex));
+  if(collectionHighlightIndex>=0)items[collectionHighlightIndex].scrollIntoView({block:'nearest'});
+}
+
+function filterCategorySuggestions(){
+  const dd=document.getElementById('categoryDropdown');
+  const q=document.getElementById('fCategory').value.trim().toLowerCase();
+  const matches=q?_categoryNames.filter(n=>n.toLowerCase().includes(q)):_categoryNames;
+  categoryHighlightIndex=-1;
+  if(!matches.length){dd.style.display='none';return;}
+  dd.innerHTML=matches.map(n=>`<div class="cat-suggestion" data-name="${esc(n)}" onmousedown="pickCategory('${n.replace(/'/g,"\\'")}')"><span class="cat-icon">&#128196;</span>${esc(n)}</div>`).join('');
+  dd.style.display='';
+}
+function hideCategorySuggestions(){
+  categoryHighlightIndex=-1;
+  document.getElementById('categoryDropdown').style.display='none';
+}
+function pickCategory(name){
+  document.getElementById('fCategory').value=name;
+  hideCategorySuggestions();
+}
+function onCategoryKeyDown(e){
+  const dd=document.getElementById('categoryDropdown');
+  if(dd.style.display==='none')return;
+  const items=dd.querySelectorAll('.cat-suggestion');
+  if(!items.length)return;
+  if(e.key==='ArrowDown'){
+    e.preventDefault();
+    categoryHighlightIndex=Math.min(categoryHighlightIndex+1,items.length-1);
+    updateCategoryHighlight(items);
+  }else if(e.key==='ArrowUp'){
+    e.preventDefault();
+    categoryHighlightIndex=Math.max(categoryHighlightIndex-1,-1);
+    updateCategoryHighlight(items);
+  }else if(e.key==='Enter'){
+    const target=categoryHighlightIndex>=0?items[categoryHighlightIndex]:items[0];
+    if(target){e.preventDefault();e.stopPropagation();pickCategory(target.dataset.name);}
+  }
+}
+function updateCategoryHighlight(items){
+  items.forEach((el,i)=>el.classList.toggle('active',i===categoryHighlightIndex));
+  if(categoryHighlightIndex>=0)items[categoryHighlightIndex].scrollIntoView({block:'nearest'});
 }
 
 function openEditModal(id){
   const m=movies.find(x=>x.id===id);if(!m)return;
   editingId=id;document.getElementById('modalTitle').textContent=christmasMode?'🎄 Edit Christmas Film':'Edit Film';
   document.getElementById('deleteRow').style.display='flex';
-  populateForm(m);document.getElementById('addModal').classList.add('open');lockScroll();updateModalJustWatch();populateCollectionSuggestions();
+  populateForm(m);document.getElementById('addModal').classList.add('open');lockScroll();updateModalJustWatch();populateCollectionSuggestions();populateCategorySuggestions();
   expandMovieDetails();
 }
 
@@ -1969,7 +2235,7 @@ function closeAddModal(){
 function handleOverlayClick(e){if(e.target===document.getElementById('addModal'))closeAddModal();}
 
 function clearForm(){
-  ['fTitle','fYear','fGenre','fDirector','fRating','fPoster','fNotes','fOtherName','fCollection','fCollectionOrder','searchInput',
+  ['fTitle','fYear','fGenre','fDirector','fRating','fPoster','fNotes','fOtherName','fCollection','fCategory','searchInput',
    'fVpnCountry-netflix','fVpnCountry-disney','fVpnCountry-prime','fVpnCountry-other'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   document.getElementById('fWatched').checked=false;
   document.getElementById('fWatchingSoon').checked=false;
@@ -1979,6 +2245,7 @@ function clearForm(){
   document.getElementById('posterThumb').innerHTML='&#127917;';
   document.getElementById('searchResults').classList.remove('open');
   document.getElementById('searchHint').classList.remove('visible');
+  _pendingTmdbId=null;
 }
 
 function populateForm(m){
@@ -1991,7 +2258,7 @@ function populateForm(m){
   document.getElementById('fNotes').value=m.notes||'';
   document.getElementById('fOtherName').value=m.otherName||'';
   document.getElementById('fCollection').value=m.collection||'';
-  document.getElementById('fCollectionOrder').value=m.collectionOrder||'';
+  document.getElementById('fCategory').value=m.category||'';
   document.getElementById('fWatched').checked=!!m.watched;
   document.getElementById('fWatchingSoon').checked=!!m.watchingSoon;
   updatePosterPreview(m.poster||'');
@@ -2049,7 +2316,8 @@ function saveMovie(){
     notes:document.getElementById('fNotes').value.trim(),
     otherName:document.getElementById('fOtherName').value.trim(),
     collection:document.getElementById('fCollection').value.trim(),
-    collectionOrder:parseInt(document.getElementById('fCollectionOrder').value)||0,
+    category:document.getElementById('fCategory').value.trim(),
+    tmdbId:_pendingTmdbId||existing?.tmdbId||null,
     watched,
     // If marked watched, strip watchingSoon
     watchingSoon:watched?false:document.getElementById('fWatchingSoon').checked,
@@ -2059,15 +2327,6 @@ function saveMovie(){
   };
   if(editingId){const i=movies.findIndex(m=>m.id===editingId);if(i!==-1)movies[i]=movie;}
   else movies.push(movie);
-  // Shift any other films in the same collection that conflict with this order number
-  if(movie.collection&&movie.collectionOrder){
-    const hasConflict=movies.some(m=>m.id!==movie.id&&m.collection===movie.collection&&m.collectionOrder===movie.collectionOrder);
-    if(hasConflict){
-      movies.forEach(m=>{
-        if(m.id!==movie.id&&m.collection===movie.collection&&m.collectionOrder>=movie.collectionOrder)m.collectionOrder++;
-      });
-    }
-  }
   save();closeAddModal();render();
   // Suppress the fadeIn re-animation on every card/row that already existed —
   // only the newly added/edited entry should animate into view.
@@ -2120,6 +2379,77 @@ function showInfoToast(msg,dur=3000){
   t._timer=setTimeout(()=>dismissToast(t),dur);
 }
 
+function _allMoviesPool(){
+  if(christmasMode)return[...movies,...(_normalMovies||[])];
+  return[...movies,...(christmasMovies||[])];
+}
+
+function isDetachedMovie(m){
+  if(!m.category)return false;
+  return!!(categorySettings[m.category]?.detached);
+}
+
+function saveCategorySettings(){
+  localStorage.setItem('category_settings_v1',JSON.stringify(categorySettings));
+  if(window._sbSyncNow&&!window._sbPaused)window._sbSyncNow();
+}
+
+function toggleCategoryDetached(){
+  if(!currentCategory)return;
+  if(!categorySettings[currentCategory])categorySettings[currentCategory]={};
+  categorySettings[currentCategory].detached=!categorySettings[currentCategory].detached;
+  saveCategorySettings();
+  render();
+}
+
+function openAddModalWithCategory(cat){
+  openAddModal();
+  document.getElementById('fCategory').value=cat;
+}
+
+function dismissCategoryOptions(){
+  categoryOptionsDismissed=true;
+  localStorage.setItem('category_options_dismissed','1');
+  document.getElementById('categoryOptions').classList.remove('visible');
+  document.getElementById('categoryOptions').innerHTML='';
+}
+
+function openPillMenu(e,btn,name){
+  e.stopPropagation();e.preventDefault();
+  const isDetached=!!(categorySettings[name]?.detached);
+  const pop=document.getElementById('categoryPillPopover');
+  pop.innerHTML=`<div class="popover-label">Category options</div>
+    <label class="toggle-row" style="gap:10px;cursor:pointer;">
+      <input type="checkbox" onchange="toggleCategoryDetachedByName('${name.replace(/'/g,"\\'")}')" ${isDetached?'checked':''}>
+      <span class="track"></span>
+      <span class="toggle-label" style="text-transform:none;letter-spacing:0.03em;font-size:0.8rem;">Detached</span>
+    </label>`;
+  pop.style.display='block';
+  // Position below the button, clamped to viewport
+  const rect=btn.getBoundingClientRect();
+  const pw=Math.max(pop.offsetWidth,196);
+  let left=rect.left+window.scrollX,top=rect.bottom+window.scrollY+6;
+  if(left+pw>window.innerWidth+window.scrollX-12)left=window.innerWidth+window.scrollX-pw-12;
+  if(rect.bottom+pop.offsetHeight>window.innerHeight-12)top=rect.top+window.scrollY-pop.offsetHeight-6;
+  pop.style.left=left+'px';pop.style.top=top+'px';
+}
+
+function closePillMenu(){
+  document.getElementById('categoryPillPopover').style.display='none';
+}
+
+function toggleCategoryDetachedByName(name){
+  if(!categorySettings[name])categorySettings[name]={};
+  categorySettings[name].detached=!categorySettings[name].detached;
+  saveCategorySettings();
+  render();
+  // Keep popover open so the user can see the new state
+  // Re-open with fresh state
+  const pop=document.getElementById('categoryPillPopover');
+  const toggle=pop.querySelector('input[type=checkbox]');
+  if(toggle)toggle.checked=!!(categorySettings[name]?.detached);
+}
+
 function save(){
   if(christmasMode){localStorage.setItem('christmas_watchlist_v1',JSON.stringify(movies));}
   else{localStorage.setItem('watchlist_v2',JSON.stringify(movies));}
@@ -2131,13 +2461,15 @@ function save(){
 function esc(s){if(!s)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
 document.addEventListener('keydown',e=>{
-  if(e.key==='Escape'){closeAddModal();closeDetail();return;}
+  if(e.key==='Escape'){closePillMenu();closeAddModal();closeDetail();return;}
   if(e.key==='Enter'&&!e.shiftKey){
     const modalOpen=document.getElementById('addModal').classList.contains('open');
     if(modalOpen){
       const active=document.activeElement;
       if(active&&active.tagName==='TEXTAREA')return;
       if(document.getElementById('searchResults').classList.contains('open'))return;
+      if(document.getElementById('collectionDropdown').style.display!=='none')return;
+      if(document.getElementById('categoryDropdown').style.display!=='none')return;
       e.preventDefault();
       saveMovie();
     }
@@ -2173,6 +2505,12 @@ document.addEventListener('keydown',e=>{
         }
         return;
       }
+      // / = focus the first visible VPN country input
+      if(e.key==='/'){
+        const vpnInput=document.querySelector('.vpn-country-input.visible');
+        if(vpnInput){e.preventDefault();vpnInput.focus();}
+        return;
+      }
       // J = open JustWatch
       if(key==='J'){
         e.preventDefault();
@@ -2194,6 +2532,25 @@ document.addEventListener('keydown',e=>{
     }
   }
 
+  // ── Detail modal keyboard shortcuts ──
+  if(document.getElementById('detailModal').classList.contains('open')&&!document.getElementById('addModal').classList.contains('open')){
+    const inField=document.activeElement.tagName==='INPUT'||document.activeElement.tagName==='TEXTAREA';
+    if(!inField&&!e.metaKey&&!e.ctrlKey&&!e.altKey){
+      const key=e.key.toUpperCase();
+      if(key==='J'){
+        e.preventDefault();
+        const jw=document.querySelector('#detailContent .btn-justwatch');
+        if(jw)jw.click();
+        return;
+      }
+      if(e.key==='Enter'){
+        const m=currentDetailId?movies.find(x=>x.id===currentDetailId):null;
+        if(m&&!m.graveyard){e.preventDefault();toggleWatched(currentDetailId);}
+        return;
+      }
+    }
+  }
+
   const inField=document.activeElement.tagName==='INPUT'||document.activeElement.tagName==='TEXTAREA';
   if(e.altKey&&e.code==='KeyT'&&!inField&&!document.getElementById('addModal').classList.contains('open')){
     e.preventDefault();
@@ -2207,6 +2564,111 @@ document.addEventListener('keydown',e=>{
   if(e.key==='z'&&(e.metaKey||e.ctrlKey)&&e.shiftKey&&!inField){e.preventDefault();redoDelete();}
 });
 
+
+document.addEventListener('click',e=>{
+  const pop=document.getElementById('categoryPillPopover');
+  if(pop&&pop.style.display!=='none'&&!pop.contains(e.target))closePillMenu();
+});
+
+// ── Christmas visual effects ──────────────────────────────────────────────
+
+// Snow
+let _snowCvs=null,_snowCtx=null,_snowFlakes=[],_snowRaf=null;
+
+function _initSnowCanvas(){
+  if(_snowCvs)return;
+  _snowCvs=document.createElement('canvas');
+  _snowCvs.style.cssText='position:fixed;top:0;left:0;pointer-events:none;z-index:9990;';
+  document.body.appendChild(_snowCvs);
+  _snowCtx=_snowCvs.getContext('2d');
+  _resizeSnowCanvas();
+  window.addEventListener('resize',_resizeSnowCanvas);
+}
+function _resizeSnowCanvas(){
+  if(!_snowCvs)return;
+  _snowCvs.width=window.innerWidth;_snowCvs.height=window.innerHeight;
+}
+function _newFlake(){
+  return{x:Math.random()*window.innerWidth,y:-30,sz:10+Math.random()*20,vy:0.45+Math.random()*1.1,vx:(Math.random()-0.5)*0.35,rot:Math.random()*Math.PI*2,vrot:(Math.random()-0.5)*0.014,op:0.3+Math.random()*0.6};
+}
+function _tickSnow(){
+  if(!_snowCvs)return;
+  _snowCtx.clearRect(0,0,_snowCvs.width,_snowCvs.height);
+  if(_snowFlakes.length<55&&Math.random()<0.25)_snowFlakes.push(_newFlake());
+  for(let i=_snowFlakes.length-1;i>=0;i--){
+    const f=_snowFlakes[i];
+    _snowCtx.save();
+    _snowCtx.globalAlpha=f.op;
+    _snowCtx.font=`${f.sz}px serif`;
+    _snowCtx.fillStyle='#fff';
+    _snowCtx.translate(f.x,f.y);
+    _snowCtx.rotate(f.rot);
+    _snowCtx.fillText('❄',-(f.sz*0.44),(f.sz*0.4));
+    _snowCtx.restore();
+    f.y+=f.vy;f.x+=f.vx;f.rot+=f.vrot;
+    if(f.y>_snowCvs.height+40)_snowFlakes.splice(i,1);
+  }
+  _snowRaf=requestAnimationFrame(_tickSnow);
+}
+function _startSnow(){_initSnowCanvas();_snowFlakes=[];if(_snowRaf)cancelAnimationFrame(_snowRaf);_snowCvs.style.display='';_tickSnow();}
+function _stopSnow(){if(_snowRaf){cancelAnimationFrame(_snowRaf);_snowRaf=null;}if(_snowCvs){_snowCtx.clearRect(0,0,_snowCvs.width,_snowCvs.height);_snowCvs.style.display='none';}_snowFlakes=[];}
+
+// Lights
+const _bulbCols=['#e63946','#ffd166','#3ecf7a','#4fc3f7','#ff7043','#c084fc'];
+
+function buildChristmasLights(){
+  const el=document.getElementById('christmasLights');
+  if(!el||el.style.display==='none')return;
+  // clientWidth excludes scrollbar so the SVG never causes horizontal overflow
+  const W=document.documentElement.clientWidth;
+  const SAG=15,SY=7,H=50,spacing=54;
+  const n=Math.max(6,Math.floor(W/spacing));
+
+  let s=`<defs><filter id="xglow" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="3.5"/></filter></defs>`;
+  // String
+  s+=`<path d="M0,${SY} Q${W/2},${SY+SAG} ${W},${SY}" stroke="#2a2010" stroke-width="1.6" fill="none" stroke-linecap="round"/>`;
+
+  for(let i=0;i<n;i++){
+    const t=(i+0.5)/n;
+    const x=+(t*W).toFixed(1);
+    const y=+(SY+SAG*4*t*(1-t)).toFixed(1);
+    const col=_bulbCols[i%_bulbCols.length];
+    const delay=(Math.random()*4).toFixed(2);
+    const dur=(1.3+Math.random()*2.4).toFixed(2);
+    const anim=`animation:xmasTwinkle ${dur}s ${delay}s ease-in-out infinite`;
+    // Wire — starts at string y, ends exactly where cap begins
+    s+=`<line x1="${x}" y1="${y}" x2="${x}" y2="${y+10}" stroke="#2a2010" stroke-width="1.3"/>`;
+    // Cap — sits flush on top of bulb, wire overlaps its top edge by 1px
+    s+=`<rect x="${x-3}" y="${y+9}" width="6" height="5" rx="1.5" fill="#3a2e10"/>`;
+    // Glow halo — center lines up with bulb center
+    s+=`<ellipse cx="${x}" cy="${y+22}" rx="8" ry="10" fill="${col}" opacity="0.3" filter="url(#xglow)" style="${anim}"/>`;
+    // Bulb body — top edge (cy - ry = y+22-8 = y+14) touches cap bottom (y+14) exactly
+    s+=`<ellipse cx="${x}" cy="${y+22}" rx="5.5" ry="8" fill="${col}" style="${anim}"/>`;
+    // Shine spot
+    s+=`<ellipse cx="${x-1.5}" cy="${y+17}" rx="1.4" ry="2" fill="rgba(255,255,255,0.42)" style="${anim}"/>`;
+  }
+
+  el.innerHTML=`<svg width="100%" height="${H}" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" style="overflow:visible;display:block;">${s}</svg>`;
+}
+
+let _lightsResizeTimer=null;
+function _onLightsResize(){
+  clearTimeout(_lightsResizeTimer);
+  _lightsResizeTimer=setTimeout(buildChristmasLights,120);
+}
+
+function startChristmasEffects(){
+  const el=document.getElementById('christmasLights');
+  if(el){el.style.display='';buildChristmasLights();}
+  window.addEventListener('resize',_onLightsResize);
+  _startSnow();
+}
+function stopChristmasEffects(){
+  const el=document.getElementById('christmasLights');
+  if(el){el.style.display='none';el.innerHTML='';}
+  window.removeEventListener('resize',_onLightsResize);
+  _stopSnow();
+}
 
 init();
 </script>
@@ -2262,7 +2724,7 @@ window._sbGetData = function() {
     watchlist = JSON.parse(localStorage.getItem('watchlist_v2') || '[]');
     christmas = JSON.parse(localStorage.getItem('christmas_watchlist_v1') || '[]');
   }
-  return { watchlist, christmas };
+  return { watchlist, christmas, categorySettings };
 };
 
 window._sbOnLoad = function(data) {
@@ -2291,6 +2753,10 @@ window._sbOnLoad = function(data) {
         christmasMovies = data.christmas;
         if (christmasMode && JSON.stringify(movies) !== cIncoming) { movies = data.christmas; render(); }
         try { __sbOrigSet('christmas_watchlist_v1', cIncoming); } catch(e) {}
+      }
+      if (data.categorySettings) {
+        categorySettings = data.categorySettings;
+        try { __sbOrigSet('category_settings_v1', JSON.stringify(data.categorySettings)); } catch(e) {}
       }
     }
   } catch(e) { console.warn('Supabase load error:', e); }
