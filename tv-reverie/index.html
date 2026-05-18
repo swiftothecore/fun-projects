@@ -352,9 +352,54 @@
     .list-stale-red     { border-color:rgba(192,57,43,0.55) !important; }
     .list-stale-crimson { border-color:rgba(180,30,60,0.6) !important; }
     .list-stale-purple  { border-color:rgba(124,58,237,0.6) !important; }
-    /* ─────────────────────────────────────────
-       MOBILE  (≤ 640 px)
-    ───────────────────────────────────────── */
+    /* ── Categories ── */
+    #categoryBar { padding:14px 48px 0; display:none; }
+    #categoryBar.visible { display:block; }
+    .category-bar-heading { display:flex; align-items:center; gap:12px; margin-bottom:12px; }
+    .category-bar-label { font-size:0.7rem; letter-spacing:0.18em; text-transform:uppercase; color:var(--gold-dim); }
+    .category-bar-line { flex:1; height:1px; background:rgba(96,165,250,0.15); }
+    .category-pill-strip { display:flex; gap:8px; flex-wrap:wrap; }
+    .category-pill { background:transparent; border:1px solid var(--border); color:var(--text-dim); padding:6px 14px; border-radius:100px; font-family:'DM Sans',sans-serif; font-size:0.74rem; letter-spacing:0.07em; text-transform:uppercase; cursor:pointer; transition:all 0.15s; display:inline-flex; align-items:center; gap:7px; }
+    .category-pill:hover { border-color:var(--gold-dim); color:var(--text); }
+    .category-pill.active { border-color:var(--gold); color:var(--gold); background:rgba(96,165,250,0.08); }
+    .category-pill-count { font-size:0.62rem; opacity:0.65; letter-spacing:0.04em; }
+    .category-pill.detached { border-style:dashed; opacity:0.8; }
+    .category-pill.detached.active { opacity:1; }
+    .pill-menu-btn { display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:3px;margin-left:4px;margin-right:-2px;font-size:0.82rem;line-height:1;color:var(--text-muted);transition:background 0.1s,color 0.1s;vertical-align:middle;flex-shrink:0; }
+    .category-pill.active .pill-menu-btn { color:rgba(96,165,250,0.55); }
+    .pill-menu-btn:hover { color:var(--gold) !important; background:rgba(96,165,250,0.15); }
+    .category-empty-state { padding:60px 48px; text-align:center; color:var(--text-muted); }
+    .category-empty-state .empty-icon { font-size:2.5rem; display:block; margin-bottom:14px; opacity:0.35; }
+    .category-empty-state p { font-size:0.85rem; line-height:1.6; }
+    #categoryOptions { padding:10px 48px 0; display:none; }
+    #categoryOptions.visible { display:block; }
+    .category-options-row { display:flex; align-items:center; gap:12px; padding:10px 14px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); }
+    .category-options-label { font-size:0.7rem; letter-spacing:0.1em; text-transform:uppercase; color:var(--text-dim); }
+    .category-options-desc { font-size:0.68rem; color:var(--text-muted); margin-top:2px; }
+    #categoryPillPopover { position:absolute;z-index:400;background:var(--surface2);border:1px solid var(--border-hi);border-radius:var(--radius);padding:12px 16px;box-shadow:0 8px 28px rgba(0,0,0,0.55);min-width:196px;display:none; }
+    #categoryPillPopover .popover-label { font-size:0.65rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-muted);margin-bottom:10px; }
+    #categoryDropdown .cat-suggestion { padding:9px 14px; font-size:0.82rem; color:var(--text-dim); cursor:pointer; font-family:'DM Sans',sans-serif; font-weight:300; display:flex; align-items:center; gap:8px; transition:background 0.1s; }
+    #categoryDropdown .cat-suggestion:hover, #categoryDropdown .cat-suggestion.active { background:rgba(96,165,250,0.08); color:var(--text); }
+    #categoryDropdown .cat-suggestion .cat-icon { font-size:0.75rem; opacity:0.5; }
+    #categoryDropdown .cat-suggestion + .cat-suggestion { border-top:1px solid var(--border); }
+    /* ── Toggle widget (used by detached toggle) ── */
+    .toggle-row { display:inline-flex; align-items:center; cursor:pointer; }
+    .toggle-row input[type=checkbox] { display:none; }
+    .toggle-row .track { display:inline-block; width:36px; height:20px; background:var(--border-hi); border-radius:100px; position:relative; transition:background 0.2s; }
+    .toggle-row .track::after { content:''; position:absolute; width:16px; height:16px; background:var(--text-muted); border-radius:50%; top:2px; left:2px; transition:all 0.2s; }
+    .toggle-row input:checked + .track { background:var(--gold); }
+    .toggle-row input:checked + .track::after { left:18px; background:#0c0b0a; }
+    .toggle-label { font-size:0.7rem; letter-spacing:0.1em; text-transform:uppercase; color:var(--text-dim); margin-left:10px; }
+    /* ── Already-added search results ── */
+    .search-result-item.already-added { opacity:0.45; }
+    .result-in-list { display:inline-block; font-size:0.62rem; letter-spacing:0.07em; text-transform:uppercase; color:var(--gold-dim); background:rgba(96,165,250,0.08); border:1px solid rgba(96,165,250,0.2); border-radius:100px; padding:1px 7px; margin-top:3px; }
+    @media(max-width:640px){
+      #categoryBar{padding-left:16px;padding-right:16px;}
+      #categoryOptions{padding-left:16px;padding-right:16px;}
+      .category-empty-state{padding:40px 16px;}
+    }
+
+    /* ── MOBILE  (≤ 640 px) ── */
     @media(max-width:640px){
       /* Prevent iOS Safari from zooming on input focus (triggered when font-size < 16px).
          !important is necessary here because class selectors have higher specificity
@@ -953,6 +998,7 @@
     <button class="filter-btn" onclick="setFilter('more_to_come',this)"><span class="dot" style="background:var(--more)"></span>More to Come</button>
     <button class="filter-btn" onclick="setFilter('finished_for_good',this)"><span class="dot" style="background:var(--finished)"></span>Finished</button>
     <button class="filter-btn" onclick="setFilter('graveyard',this)">💀 Graveyard</button>
+    <button class="filter-btn" id="filterCategories" onclick="setFilter('categories',this)">&#128196; Categories</button>
   </div>
   <div class="view-toggle">
     <button id="viewGrid" class="view-toggle-btn active" onclick="setView('grid')" title="Grid view">
@@ -963,6 +1009,15 @@
     </button>
   </div>
 </div>
+
+<div id="categoryBar">
+  <div class="category-bar-heading">
+    <span class="category-bar-label">&#9658; Categories</span>
+    <span class="category-bar-line" aria-hidden="true"></span>
+  </div>
+  <div class="category-pill-strip" id="categoryPillStrip"></div>
+</div>
+<div id="categoryOptions"></div>
 
 <!-- Currently Watching strip (visible on All view) -->
 <div id="watchingSection">
@@ -975,6 +1030,7 @@
 <hr class="watching-divider" id="watchingDivider" style="display:none;">
 
 <div id="showGrid"></div>
+<div id="categoryPillPopover"></div>
 <div id="toastContainer"></div>
 
 <!-- ADD/EDIT MODAL -->
@@ -1020,6 +1076,12 @@
           <div class="field"><label>Creator</label><input type="text" id="fCreator" placeholder="Creator / Showrunner"></div>
           <div class="field"><label>Rating</label><input type="text" id="fRating" placeholder="e.g. 8.5/10"></div>
           <div class="field"><label>Seasons</label><input type="number" id="fSeasons" placeholder="e.g. 3" min="1" max="99"></div>
+          <div class="field" style="position:relative;">
+            <label>Category</label>
+            <input type="text" id="fCategory" placeholder="e.g. Sci-Fi, Date Night..." autocomplete="off"
+              oninput="filterCategorySuggestions()" onfocus="filterCategorySuggestions()" onblur="setTimeout(hideCategorySuggestions,150)" onkeydown="onCategoryKeyDown(event)">
+            <div id="categoryDropdown" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:9999;background:var(--surface2);border:1px solid var(--border-hi);border-radius:var(--radius);margin-top:4px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,0.5);"></div>
+          </div>
           <div class="field full">
             <label>Poster Image URL</label>
             <div class="poster-preview-row">
@@ -1131,10 +1193,13 @@ const TMDB_IMG='https://image.tmdb.org/t/p/w500';
 const TMDB_SM='https://image.tmdb.org/t/p/w92';
 
 var shows=JSON.parse(localStorage.getItem('tvshows_v1')||'[]');
-let currentFilter='all',editingId=null,searchTimer=null,searchHighlightIndex=-1;
+let currentFilter='all',currentCategory=null,editingId=null,searchTimer=null,searchHighlightIndex=-1,_pendingTmdbId=null;
 let currentView=localStorage.getItem('tvshows_view')||'grid';
 let tmdbKey=localStorage.getItem('tmdb_api_key')||'';
 let undoStack=[],redoStack=[];
+let categorySettings=JSON.parse(localStorage.getItem('category_settings_tvshows_v1')||'{}');
+let categoryOptionsDismissed=localStorage.getItem('category_options_tvshows_dismissed')==='1';
+let _categoryNames=[],categoryHighlightIndex=-1,_filterBarResizeTimer=null;
 
 const SERVICE_META={
   netflix:{ label:'Netflix',      color:'#e50914', rule:'rgba(229,9,20,0.15)'   },
@@ -1155,10 +1220,13 @@ function init(){
   if(window.innerWidth<=640){currentView='list';}
   applyViewToggleUI();
   render();
+  requestAnimationFrame(adjustFilterBar);
 }
 
 window.addEventListener('resize',()=>{
   if(window.innerWidth<=640&&currentView!=='list'){currentView='list';applyViewToggleUI();render();}
+  clearTimeout(_filterBarResizeTimer);
+  _filterBarResizeTimer=setTimeout(adjustFilterBar,80);
 });
 
 function setView(v){currentView=v;localStorage.setItem('tvshows_view',v);applyViewToggleUI();render();}
@@ -1210,7 +1278,11 @@ async function searchTMDB(q){
       const yr=m.first_air_date?m.first_air_date.slice(0,4):'?';
       const th=m.poster_path?`<img class="result-thumb" src="${TMDB_SM}${m.poster_path}" alt="" loading="lazy">`:`<div class="result-thumb-placeholder">📺</div>`;
       const ov=m.overview?`<div class="result-overview">${esc(m.overview)}</div>`:'';
-      return`<div class="search-result-item" data-show-id="${m.id}" onclick="selectShow(${m.id})">${th}<div class="result-info"><div class="result-title">${esc(m.name||m.title)}</div><div class="result-meta">${yr}${m.vote_average?' &middot; &#9733; '+m.vote_average.toFixed(1):''}</div>${ov}</div></div>`;
+      const name=m.name||m.title||'';
+      const inList=shows.some(x=>(x.tmdbId&&x.tmdbId===m.id)||(x.title.toLowerCase()===name.toLowerCase()&&x.year==yr));
+      const alreadyCls=inList?' already-added':'';
+      const inListBadge=inList?`<div class="result-in-list">&#10003; In your list</div>`:'';
+      return`<div class="search-result-item${alreadyCls}" data-show-id="${m.id}" onclick="selectShow(${m.id})">${th}<div class="result-info"><div class="result-title">${esc(name)}</div><div class="result-meta">${yr}${m.vote_average?' &middot; &#9733; '+m.vote_average.toFixed(1):''}</div>${ov}${inListBadge}</div></div>`;
     }).join('');
     searchHighlightIndex=-1;r.classList.add('open');
   }catch{sp.classList.remove('active');r.innerHTML=`<div class="search-no-results">Search failed.</div>`;r.classList.add('open');}
@@ -1233,6 +1305,7 @@ async function selectShow(id){
     document.getElementById('fPoster').value=p;updatePosterPreview(p);
     if(!document.getElementById('fNotes').value)document.getElementById('fNotes').value=d.overview||'';
     document.getElementById('searchInput').value='';
+    _pendingTmdbId=id;
     h.textContent=`Filled from TMDB: "${d.name||d.title}". Edit details below.`;h.classList.add('visible');
     updateModalJustWatch();collapseMovieDetails();
   }catch{document.getElementById('searchSpinner').classList.remove('active');const h=document.getElementById('searchHint');h.textContent='Could not load details. Fill in manually.';h.classList.add('visible');}
@@ -1451,7 +1524,7 @@ function buildWatchedSection(title, sectionShows, type, listView){
 
 // ── Render ──
 function render(){
-  const cnt=shows.filter(m=>!m.graveyard).length;
+  const cnt=shows.filter(m=>!m.graveyard&&!isDetachedShow(m)).length;
   document.getElementById('headerCount').textContent=cnt===1?'1 show':`${cnt} shows`;
 
   const watchingShows=shows.filter(m=>m.watching&&!m.graveyard);
@@ -1462,18 +1535,19 @@ function render(){
     wstrip.innerHTML=watchingShows.map((m,i)=>buildWatchingCard(m,i)).join('');
   }else{ws.classList.remove('visible');wd.style.display='none';}
 
+  if(currentFilter==='categories'){renderCategoriesView();return;}
+
   const g=document.getElementById('showGrid');
-  const hasAnyShows=shows.length>0;
+  const hasAnyShows=shows.filter(m=>!isDetachedShow(m)).length>0;
   const emptyAll=`<div style="text-align:center;padding:80px 0;color:var(--text-muted)"><span style="font-size:3rem;display:block;margin-bottom:16px;opacity:0.4">📺</span><p style="font-size:0.9rem;line-height:1.6">${hasAnyShows?'All your shows are currently being watched or in the graveyard.':'Your show list is empty.<br>Click <strong>Add Show</strong> to get started.'}</p></div>`;
   const emptyFilter=`<div class="empty-state"><span class="empty-icon">📺</span><p>${!hasAnyShows?'Your show list is empty.<br>Click <strong>Add Show</strong> to get started.':'No shows match this filter.'}</p></div>`;
 
   if(currentView==='list'){
     g.className='list-container';
     if(currentFilter==='all'){
-      // Service sections: unwatched only (watching is in the strip)
-      const baseUnwatched=shows.filter(m=>!m.watching&&!m.watched&&!m.graveyard);
-      const moreToCome=shows.filter(m=>m.watched&&m.watchStatus==='more_to_come'&&!m.graveyard);
-      const finished=shows.filter(m=>m.watched&&m.watchStatus==='finished_for_good'&&!m.graveyard);
+      const baseUnwatched=shows.filter(m=>!m.watching&&!m.watched&&!m.graveyard&&!isDetachedShow(m));
+      const moreToCome=shows.filter(m=>m.watched&&m.watchStatus==='more_to_come'&&!m.graveyard&&!isDetachedShow(m));
+      const finished=shows.filter(m=>m.watched&&m.watchStatus==='finished_for_good'&&!m.graveyard&&!isDetachedShow(m));
       let html=buildGrouped(baseUnwatched,true);
       if(moreToCome.length)html+=buildWatchedSection('More to Come',moreToCome,'more',true);
       if(finished.length)html+=buildWatchedSection('Finished for Good',finished,'finished',true);
@@ -1483,19 +1557,19 @@ function render(){
       if(!f.length){g.innerHTML=emptyFilter;return;}
       g.innerHTML=`<div class="list-rows">${sortShows(f).map((m,i)=>buildListRow(m,i)).join('')}</div>`;
     }else if(currentFilter==='more_to_come'){
-      const f=shows.filter(m=>m.watched&&m.watchStatus==='more_to_come'&&!m.graveyard);
+      const f=shows.filter(m=>m.watched&&m.watchStatus==='more_to_come'&&!m.graveyard&&!isDetachedShow(m));
       if(!f.length){g.innerHTML=emptyFilter;return;}
       g.innerHTML=`<div class="list-rows">${sortShows(f).map((m,i)=>buildListRow(m,i)).join('')}</div>`;
     }else if(currentFilter==='finished_for_good'){
-      const f=shows.filter(m=>m.watched&&m.watchStatus==='finished_for_good'&&!m.graveyard);
+      const f=shows.filter(m=>m.watched&&m.watchStatus==='finished_for_good'&&!m.graveyard&&!isDetachedShow(m));
       if(!f.length){g.innerHTML=emptyFilter;return;}
       g.innerHTML=`<div class="list-rows">${sortShows(f).map((m,i)=>buildListRow(m,i)).join('')}</div>`;
     }else if(currentFilter==='graveyard'){
-      const f=shows.filter(m=>m.graveyard);
+      const f=shows.filter(m=>m.graveyard&&!isDetachedShow(m));
       if(!f.length){g.innerHTML=emptyFilter;return;}
       g.innerHTML=`<div class="list-rows">${sortShows(f).map((m,i)=>buildListRow(m,i)).join('')}</div>`;
     }else if(SERVICES.includes(currentFilter)){
-      const f=shows.filter(m=>!m.graveyard&&m.streaming?.[currentFilter]?.direct);
+      const f=shows.filter(m=>!m.graveyard&&!isDetachedShow(m)&&m.streaming?.[currentFilter]?.direct);
       if(!f.length){g.innerHTML=emptyFilter;return;}
       g.innerHTML=buildServiceView(currentFilter,f,true);
     }
@@ -1505,10 +1579,9 @@ function render(){
   // Grid view
   if(currentFilter==='all'){
     g.className='show-container';
-    // Service sections: unwatched only (watching goes in the strip)
-    const baseUnwatched=shows.filter(m=>!m.watching&&!m.watched&&!m.graveyard);
-    const moreToCome=shows.filter(m=>m.watched&&m.watchStatus==='more_to_come'&&!m.graveyard);
-    const finished=shows.filter(m=>m.watched&&m.watchStatus==='finished_for_good'&&!m.graveyard);
+    const baseUnwatched=shows.filter(m=>!m.watching&&!m.watched&&!m.graveyard&&!isDetachedShow(m));
+    const moreToCome=shows.filter(m=>m.watched&&m.watchStatus==='more_to_come'&&!m.graveyard&&!isDetachedShow(m));
+    const finished=shows.filter(m=>m.watched&&m.watchStatus==='finished_for_good'&&!m.graveyard&&!isDetachedShow(m));
     let html=buildGrouped(baseUnwatched,false);
     if(moreToCome.length)html+=buildWatchedSection('More to Come',moreToCome,'more',false);
     if(finished.length)html+=buildWatchedSection('Finished for Good',finished,'finished',false);
@@ -1520,22 +1593,22 @@ function render(){
     g.innerHTML=renderItems(groupIntoRenderItems(sortShows(f)));
   }else if(currentFilter==='more_to_come'){
     g.className='grid';
-    const f=shows.filter(m=>m.watched&&m.watchStatus==='more_to_come'&&!m.graveyard);
+    const f=shows.filter(m=>m.watched&&m.watchStatus==='more_to_come'&&!m.graveyard&&!isDetachedShow(m));
     if(!f.length){g.innerHTML=emptyFilter;return;}
     g.innerHTML=renderItems(groupIntoRenderItems(sortShows(f)));
   }else if(currentFilter==='finished_for_good'){
     g.className='grid';
-    const f=shows.filter(m=>m.watched&&m.watchStatus==='finished_for_good'&&!m.graveyard);
+    const f=shows.filter(m=>m.watched&&m.watchStatus==='finished_for_good'&&!m.graveyard&&!isDetachedShow(m));
     if(!f.length){g.innerHTML=emptyFilter;return;}
     g.innerHTML=renderItems(groupIntoRenderItems(sortShows(f)));
   }else if(currentFilter==='graveyard'){
     g.className='grid';
-    const f=shows.filter(m=>m.graveyard);
+    const f=shows.filter(m=>m.graveyard&&!isDetachedShow(m));
     if(!f.length){g.innerHTML=emptyFilter;return;}
     g.innerHTML=renderItems(groupIntoRenderItems(sortShows(f)));
   }else if(SERVICES.includes(currentFilter)){
     g.className='show-container';
-    const f=shows.filter(m=>!m.graveyard&&m.streaming?.[currentFilter]?.direct);
+    const f=shows.filter(m=>!m.graveyard&&!isDetachedShow(m)&&m.streaming?.[currentFilter]?.direct);
     if(!f.length){g.innerHTML=emptyFilter;return;}
     g.innerHTML=buildServiceView(currentFilter,f,false);
   }
@@ -1543,15 +1616,233 @@ function render(){
 
 function setFilter(f,btn){
   if(currentFilter===f&&f!=='all'){
-    currentFilter='all';
+    currentFilter='all';currentCategory=null;
     document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
     document.querySelector('.filter-btn[onclick*="\'all\'"]').classList.add('active');
   }else{
     currentFilter=f;
+    if(f!=='categories')currentCategory=null;
     document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
     btn.classList.add('active');
   }
+  document.getElementById('categoryBar').classList.toggle('visible',currentFilter==='categories');
+  document.getElementById('categoryOptions').classList.toggle('visible',currentFilter==='categories'&&!!currentCategory);
   render();
+}
+
+// ── Categories ─────────────────────────────────────────────────────────────
+
+function isDetachedShow(m){
+  if(!m.category)return false;
+  return!!(categorySettings[m.category]?.detached);
+}
+
+function getCategoryNames(){
+  const map={};
+  for(const m of shows){
+    if(!m.category)continue;
+    const t=m.dateAdded?new Date(m.dateAdded).getTime():Infinity;
+    if(!(m.category in map)||t<map[m.category])map[m.category]=t;
+  }
+  return Object.keys(map).sort((a,b)=>map[a]-map[b]);
+}
+
+function saveCategorySettings(){
+  localStorage.setItem('category_settings_tvshows_v1',JSON.stringify(categorySettings));
+  if(window._sbSyncNow&&!window._sbPaused)window._sbSyncNow();
+}
+
+function renderCategoriesView(){
+  const g=document.getElementById('showGrid');
+  const strip=document.getElementById('categoryPillStrip');
+  const opts=document.getElementById('categoryOptions');
+  const cats=getCategoryNames();
+
+  const addPill=`<button class="category-pill" style="border-color:var(--text-muted);gap:5px;" onclick="openAddModalWithCategory('${currentCategory?currentCategory.replace(/'/g,"\\'"):''}')">&#43; Add Show</button>`;
+  strip.innerHTML=addPill+cats.map(c=>{
+    const count=shows.filter(m=>m.category===c).length;
+    const active=currentCategory===c?'active':'';
+    const detached=categorySettings[c]?.detached;
+    const detachedCls=detached?'detached':'';
+    const lockPrefix=detached?'🔒 ':'';
+    const menuBtn=active?`<span class="pill-menu-btn" onclick="openPillMenu(event,this,'${c.replace(/'/g,"\\'")}')" title="Category options">&middot;&middot;&middot;</span>`:'';
+    return`<button class="category-pill ${active} ${detachedCls}" onclick="selectCategory('${c.replace(/'/g,"\\'")}') " oncontextmenu="openPillMenu(event,this,'${c.replace(/'/g,"\\'")}');return false;">${lockPrefix}${esc(c)}<span class="category-pill-count">${count}</span>${menuBtn}</button>`;
+  }).join('');
+
+  if(!cats.length){
+    opts.classList.remove('visible');opts.innerHTML='';
+    g.className='grid';
+    g.innerHTML=`<div class="category-empty-state"><span class="empty-icon">📂</span><p>No categories yet.<br>Add a category to a show when editing or adding it.</p></div>`;
+    return;
+  }
+  if(!currentCategory){
+    opts.classList.remove('visible');opts.innerHTML='';
+    g.className='grid';
+    g.innerHTML=`<div class="category-empty-state"><span class="empty-icon">👆</span><p>Select a category above to browse its shows.</p></div>`;
+    return;
+  }
+
+  if(!categoryOptionsDismissed){
+    const isDetached=!!(categorySettings[currentCategory]?.detached);
+    opts.innerHTML=`<div class="category-options-row">
+      <div style="display:flex;align-items:center;gap:12px;flex:1;min-width:0;">
+        <div>
+          <div class="category-options-label">Detached</div>
+          <div class="category-options-desc">Hidden from all tabs except Currently Watching</div>
+        </div>
+        <label class="toggle-row" style="margin:0;flex-shrink:0;">
+          <input type="checkbox" id="categoryDetachedToggle" onchange="toggleCategoryDetached()" ${isDetached?'checked':''}>
+          <span class="track"></span>
+        </label>
+      </div>
+      <button onclick="dismissCategoryOptions()" title="Dismiss" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:1.2rem;line-height:1;padding:2px 6px;margin-left:4px;transition:color 0.15s;flex-shrink:0;" onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color=''">&times;</button>
+    </div>`;
+    opts.classList.add('visible');
+  }else{
+    opts.classList.remove('visible');opts.innerHTML='';
+  }
+
+  const inCat=shows.filter(m=>m.category===currentCategory);
+  const sorted=inCat.slice().sort((a,b)=>(parseInt(a.year)||Infinity)-(parseInt(b.year)||Infinity));
+  if(!sorted.length){
+    g.className='grid';
+    g.innerHTML=`<div class="category-empty-state"><span class="empty-icon">📺</span><p>No shows in this category yet.</p></div>`;
+    return;
+  }
+  if(currentView==='list'){
+    g.className='list-container';
+    g.innerHTML=`<div class="list-rows">${sorted.map((m,i)=>buildListRow(m,i)).join('')}</div>`;
+  }else{
+    g.className='grid';
+    g.innerHTML=sorted.map((m,i)=>buildCard(m,i)).join('');
+  }
+}
+
+function selectCategory(name){
+  currentCategory=(currentCategory===name)?null:name;
+  render();
+}
+
+function toggleCategoryDetached(){
+  if(!currentCategory)return;
+  if(!categorySettings[currentCategory])categorySettings[currentCategory]={};
+  categorySettings[currentCategory].detached=!categorySettings[currentCategory].detached;
+  saveCategorySettings();render();
+}
+
+function toggleCategoryDetachedByName(name){
+  if(!categorySettings[name])categorySettings[name]={};
+  categorySettings[name].detached=!categorySettings[name].detached;
+  saveCategorySettings();render();
+  const pop=document.getElementById('categoryPillPopover');
+  const toggle=pop.querySelector('input[type=checkbox]');
+  if(toggle)toggle.checked=!!(categorySettings[name]?.detached);
+}
+
+function dismissCategoryOptions(){
+  categoryOptionsDismissed=true;
+  localStorage.setItem('category_options_tvshows_dismissed','1');
+  document.getElementById('categoryOptions').classList.remove('visible');
+  document.getElementById('categoryOptions').innerHTML='';
+}
+
+function openPillMenu(e,btn,name){
+  e.stopPropagation();e.preventDefault();
+  const isDetached=!!(categorySettings[name]?.detached);
+  const pop=document.getElementById('categoryPillPopover');
+  pop.innerHTML=`<div class="popover-label">Category options</div>
+    <label class="toggle-row" style="gap:10px;cursor:pointer;">
+      <input type="checkbox" onchange="toggleCategoryDetachedByName('${name.replace(/'/g,"\\'")}')" ${isDetached?'checked':''}>
+      <span class="track"></span>
+      <span class="toggle-label" style="text-transform:none;letter-spacing:0.03em;font-size:0.8rem;">Detached</span>
+    </label>`;
+  pop.style.display='block';
+  const rect=btn.getBoundingClientRect();
+  const pw=Math.max(pop.offsetWidth,196);
+  let left=rect.left+window.scrollX,top=rect.bottom+window.scrollY+6;
+  if(left+pw>window.innerWidth+window.scrollX-12)left=window.innerWidth+window.scrollX-pw-12;
+  if(rect.bottom+pop.offsetHeight>window.innerHeight-12)top=rect.top+window.scrollY-pop.offsetHeight-6;
+  pop.style.left=left+'px';pop.style.top=top+'px';
+}
+
+function closePillMenu(){document.getElementById('categoryPillPopover').style.display='none';}
+
+function openAddModalWithCategory(cat){
+  openAddModal();
+  document.getElementById('fCategory').value=cat;
+  populateCategorySuggestions();
+}
+
+// ── Category suggestions ────────────────────────────────────────────────────
+
+function populateCategorySuggestions(){
+  _categoryNames=[...new Set(shows.map(m=>m.category).filter(Boolean))].sort();
+}
+
+function filterCategorySuggestions(){
+  const dd=document.getElementById('categoryDropdown');
+  const q=document.getElementById('fCategory').value.trim().toLowerCase();
+  const matches=q?_categoryNames.filter(n=>n.toLowerCase().includes(q)):_categoryNames;
+  categoryHighlightIndex=-1;
+  if(!matches.length){dd.style.display='none';return;}
+  dd.innerHTML=matches.map(n=>`<div class="cat-suggestion" data-name="${esc(n)}" onmousedown="pickCategory('${n.replace(/'/g,"\\'")}')"><span class="cat-icon">&#128196;</span>${esc(n)}</div>`).join('');
+  dd.style.display='';
+}
+
+function hideCategorySuggestions(){
+  categoryHighlightIndex=-1;
+  document.getElementById('categoryDropdown').style.display='none';
+}
+
+function pickCategory(name){
+  document.getElementById('fCategory').value=name;
+  hideCategorySuggestions();
+}
+
+function onCategoryKeyDown(e){
+  const dd=document.getElementById('categoryDropdown');
+  if(dd.style.display==='none')return;
+  const items=dd.querySelectorAll('.cat-suggestion');
+  if(!items.length)return;
+  if(e.key==='ArrowDown'){
+    e.preventDefault();
+    categoryHighlightIndex=Math.min(categoryHighlightIndex+1,items.length-1);
+    _updateCategoryHighlight(items);
+  }else if(e.key==='ArrowUp'){
+    e.preventDefault();
+    categoryHighlightIndex=Math.max(categoryHighlightIndex-1,-1);
+    _updateCategoryHighlight(items);
+  }else if(e.key==='Enter'){
+    const target=categoryHighlightIndex>=0?items[categoryHighlightIndex]:items[0];
+    if(target){e.preventDefault();e.stopPropagation();pickCategory(target.dataset.name);}
+  }
+}
+
+function _updateCategoryHighlight(items){
+  items.forEach((el,i)=>el.classList.toggle('active',i===categoryHighlightIndex));
+  if(categoryHighlightIndex>=0)items[categoryHighlightIndex].scrollIntoView({block:'nearest'});
+}
+
+// ── Filter bar adjustment ──────────────────────────────────────────────────
+
+function adjustFilterBar(){
+  if(window.innerWidth<=640)return;
+  // Hide "Watching" tab if the bar wraps (watching shows are visible in the strip)
+  const watchingBtn=document.querySelector('.filter-btn[onclick*="\'watching\'"]');
+  const filterBar=document.querySelector('.filter-bar');
+  if(!watchingBtn||!filterBar)return;
+  watchingBtn.style.display='';
+  const buttons=Array.from(filterBar.querySelectorAll('.filter-btn'));
+  if(buttons.length<2)return;
+  const firstTop=buttons[0].getBoundingClientRect().top;
+  const wraps=buttons.some(btn=>btn.getBoundingClientRect().top>firstTop+4);
+  watchingBtn.style.display=wraps?'none':'';
+  if(wraps&&currentFilter==='watching'){
+    currentFilter='all';currentCategory=null;
+    document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelector('.filter-btn[onclick*="\'all\'"]')?.classList.add('active');
+    render();
+  }
 }
 
 // ── List view builders ──
@@ -1745,6 +2036,7 @@ function closeAddModal(){
   editingId=null;
   unlockScroll();
 }
+function handleOverlayClick(e){if(e.target===document.getElementById('addModal'))closeAddModal();}
 function setShowStatus(id,status){
   const m=shows.find(x=>x.id===id);if(!m)return;
   m.watching=false;m.watched=false;m.watchStatus=null;
@@ -1805,7 +2097,7 @@ function openAddModal(){
   editingId=null;document.getElementById('modalTitle').textContent='Add Show';clearForm();
   document.getElementById('deleteRow').style.display='none';
   document.getElementById('addModal').classList.add('open');
-  updateModalJustWatch();expandMovieDetails();
+  updateModalJustWatch();expandMovieDetails();populateCategorySuggestions();
   if(tmdbKey)setTimeout(()=>document.getElementById('searchInput').focus(),80);
   else document.getElementById('fTitle').focus();
 }
@@ -1813,20 +2105,12 @@ function openEditModal(id){
   const m=shows.find(x=>x.id===id);if(!m)return;
   editingId=id;document.getElementById('modalTitle').textContent='Edit Show';
   document.getElementById('deleteRow').style.display='flex';
-  populateForm(m);document.getElementById('addModal').classList.add('open');updateModalJustWatch();
+  populateForm(m);document.getElementById('addModal').classList.add('open');updateModalJustWatch();populateCategorySuggestions();
   expandMovieDetails();
 }
-function closeAddModal(){
-  document.getElementById('addModal').classList.remove('open');
-  document.getElementById('searchResults').classList.remove('open');
-  document.getElementById('searchHint').classList.remove('visible');
-  editingId=null;
-}
-function handleOverlayClick(e){if(e.target===document.getElementById('addModal'))closeAddModal();}
 
 function clearForm(){
-  ['fTitle','fYear','fGenre','fCreator','fRating','fSeasons','fPoster','fNotes','fOtherName','searchInput'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''});
-  // Reset status to unwatched
+  ['fTitle','fYear','fGenre','fCreator','fRating','fSeasons','fPoster','fNotes','fOtherName','fCategory','searchInput'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''});
   const uw=document.querySelector('input[name="showStatus"][value="unwatched"]');
   if(uw)uw.checked=true;
   document.querySelectorAll('.streaming-tile').forEach(t=>t.classList.remove('active'));
@@ -1834,6 +2118,7 @@ function clearForm(){
   document.getElementById('posterThumb').innerHTML='📺';
   document.getElementById('searchResults').classList.remove('open');
   document.getElementById('searchHint').classList.remove('visible');
+  _pendingTmdbId=null;
 }
 function populateForm(m){
   document.getElementById('fTitle').value=m.title||'';
@@ -1845,6 +2130,7 @@ function populateForm(m){
   document.getElementById('fPoster').value=m.poster||'';
   document.getElementById('fNotes').value=m.notes||'';
   document.getElementById('fOtherName').value=m.otherName||'';
+  document.getElementById('fCategory').value=m.category||'';
   updatePosterPreview(m.poster||'');
   // Set status radio
   let statusVal='unwatched';
@@ -1893,6 +2179,8 @@ function saveShow(){
     poster:document.getElementById('fPoster').value.trim(),
     notes:document.getElementById('fNotes').value.trim(),
     otherName:document.getElementById('fOtherName').value.trim(),
+    category:document.getElementById('fCategory').value.trim(),
+    tmdbId:_pendingTmdbId||existing?.tmdbId||null,
     watching,watched,watchStatus,streaming,
     dateAdded:existing?.dateAdded||new Date().toISOString(),
     dateWatched:watched?(existing?.dateWatched||(existing?.watched?undefined:new Date().toISOString())):undefined,
@@ -1952,14 +2240,14 @@ function esc(s){if(!s)return'';return String(s).replace(/&/g,'&amp;').replace(/<
 
 // ── Keyboard shortcuts ──
 document.addEventListener('keydown',e=>{
-  if(e.key==='Escape'){closeAddModal();closeDetail();return;}
+  if(e.key==='Escape'){closePillMenu();closeAddModal();closeDetail();return;}
   if(e.key==='Enter'&&!e.shiftKey){
     const modalOpen=document.getElementById('addModal').classList.contains('open');
     if(modalOpen){
       const active=document.activeElement;
-      // Don't intercept if in textarea, or if search results are open and navigating
       if(active&&active.tagName==='TEXTAREA')return;
       if(document.getElementById('searchResults').classList.contains('open'))return;
+      if(document.getElementById('categoryDropdown').style.display!=='none')return;
       e.preventDefault();
       saveShow();
     }
@@ -1986,6 +2274,11 @@ document.addEventListener('keydown',e=>{
   document.addEventListener('mousemove',e=>{tip.style.left=(e.clientX+14)+'px';tip.style.top=(e.clientY+14)+'px';});
 })();
 
+document.addEventListener('click',e=>{
+  const pop=document.getElementById('categoryPillPopover');
+  if(pop&&pop.style.display!=='none'&&!pop.contains(e.target))closePillMenu();
+});
+
 init();
 </script>
 
@@ -2011,7 +2304,7 @@ localStorage.setItem = function(key, value) {
   // Wrap in try-catch: on iOS with "Block All Cookies" enabled, localStorage
   // throws a SecurityError. We still want the Supabase sync to fire.
   try { __sbOrigSet(key, value); } catch(e) { console.warn('[Storage] localStorage write failed:', e.message); }
-  if (key === 'tvshows_v1') {
+  if (key === 'tvshows_v1' || key === 'category_settings_tvshows_v1') {
     // Stamp the local modification time so the conflict resolver knows
     // when THIS device last saved. Used by the IIFE to decide push vs. pull.
     try { __sbOrigSet('_sb_local_ts', String(Date.now())); } catch(e) {}
@@ -2023,17 +2316,23 @@ localStorage.setItem = function(key, value) {
 // If localStorage writes are failing (iOS restrictions etc.), the in-memory
 // array still has the correct current state, so Supabase gets accurate data.
 window._sbGetData = function() {
-  if (typeof shows !== 'undefined' && Array.isArray(shows)) return shows;
-  return JSON.parse(localStorage.getItem('tvshows_v1') || '[]');
+  const tvshows = (typeof shows !== 'undefined' && Array.isArray(shows)) ? shows : JSON.parse(localStorage.getItem('tvshows_v1') || '[]');
+  const cats = (typeof categorySettings !== 'undefined') ? categorySettings : JSON.parse(localStorage.getItem('category_settings_tvshows_v1') || '{}');
+  return { tvshows, categorySettings: cats };
 };
 
 window._sbOnLoad = function(data) {
   try {
-    if (Array.isArray(data)) {
-      const incoming = JSON.stringify(data);
-      // Update in-memory state first so it's never blocked by a localStorage failure.
-      if (JSON.stringify(shows) !== incoming) { shows = data; render(); }
-      try { __sbOrigSet('tvshows_v1', incoming); } catch(e) {}
+    // Support both legacy (plain array) and new ({ tvshows, categorySettings }) formats
+    const incoming = Array.isArray(data) ? data : (Array.isArray(data?.tvshows) ? data.tvshows : null);
+    if (incoming !== null) {
+      const incomingStr = JSON.stringify(incoming);
+      if (JSON.stringify(shows) !== incomingStr) { shows = incoming; render(); }
+      try { __sbOrigSet('tvshows_v1', incomingStr); } catch(e) {}
+    }
+    if (data?.categorySettings && typeof data.categorySettings === 'object') {
+      categorySettings = data.categorySettings;
+      try { __sbOrigSet('category_settings_tvshows_v1', JSON.stringify(data.categorySettings)); } catch(e) {}
     }
   } catch(e) { console.warn('Supabase load error:', e); }
 };
