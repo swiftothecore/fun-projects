@@ -49,6 +49,9 @@
     .btn-justwatch { background:rgba(255,140,0,0.08); color:#ff9a30; border:1px solid rgba(255,140,0,0.25); display:inline-flex; align-items:center; gap:7px; padding:8px 16px; border-radius:var(--radius); font-family:'DM Sans',sans-serif; font-size:0.78rem; font-weight:500; letter-spacing:0.05em; text-transform:uppercase; cursor:pointer; transition:all 0.15s; text-decoration:none; }
     .btn-justwatch:hover { background:rgba(255,140,0,0.14); border-color:rgba(255,140,0,0.4); }
     .jw-dot { width:8px; height:8px; border-radius:50%; background:#ff8000; flex-shrink:0; }
+    .btn-letterboxd { background:rgba(0,224,84,0.07); color:#00e054; border:1px solid rgba(0,224,84,0.22); display:inline-flex; align-items:center; gap:7px; padding:8px 16px; border-radius:var(--radius); font-family:'DM Sans',sans-serif; font-size:0.78rem; font-weight:500; letter-spacing:0.05em; text-transform:uppercase; cursor:pointer; transition:all 0.15s; text-decoration:none; }
+    .btn-letterboxd:hover { background:rgba(0,224,84,0.13); border-color:rgba(0,224,84,0.4); }
+    .lb-dot { width:8px; height:8px; border-radius:50%; background:#00e054; flex-shrink:0; }
     #soonSection { padding:28px 48px 0; display:none; }
     #soonSection.visible { display:block; }
     .soon-heading { display:flex; align-items:center; gap:12px; margin-bottom:16px; }
@@ -1087,7 +1090,7 @@
         <div class="form-grid">
           <div class="field full">
             <label>Title <span style="color:var(--danger)">*</span></label>
-            <input type="text" id="fTitle" placeholder="e.g. Dune: Part Two" oninput="updateModalJustWatch();syncCollapsedTitle()">
+            <input type="text" id="fTitle" placeholder="e.g. Dune: Part Two" oninput="updateModalJustWatch();updateModalLetterboxd();syncCollapsedTitle()">
           </div>
           <div class="field"><label>Year</label><input type="number" id="fYear" placeholder="2024" min="1900" max="2099" oninput="syncCollapsedTitle()"></div>
           <div class="field"><label>Genre</label><input type="text" id="fGenre" placeholder="Sci-Fi, Drama..." oninput="syncCollapsedTitle()"></div>
@@ -1154,6 +1157,7 @@
         </div>
         <div class="form-footer-right">
           <a id="modalJustWatch" class="btn-justwatch btn-sm" href="#" target="_blank" rel="noopener" style="text-decoration:none;opacity:0.35;pointer-events:none;"><span class="jw-dot"></span>JustWatch</a>
+          <a id="modalLetterboxd" class="btn-letterboxd btn-sm" href="#" target="_blank" rel="noopener" style="text-decoration:none;opacity:0.35;pointer-events:none;"><span class="lb-dot"></span>LB</a>
           <button class="btn btn-ghost" onclick="closeAddModal()">Cancel</button>
           <button class="btn btn-primary" onclick="saveMovie()">Save</button>
         </div>
@@ -1485,8 +1489,7 @@ async function selectMovie(id){
   document.getElementById('searchInput').value='';
   _pendingTmdbId=id;
   h.textContent=`Filled from TMDB: "${d.title}". Edit details below.`;h.classList.add('visible');
-  updateModalJustWatch();
-  collapseMovieDetails();
+  updateModalJustWatch();updateModalLetterboxd();
   // Remove focus from the search input after selection
   document.getElementById('searchInput').blur();
 }
@@ -1495,6 +1498,16 @@ function updateModalJustWatch(){
   const t=document.getElementById('fTitle').value.trim(),el=document.getElementById('modalJustWatch');
   if(t){el.href=`https://www.justwatch.com/au/search?q=${encodeURIComponent(t)}`;el.style.opacity='1';el.style.pointerEvents='';}
   else{el.href='#';el.style.opacity='0.35';el.style.pointerEvents='none';}
+}
+
+function updateModalLetterboxd(){
+  const t=document.getElementById('fTitle').value.trim(),el=document.getElementById('modalLetterboxd');
+  if(!el)return;
+  if(t){
+    const m=editingId?movies.find(x=>x.id===editingId):null;
+    const url=(m?.tmdbId||_pendingTmdbId)?`https://letterboxd.com/tmdb/${m?.tmdbId||_pendingTmdbId}/`:`https://letterboxd.com/search/films/${encodeURIComponent(t)}/`;
+    el.href=url;el.style.opacity='1';el.style.pointerEvents='';
+  }else{el.href='#';el.style.opacity='0.35';el.style.pointerEvents='none';}
 }
 
 function updatePosterPreview(url){
@@ -1763,6 +1776,7 @@ function render(){
     if(!f.length){g.innerHTML=emptyFilter;return;}
     g.innerHTML=renderItems(groupIntoRenderItems(f));
   }
+  trimCardMetas();
 }
 
 // ── Categories view ──
@@ -1847,6 +1861,7 @@ function renderCategoriesView(){
   }else{
     g.className='grid';
     g.innerHTML=renderItems(groupIntoRenderItems(sorted));
+    trimCardMetas();
   }
 }
 
@@ -2005,7 +2020,27 @@ function buildCard(m,i){
   const graveyardCls=m.graveyard?' card-graveyard':'';
   const ph=m.poster?`<img class="card-poster" src="${esc(m.poster)}" alt="${esc(m.title)}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="card-poster-placeholder" style="display:none">&#127917;<span>No poster</span></div>`:`<div class="card-poster-placeholder">&#127917;<span>No poster</span></div>`;
   const ov=m.graveyard?`<div class="card-graveyard-overlay"><span class="graveyard-stamp">💀 Never</span></div>`:m.watched?`<div class="card-watched-overlay"><span class="watched-stamp">Watched</span></div>`:'';
-  return`<div class="card${stale}${graveyardCls}" data-id="${m.id}" onclick="openDetail('${m.id}')" style="animation-delay:${i*0.03}s">${ph}${ov}<div class="card-body"><div class="card-title">${esc(m.title)}</div><div class="card-meta">${[m.year,m.genre,formatRuntime(m.runtime)].filter(Boolean).join(' &middot; ')}</div><div class="card-services">${buildBadges(m,true)}</div></div></div>`;
+  return`<div class="card${stale}${graveyardCls}" data-id="${m.id}" onclick="openDetail('${m.id}')" style="animation-delay:${i*0.03}s">${ph}${ov}<div class="card-body"><div class="card-title">${esc(m.title)}</div><div class="card-meta" data-year="${esc(m.year||'')}" data-genre="${esc(m.genre||'')}" data-runtime="${esc(formatRuntime(m.runtime)||'')}">${[m.year,m.genre,formatRuntime(m.runtime)].filter(Boolean).join(' &middot; ')}</div><div class="card-services">${buildBadges(m,true)}</div></div></div>`;
+}
+
+function trimCardMetas(){
+  requestAnimationFrame(()=>{
+    document.querySelectorAll('.card-meta[data-genre]').forEach(el=>{
+      const genre=el.dataset.genre;
+      if(!genre)return;
+      const lh=parseFloat(getComputedStyle(el).lineHeight)||16;
+      const maxH=lh*2+4;
+      if(el.scrollHeight<=maxH)return;
+      const parts=genre.split(',').map(g=>g.trim()).filter(Boolean);
+      if(parts.length<=1)return;
+      const year=el.dataset.year;
+      const runtime=el.dataset.runtime;
+      while(parts.length>1&&el.scrollHeight>maxH){
+        parts.pop();
+        el.textContent=[year,parts.join(', '),runtime].filter(Boolean).join(' · ');
+      }
+    });
+  });
 }
 
 function getOtherShort(name){
@@ -2059,6 +2094,7 @@ function openDetail(id){
       }</div>`;
   const svc=buildDetailSvc(m);
   const jw=`https://www.justwatch.com/au/search?q=${encodeURIComponent(m.title)}`;
+  const lb=m.tmdbId?`https://letterboxd.com/tmdb/${m.tmdbId}/`:`https://letterboxd.com/search/films/${encodeURIComponent(m.title)}/`;
   document.getElementById('detailContent').innerHTML=`
     <div class="detail-poster-row">${ph}<div class="detail-info">
       <div class="detail-title">${esc(m.title)}</div>
@@ -2074,7 +2110,8 @@ function openDetail(id){
     <div class="detail-services-section"><div class="detail-services-title">Where to Watch</div><div class="detail-services-grid">${svc}</div></div>
     <div style="margin-top:20px;display:flex;gap:10px;justify-content:space-between;align-items:center;flex-wrap:wrap;">
       <div style="display:flex;gap:8px;align-items:center;">
-        <a class="btn-justwatch" href="${jw}" target="_blank" rel="noopener" style="text-decoration:none"><span class="jw-dot"></span>JustWatch AU</a>
+        <a class="btn-justwatch" href="${jw}" target="_blank" rel="noopener" style="text-decoration:none"><span class="jw-dot"></span>JW</a>
+        <a class="btn-letterboxd" href="${lb}" target="_blank" rel="noopener" style="text-decoration:none"><span class="lb-dot"></span>LB</a>
         <button class="btn btn-ghost btn-sm" onclick="toggleGraveyard('${m.id}')" title="${m.graveyard?'Remove from graveyard':'Move to graveyard — never watching this'}" style="${m.graveyard?'color:#c084fc;border-color:rgba(124,58,237,0.4);':'color:var(--text-muted);'}">${m.graveyard?'💀 Unbury':'💀'}</button>
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;">
@@ -2165,7 +2202,7 @@ function openAddModal(){
   document.getElementById('deleteRow').style.display='none';
   document.getElementById('addModal').classList.add('open');
   lockScroll();
-  updateModalJustWatch();populateCollectionSuggestions();populateCategorySuggestions();
+  updateModalJustWatch();updateModalLetterboxd();populateCollectionSuggestions();populateCategorySuggestions();
   expandMovieDetails();
   if(tmdbKey)setTimeout(()=>document.getElementById('searchInput').focus(),80);
   else document.getElementById('fTitle').focus();
@@ -2267,7 +2304,7 @@ function openEditModal(id){
   const m=movies.find(x=>x.id===id);if(!m)return;
   editingId=id;document.getElementById('modalTitle').textContent=christmasMode?'🎄 Edit Christmas Film':'Edit Film';
   document.getElementById('deleteRow').style.display='flex';
-  populateForm(m);document.getElementById('addModal').classList.add('open');lockScroll();updateModalJustWatch();populateCollectionSuggestions();populateCategorySuggestions();
+  populateForm(m);document.getElementById('addModal').classList.add('open');lockScroll();updateModalJustWatch();updateModalLetterboxd();populateCollectionSuggestions();populateCategorySuggestions();
   expandMovieDetails();
 }
 
@@ -2567,6 +2604,13 @@ document.addEventListener('keydown',e=>{
         if(jw&&jw.style.pointerEvents!=='none')jw.click();
         return;
       }
+      // L = open Letterboxd
+      if(key==='L'){
+        e.preventDefault();
+        const lb=document.getElementById('modalLetterboxd');
+        if(lb&&lb.style.pointerEvents!=='none')lb.click();
+        return;
+      }
       if(key==='W'){
         e.preventDefault();
         if(e.shiftKey){
@@ -2590,6 +2634,12 @@ document.addEventListener('keydown',e=>{
         e.preventDefault();
         const jw=document.querySelector('#detailContent .btn-justwatch');
         if(jw)jw.click();
+        return;
+      }
+      if(key==='L'){
+        e.preventDefault();
+        const lb=document.querySelector('#detailContent .btn-letterboxd');
+        if(lb)lb.click();
         return;
       }
       if(e.key==='Enter'){
