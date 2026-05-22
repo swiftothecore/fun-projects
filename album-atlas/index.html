@@ -256,6 +256,21 @@
     animation: dropIn 0.15s ease;
   }
 
+  /* On mobile the results dropdown must escape the overflow:hidden clip of
+     #mobile-controls (used for its slide-down animation). Switch to fixed
+     positioning and let JS set the correct top value at open time. */
+  @media (max-width: 768px) {
+    #results-wrap {
+      position: fixed;
+      left: 8px;
+      right: 8px;
+      min-width: 0;
+      max-width: none;
+      max-height: 55vh;
+      /* top is set dynamically by positionResultsMobile() */
+    }
+  }
+
   @keyframes dropIn {
     from { opacity: 0; transform: translateY(-5px); }
     to   { opacity: 1; transform: translateY(0); }
@@ -1573,6 +1588,14 @@ inputArtist.addEventListener("keydown", (e) => {
   }
 });
 
+/* On mobile the dropdown is position:fixed, so we calculate its top from the
+   bottom edge of the album input at the moment it opens. */
+function positionResultsMobile() {
+  if (!isMobile()) return;
+  const rect = inputAlbum.getBoundingClientRect();
+  resultsWrap.style.top = (rect.bottom + 6) + "px";
+}
+
 function renderResults(results) {
   resultsWrap.innerHTML = "";
   highlightedIndex = -1;
@@ -1599,12 +1622,14 @@ function renderResults(results) {
     }
     resultsWrap.appendChild(row);
   });
+  positionResultsMobile();
   resultsWrap.style.display = "block";
   resultsRenderedAt = Date.now();
 }
 
 function showMsg(msg) {
   resultsWrap.innerHTML = `<div class="results-msg">${msg}</div>`;
+  positionResultsMobile();
   resultsWrap.style.display = "block";
 }
 
