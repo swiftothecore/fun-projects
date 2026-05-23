@@ -487,59 +487,61 @@ input, textarea { user-select: text; }
 
 .book-year { font-size: 0.64rem; color: var(--tan); margin-top: 0.1rem; }
 
-/* ── Age indicator — full border ring via box-shadow ── */
-/* Regular (ungrouped) cards */
-.book-card.age-amber  {
-  box-shadow: 0 0 0 2px #B8860B, 0 1px 3px var(--shadow);
-  border-color: #B8860B;
-}
-.book-card.age-orange {
-  box-shadow: 0 0 0 2px #C0631A, 0 1px 3px var(--shadow);
-  border-color: #C0631A;
-}
-.book-card.age-red {
-  box-shadow: 0 0 0 2px #B83030, 0 1px 3px var(--shadow);
-  border-color: #B83030;
-}
-
-/* Hover — preserve ring alongside the lift shadow */
-.book-card.age-amber:hover  { box-shadow: 0 0 0 2px #B8860B, 0 4px 16px rgba(44,26,14,0.15); }
-.book-card.age-orange:hover { box-shadow: 0 0 0 2px #C0631A, 0 4px 16px rgba(44,26,14,0.15); }
-.book-card.age-red:hover    { box-shadow: 0 0 0 2px #B83030, 0 4px 16px rgba(44,26,14,0.15); }
-
-/* Author-group cards have box-shadow:none — re-add ring for them */
-.author-group .book-card.age-amber  { box-shadow: 0 0 0 2px #B8860B; border-color: #B8860B; }
-.author-group .book-card.age-orange { box-shadow: 0 0 0 2px #C0631A; border-color: #C0631A; }
-.author-group .book-card.age-red    { box-shadow: 0 0 0 2px #B83030; border-color: #B83030; }
-.author-group .book-card.age-amber:hover  { box-shadow: 0 0 0 2px #B8860B, 0 2px 10px rgba(44,26,14,0.12); }
-.author-group .book-card.age-orange:hover { box-shadow: 0 0 0 2px #C0631A, 0 2px 10px rgba(44,26,14,0.12); }
-.author-group .book-card.age-red:hover    { box-shadow: 0 0 0 2px #B83030, 0 2px 10px rgba(44,26,14,0.12); }
-
-/* Age text below year */
+/* ── Age indicator — coloured dot + text only ── */
 .book-age {
   font-size: 0.61rem;
   margin-top: 0.22rem;
   font-style: italic;
   color: var(--tan);
   opacity: 0.75;
+  display: flex;
+  align-items: center;
+  gap: 0.3em;
 }
-.book-card.age-amber  .book-age { color: #8A6400; opacity: 1; }
-.book-card.age-orange .book-age { color: #A0520A; opacity: 1; }
-.book-card.age-red    .book-age { color: #922020; opacity: 1; }
 
-/* Dark mode */
-[data-theme="dark"] .book-card.age-amber  { box-shadow: 0 0 0 2px #C9A020, 0 1px 3px var(--shadow); border-color: #C9A020; }
-[data-theme="dark"] .book-card.age-amber:hover  { box-shadow: 0 0 0 2px #C9A020, 0 4px 16px rgba(0,0,0,0.3); }
-[data-theme="dark"] .book-card.age-amber  .book-age { color: #C9A020; opacity: 1; }
-[data-theme="dark"] .book-card.age-orange { box-shadow: 0 0 0 2px #D07030, 0 1px 3px var(--shadow); border-color: #D07030; }
-[data-theme="dark"] .book-card.age-orange:hover { box-shadow: 0 0 0 2px #D07030, 0 4px 16px rgba(0,0,0,0.3); }
+.book-age::before {
+  content: '';
+  display: none;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.book-card.age-amber .book-age  { color: #8A6400; opacity: 1; }
+.book-card.age-amber .book-age::before  { display: inline-block; background: #B8860B; }
+
+.book-card.age-orange .book-age { color: #A0520A; opacity: 1; }
+.book-card.age-orange .book-age::before { display: inline-block; background: #C0631A; }
+
+.book-card.age-red .book-age    { color: #922020; opacity: 1; }
+.book-card.age-red .book-age::before    { display: inline-block; background: #B83030; }
+
+/* Left accent stripe */
+.book-card.age-amber  { border-left: 3px solid #B8860B; }
+.book-card.age-orange { border-left: 3px solid #C0631A; }
+.book-card.age-red    { border-left: 3px solid #B83030; }
+
+/* Author-group cards override border-left: none — restore stripe */
+.author-group .book-card.age-amber  { border-left: 3px solid #B8860B; }
+.author-group .book-card.age-orange { border-left: 3px solid #C0631A; }
+.author-group .book-card.age-red    { border-left: 3px solid #B83030; }
+
+/* Dark mode age text + dot */
+[data-theme="dark"] .book-card.age-amber .book-age  { color: #C9A020; opacity: 1; }
+[data-theme="dark"] .book-card.age-amber .book-age::before  { background: #C9A020; }
 [data-theme="dark"] .book-card.age-orange .book-age { color: #D07030; opacity: 1; }
-[data-theme="dark"] .book-card.age-red    { box-shadow: 0 0 0 2px #D05050, 0 1px 3px var(--shadow); border-color: #D05050; }
-[data-theme="dark"] .book-card.age-red:hover    { box-shadow: 0 0 0 2px #D05050, 0 4px 16px rgba(0,0,0,0.3); }
-[data-theme="dark"] .book-card.age-red    .book-age { color: #D05050; opacity: 1; }
-[data-theme="dark"] .author-group .book-card.age-amber  { box-shadow: 0 0 0 2px #C9A020; border-color: #C9A020; }
-[data-theme="dark"] .author-group .book-card.age-orange { box-shadow: 0 0 0 2px #D07030; border-color: #D07030; }
-[data-theme="dark"] .author-group .book-card.age-red    { box-shadow: 0 0 0 2px #D05050; border-color: #D05050; }
+[data-theme="dark"] .book-card.age-orange .book-age::before { background: #D07030; }
+[data-theme="dark"] .book-card.age-red .book-age    { color: #D05050; opacity: 1; }
+[data-theme="dark"] .book-card.age-red .book-age::before    { background: #D05050; }
+
+/* Dark mode left stripe */
+[data-theme="dark"] .book-card.age-amber,
+[data-theme="dark"] .author-group .book-card.age-amber  { border-left-color: #C9A020; }
+[data-theme="dark"] .book-card.age-orange,
+[data-theme="dark"] .author-group .book-card.age-orange { border-left-color: #D07030; }
+[data-theme="dark"] .book-card.age-red,
+[data-theme="dark"] .author-group .book-card.age-red    { border-left-color: #D05050; }
 
 /* ── Date picker inside floating menu ── */
 .fmenu-date-row {
