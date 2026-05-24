@@ -1207,6 +1207,14 @@ function countryFlag(name){
 const SERVICES=['netflix','disney','prime','cinema','other'];
 const TMDB_IMG='https://image.tmdb.org/t/p/w500';
 const TMDB_SM='https://image.tmdb.org/t/p/w92';
+// TMDB's search tokeniser drops single-character tokens and mis-handles
+// titles with unusual punctuation (e.g. WALL·E uses U+00B7, not a hyphen),
+// so some films cannot be found by any text query — confirmed by TMDB staff.
+// Map known-broken query strings (lowercased, hyphens normalised to spaces)
+// to TMDB movie IDs to inject the correct result. Add new entries as found.
+const TMDB_SEARCH_ALIASES={
+  'wall e':10681, 'walle':10681,
+};
 var movies=JSON.parse(localStorage.getItem('watchlist_v2')||'[]');
 let christmasMovies=JSON.parse(localStorage.getItem('christmas_watchlist_v1')||'[]');
 let christmasMode=localStorage.getItem('christmas_mode_active')==='true';
@@ -1384,12 +1392,30 @@ function onSearchInput(val){
 
 async function searchTMDB(q){
   const sp=document.getElementById('searchSpinner'),r=document.getElementById('searchResults');
+  // TMDB's search tokeniser treats hyphens as separators and some titles use
+  // a middle-dot (e.g. WALL·E) rather than a hyphen, so normalise to a space
+  // before querying — otherwise hyphenated queries return irrelevant results.
+  const normalisedQ=q.replace(/[-\u2010-\u2015]/g,' ').replace(/\s+/g,' ').trim();
+  // Alias lookup: route known-broken queries directly to a movie ID. Try both
+  // the normalised form ("wall e") and a fully-stripped form ("walle").
+  const aliasKey=normalisedQ.toLowerCase();
+  const aliasKeyStripped=aliasKey.replace(/\s+/g,'');
+  const aliasId=TMDB_SEARCH_ALIASES[aliasKey]||TMDB_SEARCH_ALIASES[aliasKeyStripped]||null;
   try{
-    const res=await fetch(`https://api.themoviedb.org/3/search/movie?api_key=${encodeURIComponent(tmdbKey)}&query=${encodeURIComponent(q)}&include_adult=false`);
+    const fetches=[fetch(`https://api.themoviedb.org/3/search/movie?api_key=${encodeURIComponent(tmdbKey)}&query=${encodeURIComponent(normalisedQ)}&include_adult=false`)];
+    if(aliasId)fetches.push(fetch(`https://api.themoviedb.org/3/movie/${aliasId}?api_key=${encodeURIComponent(tmdbKey)}`));
+    const [res,aliasRes]=await Promise.all(fetches);
     if(!res.ok){if(res.status===401)r.innerHTML=`<div class="search-no-results">Invalid API key. <a href="#" onclick="showApiSettings();return false;" style="color:var(--gold)">Update it here.</a></div>`;r.classList.add('open');sp.classList.remove('active');return;}
     const d=await res.json();sp.classList.remove('active');
-    if(!d.results||!d.results.length){r.innerHTML=`<div class="search-no-results">No results for "${esc(q)}"</div>`;r.classList.add('open');return;}
-    r.innerHTML=d.results.slice(0,8).map(m=>{
+    let results=d.results||[];
+    // Prepend the aliased movie if the fetch succeeded — dedupe if it also
+    // happened to come back in the regular search results.
+    if(aliasRes&&aliasRes.ok){
+      const aliasMovie=await aliasRes.json();
+      results=[aliasMovie,...results.filter(m=>m.id!==aliasMovie.id)];
+    }
+    if(!results.length){r.innerHTML=`<div class="search-no-results">No results for "${esc(q)}"</div>`;r.classList.add('open');return;}
+    r.innerHTML=results.slice(0,8).map(m=>{
       const yr=m.release_date?m.release_date.slice(0,4):'?';
       const th=m.poster_path?`<img class="result-thumb" src="${TMDB_SM}${m.poster_path}" alt="" loading="lazy">`:`<div class="result-thumb-placeholder">&#127917;</div>`;
       const ov=m.overview?`<div class="result-overview">${esc(m.overview)}</div>`:'';
@@ -1401,7 +1427,7 @@ async function searchTMDB(q){
     }).join('');
     searchHighlightIndex=-1;
     r.classList.add('open');
-    if(d.results.length)preloadMovie(d.results[0].id);
+    if(results.length)preloadMovie(results[0].id);
   }catch{sp.classList.remove('active');r.innerHTML=`<div class="search-no-results">Search failed.</div>`;r.classList.add('open');}
 }
 
@@ -1537,7 +1563,7 @@ async function backfillRuntimes(){
         const res=await fetch(`https://api.themoviedb.org/3/movie/${m.tmdbId}?api_key=${encodeURIComponent(tmdbKey)}`);
         if(res.ok){const d=await res.json();runtime=d.runtime||0;}
       } else if(m.title){
-        const q=encodeURIComponent(m.title);
+        const q=encodeURIComponent(m.title.replace(/[-\u2010-\u2015]/g,' ').replace(/\s+/g,' ').trim());
         const yr=m.year?`&year=${m.year}`:'';
         const res=await fetch(`https://api.themoviedb.org/3/search/movie?api_key=${encodeURIComponent(tmdbKey)}&query=${q}${yr}&include_adult=false`);
         if(res.ok){
@@ -2653,7 +2679,8 @@ document.addEventListener('keydown',e=>{
   const inField=document.activeElement.tagName==='INPUT'||document.activeElement.tagName==='TEXTAREA';
   if(e.altKey&&e.code==='KeyT'&&!inField&&!document.getElementById('addModal').classList.contains('open')){
     e.preventDefault();
-    openAddModal();
+    if(currentCategory) openAddModalWithCategory(currentCategory);
+    else openAddModal();
     return;
   }
   if(e.key==='z'&&(e.metaKey||e.ctrlKey)&&!e.shiftKey&&!inField){
