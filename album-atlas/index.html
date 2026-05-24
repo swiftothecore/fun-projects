@@ -1515,15 +1515,192 @@ function updateCount() {
 /* ---------- MusicBrainz ---------- */
 async function searchMB(album, artist) {
   let q = "";
-  if (album && artist) q = `releasegroup:"${album}" AND artist:"${artist}"`;
-  else if (album)      q = `releasegroup:"${album}"`;
-  else if (artist)     q = `artist:"${artist}"`;
+  if (album && artist) q = `releasegroup:"${escapeLucene(album)}" AND artist:"${escapeLucene(artist)}"`;
+  else if (album)      q = `releasegroup:"${escapeLucene(album)}"`;
+  else if (artist)     q = `artist:"${escapeLucene(artist)}"`;
   if (!q) return [];
-  const url = `https://musicbrainz.org/ws/2/release-group?query=${encodeURIComponent(q)}&type=album&fmt=json&limit=8`;
+  const mbUrl = `https://musicbrainz.org/ws/2/release-group?query=${encodeURIComponent(q)}&type=album&fmt=json&limit=100`;
+
+  // Phase 1: MusicBrainz primary query + iTunes oracle in parallel.
+  // iTunes provides the popularity ordering MB lacks. iTunes failure is
+  // non-fatal — we degrade gracefully to MB-only ranking.
+  const [primaryGroups, itunes] = await Promise.all([
+    fetchMBGroups(mbUrl),
+    fetchITunesData(album, artist)
+  ]);
+
+  // Phase 2: Targeted MB lookups for popular albums missing from primary.
+  // This is the critical step — MB's text-relevance search genuinely buries
+  // well-known albums beyond the top-100 limit (e.g., a broad search for
+  // "Red" doesn't surface Taylor Swift's "Red" in the first 100 results, even
+  // though MB obviously has it). iTunes tells us what *should* be there,
+  // and we ask MB explicitly for each one by artist+title.
+  let supplemental = [];
+  if (itunes.top.length > 0) {
+    supplemental = await fetchMBForMissingPopular(primaryGroups, itunes.top, 3);
+  }
+
+  // Merge primary + supplemental, dedupe by MB ID.
+  const merged = [...primaryGroups];
+  const seen = new Set(primaryGroups.map(g => g.id));
+  supplemental.forEach(g => {
+    if (g.id && !seen.has(g.id)) {
+      merged.push(g);
+      seen.add(g.id);
+    }
+  });
+
+  return rankByPopularity(merged, album, itunes.hints).slice(0, 10);
+}
+
+async function fetchMBGroups(url) {
   const r = await fetch(url, { headers: { Accept: "application/json" } });
   if (!r.ok) throw new Error("fail");
   const d = await r.json();
   return d["release-groups"] || [];
+}
+
+/* For each of iTunes' top-N popular results not already in MB's primary
+   results, fire a targeted MB query by artist+title. These are fired in
+   parallel; individual failures (rate limits, no MB record) just yield
+   empty arrays and don't break the rest of the search. */
+async function fetchMBForMissingPopular(primaryGroups, itunesTop, topN) {
+  // Index existing primary results by normalised (artist, title), with and
+  // without parenthetical suffixes, so we don't refetch what's already there.
+  const existing = new Set();
+  primaryGroups.forEach(g => {
+    const a = normaliseForMatch(g["artist-credit"]?.[0]?.name);
+    const t = normaliseForMatch(g.title);
+    const ct = stripParens(t);
+    if (a && t)                    existing.add(a + "|" + t);
+    if (a && ct && ct !== t)       existing.add(a + "|" + ct);
+  });
+
+  const candidates = itunesTop.slice(0, topN).filter(item =>
+    !existing.has(item.artist + "|" + item.title) &&
+    !existing.has(item.artist + "|" + item.cleanTitle)
+  );
+  if (candidates.length === 0) return [];
+
+  const requests = candidates.map(item => {
+    const titleForQuery = item.cleanTitle || item.title;
+    const q = `releasegroup:"${escapeLucene(titleForQuery)}" AND artist:"${escapeLucene(item.artist)}"`;
+    const url = `https://musicbrainz.org/ws/2/release-group?query=${encodeURIComponent(q)}&type=album&fmt=json&limit=5`;
+    return fetch(url, { headers: { Accept: "application/json" } })
+      .then(r => r.ok ? r.json() : null)
+      .then(d => (d && d["release-groups"]) || [])
+      .catch(() => []);
+  });
+
+  const responses = await Promise.all(requests);
+  return responses.flat();
+}
+
+/* iTunes Search API as a popularity oracle. Returns both a hint Map (for
+   ranking) and a top array (for targeted MB lookups). 1.5s timeout; failures
+   return empty structures and the ranking still works on MB signals alone. */
+async function fetchITunesData(album, artist) {
+  const term = [album, artist].filter(Boolean).join(" ").trim();
+  if (!term) return { hints: new Map(), top: [] };
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 1500);
+    const url = `https://itunes.apple.com/search?term=${encodeURIComponent(term)}&entity=album&limit=20`;
+    const r = await fetch(url, { signal: controller.signal });
+    clearTimeout(timeoutId);
+    if (!r.ok) return { hints: new Map(), top: [] };
+    const d = await r.json();
+    const results = d.results || [];
+    if (results.length === 0) return { hints: new Map(), top: [] };
+    const hints = new Map();
+    const top = [];
+    results.forEach((res, i) => {
+      const rank = (results.length - i) / results.length;
+      const artistName = normaliseForMatch(res.artistName);
+      const title      = normaliseForMatch(res.collectionName);
+      if (!artistName || !title) return;
+      const cleanTitle = stripParens(title);
+      hints.set(artistName + "|" + title, rank);
+      if (cleanTitle && cleanTitle !== title && !hints.has(artistName + "|" + cleanTitle)) {
+        hints.set(artistName + "|" + cleanTitle, rank);
+      }
+      top.push({ artist: artistName, title, cleanTitle, rank });
+    });
+    return { hints, top };
+  } catch {
+    return { hints: new Map(), top: [] };
+  }
+}
+
+/* Normalise strings for fuzzy matching across MB and iTunes: case-fold,
+   strip diacritics, straighten curly quotes, collapse whitespace. Catches
+   mismatches like "Beyoncé" vs "Beyonce" or curly vs straight apostrophes. */
+function normaliseForMatch(s) {
+  return String(s || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[\u2018\u2019]/g, "'")
+    .replace(/[\u201c\u201d]/g, '"')
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function stripParens(s) {
+  return String(s || "").replace(/\s*[\(\[][^\)\]]*[\)\]]/g, "").trim();
+}
+
+function escapeLucene(s) {
+  return String(s || "").replace(/(["\\])/g, "\\$1");
+}
+
+/* Re-rank MusicBrainz results by combining four signals:
+   1. MB's text-relevance `score` (0-100) — foundation
+   2. MB's per-result `count` (release count) — often missing in search
+      responses, so frequently a no-op
+   3. Title-match boost — separates the album you typed from titles that
+      merely contain the word
+   4. iTunes popularity boost — multiplies up to 11x when (artist, title)
+      matches iTunes results; dominant signal when present
+
+   Studio originals get a small edge over compilations, live, soundtracks,
+   and remix collections. */
+function rankByPopularity(results, queryAlbum, popHints) {
+  return results.slice().sort((a, b) => popularityScore(b, queryAlbum, popHints) - popularityScore(a, queryAlbum, popHints));
+}
+
+function popularityScore(r, queryAlbum, popHints) {
+  const score = parseInt(r.score, 10) || 0;
+  const count = r.count || 0;
+  const secondary = r["secondary-types"] || [];
+  let typeWeight = 1.0;
+  if (secondary.includes("Compilation"))      typeWeight = 0.65;
+  else if (secondary.includes("Soundtrack"))  typeWeight = 0.85;
+  else if (secondary.includes("Live"))        typeWeight = 0.85;
+  else if (secondary.includes("Remix"))       typeWeight = 0.80;
+  else if (secondary.includes("Demo"))        typeWeight = 0.90;
+
+  let titleBoost = 1.0;
+  if (queryAlbum) {
+    const t = normaliseForMatch(r.title);
+    const q = normaliseForMatch(queryAlbum);
+    if (t === q)                                                titleBoost = 5.0;
+    else if (t.startsWith(q + " (") || t.startsWith(q + " ["))  titleBoost = 3.0;
+    else if (t.startsWith(q + ":"))                              titleBoost = 2.5;
+  }
+
+  let popBoost = 1.0;
+  if (popHints && popHints.size > 0) {
+    const artistName = normaliseForMatch(r["artist-credit"]?.[0]?.name);
+    const titleStr   = normaliseForMatch(r.title);
+    const cleanTitle = stripParens(titleStr);
+    const rank = popHints.get(artistName + "|" + titleStr)
+              || popHints.get(artistName + "|" + cleanTitle)
+              || 0;
+    if (rank > 0) popBoost = 1 + rank * 10;
+  }
+
+  return score * Math.log10(count + 10) * typeWeight * titleBoost * popBoost;
 }
 
 /* ---------- Live search ---------- */
