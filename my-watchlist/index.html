@@ -30,10 +30,10 @@
     .banner-input:focus { outline:none; border-color:var(--gold-dim); }
     header { padding:36px 48px 0; display:flex; align-items:flex-end; justify-content:space-between; gap:24px; flex-wrap:wrap; }
     .header-title { font-family:'Playfair Display',serif; font-size:clamp(2rem,5vw,3.5rem); font-weight:400; line-height:1; letter-spacing:-0.02em; }
-    .header-title span { color:var(--gold); font-style:italic; }
+    .header-title span { color:var(--gold); font-style:italic; letter-spacing:0.02em; }
     .header-count { font-size:0.75rem; letter-spacing:0.15em; text-transform:uppercase; color:var(--text-dim); margin-top:2px; position:relative; top:14px; }
-    .controls { padding:24px 48px; display:flex; gap:12px; flex-wrap:wrap; align-items:center; border-bottom:1px solid var(--border); }
-    .filter-bar { display:flex; gap:6px; flex-wrap:wrap; flex:1; }
+    .controls { padding:24px 48px 20px; display:flex; gap:12px; flex-wrap:wrap; align-items:center; border-bottom:1px solid var(--border); }
+    .filter-bar { display:flex; column-gap:6px; row-gap:10px; flex-wrap:wrap; flex:1; }
     .filter-btn { background:transparent; border:1px solid var(--border); color:var(--text-dim); padding:6px 14px; border-radius:100px; font-family:'DM Sans',sans-serif; font-size:0.75rem; letter-spacing:0.08em; text-transform:uppercase; cursor:pointer; transition:all 0.15s; }
     .filter-btn:hover { border-color:var(--gold-dim); color:var(--text); }
     .filter-btn.active { border-color:var(--gold); color:var(--gold); background:rgba(201,168,76,0.08); }
@@ -192,8 +192,8 @@
     .poster-preview-thumb { width:50px; height:75px; border-radius:3px; flex-shrink:0; border:1px solid var(--border); display:flex; align-items:center; justify-content:center; color:var(--text-muted); font-size:1.2rem; overflow:hidden; background:var(--surface2); }
     .poster-preview-thumb img { width:100%; height:100%; object-fit:cover; }
     .streaming-section { margin-top:6px; }
-    .streaming-rows { display:flex; flex-direction:column; gap:8px; }
-    .streaming-row { background:var(--bg); border:1px solid var(--border); border-radius:var(--radius); padding:10px 14px; display:flex; flex-direction:column; align-items:flex-start; gap:8px; }
+    .streaming-rows { display:flex; flex-direction:column; gap:6px; }
+    .streaming-row { background:var(--bg); border:1px solid var(--border); border-radius:var(--radius); padding:7px 14px; display:flex; flex-direction:column; align-items:flex-start; gap:8px; }
     .streaming-row-inner { display:flex; align-items:center; gap:12px; width:100%; }
     .streaming-row .service-label { flex:1; font-size:0.8rem; font-weight:500; }
     .streaming-row .service-label.netflix { color:#ff4a54; }
@@ -213,7 +213,7 @@
     .vpn-country-input.visible { display:block; }
     .form-footer { display:flex; justify-content:space-between; align-items:center; margin-top:22px; padding-top:18px; border-top:1px solid var(--border); gap:12px; flex-wrap:wrap; }
     .form-footer-right { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
-    .form-footer-left  { display:flex; flex-direction:column; gap:8px; }
+    .form-footer-left  { display:flex; flex-direction:row; gap:20px; align-items:center; }
     .toggle-row { display:flex; align-items:center; gap:8px; cursor:pointer; }
     .toggle-row input { display:none; }
     .toggle-row .track { width:36px; height:20px; background:var(--border); border-radius:100px; position:relative; transition:background 0.2s; flex-shrink:0; }
@@ -301,6 +301,7 @@
     .view-toggle-btn { background:transparent; border:none; color:var(--text-muted); padding:5px 8px; border-radius:4px; cursor:pointer; transition:all 0.15s; display:flex; align-items:center; }
     .view-toggle-btn:hover { color:var(--text); }
     .view-toggle-btn.active { background:var(--surface); color:var(--gold); box-shadow:0 1px 4px rgba(0,0,0,0.3); }
+    .view-toggle-sep { width:1px; background:var(--border-hi); margin:3px 2px; flex-shrink:0; }
     @media(max-width:640px){
       /* Prevent iOS Safari from zooming on input focus (triggered when font-size < 16px).
          !important is necessary here because class selectors (.search-input, .banner-input etc.)
@@ -316,20 +317,30 @@
       header{padding-top:22px;flex-direction:column;align-items:flex-start;gap:12px;}
       header > div:first-child{width:100%;}
       header > div:last-child{width:100%;display:flex;flex-wrap:wrap;align-items:stretch;gap:8px;}
-      header > div:last-child .btn-ghost,
-      header > div:last-child .btn-christmas{flex:1 1 calc(33.333% - 6px);min-width:0;justify-content:center;padding:10px 8px;font-size:0.68rem;white-space:nowrap;}
+      header > div:last-child .btn-ghost{flex:1 1 calc(33.333% - 6px);min-width:0;justify-content:center;padding:10px 8px;font-size:0.68rem;white-space:nowrap;}
       header > div:last-child .btn-primary{flex:1 1 100%;width:100%;justify-content:center;padding:12px 16px;margin-top:2px;}
       .header-count{margin-top:8px;font-size:0.68rem;letter-spacing:0.16em;top:0;}
       .header-title{font-size:clamp(1.8rem,8vw,2.5rem);}
 
-      /* Filter bar: single scrollable row instead of multi-row bubble wrap */
-      .controls{flex-wrap:nowrap;gap:8px;padding-top:14px;padding-bottom:14px;}
-      .filter-bar{flex-wrap:nowrap;overflow-x:auto;min-width:0;scrollbar-width:none;gap:8px;}
+      /* Filter bar on its own row; search/sort/select/toggle right-aligned on the row below */
+      .controls{flex-wrap:wrap;gap:8px;padding-top:14px;padding-bottom:14px;}
+      .filter-bar{flex:0 0 100%;flex-wrap:nowrap;overflow-x:auto;min-width:0;scrollbar-width:none;gap:8px;}
       .filter-bar::-webkit-scrollbar{display:none;}
       .filter-btn{flex-shrink:0;white-space:nowrap;padding:6px 12px;font-size:0.7rem;}
+      #searchBarWrap{margin-left:auto;}
 
-      /* Hide the view toggle — list view is forced on mobile via JS */
-      .view-toggle{display:none;}
+      /* Hide the layout buttons on mobile (list view is forced via JS), keep Christmas button */
+      #viewGrid,#viewList{display:none;}
+      .view-toggle{background:transparent;border-color:transparent;padding:0;}
+      .view-toggle-sep{display:none;}
+
+      /* Bulk bar: two rows on mobile */
+      .bulk-main{padding:8px 16px 10px;gap:0;flex-direction:column;align-items:stretch;}
+      .bulk-top{display:flex;align-items:center;gap:8px;margin-bottom:7px;}
+      .bulk-sep{display:none;}
+      .bulk-cancel{margin-left:auto;}
+      .bulk-actions{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding-bottom:2px;gap:5px;}
+      .bulk-actions::-webkit-scrollbar{display:none;}
 
       /* Form */
       .form-grid{grid-template-columns:1fr;}
@@ -577,10 +588,14 @@
   #duplicateWarning { padding:9px 14px; background:rgba(201,168,76,0.07); border:1px solid rgba(201,168,76,0.25); border-radius:var(--radius); font-size:0.78rem; color:var(--text-dim); display:flex; align-items:flex-start; gap:8px; line-height:1.5; }
   #duplicateWarning .dup-icon { flex-shrink:0; margin-top:1px; }
   .dup-match { color:var(--gold); cursor:pointer; text-decoration:underline; text-underline-offset:2px; white-space:nowrap; }
-  .dup-match:hover { color:var(--text); } font-size:0.82rem; color:var(--text-dim); cursor:pointer; font-family:'DM Sans',sans-serif; font-weight:300; display:flex; align-items:center; gap:8px; transition:background 0.1s; }
+  .dup-match:hover { color:var(--text); }
+  #categoryDropdown .cat-suggestion, #watchWithDropdown .cat-suggestion { padding:9px 14px; font-size:0.82rem; color:var(--text-dim); cursor:pointer; font-family:'DM Sans',sans-serif; font-weight:300; display:flex; align-items:center; gap:8px; transition:background 0.1s; }
   #categoryDropdown .cat-suggestion:hover, #categoryDropdown .cat-suggestion.active { background:rgba(201,168,76,0.08); color:var(--text); }
   #categoryDropdown .cat-suggestion .cat-icon { font-size:0.75rem; opacity:0.5; }
   #categoryDropdown .cat-suggestion + .cat-suggestion { border-top:1px solid var(--border); }
+  #watchWithDropdown .cat-suggestion:hover, #watchWithDropdown .cat-suggestion.active { background:rgba(201,168,76,0.08); color:var(--text); }
+  #watchWithDropdown .cat-suggestion .cat-icon { font-size:0.75rem; opacity:0.5; }
+  #watchWithDropdown .cat-suggestion + .cat-suggestion { border-top:1px solid var(--border); }
   @media(max-width:640px){
     #categoryBar{padding-left:20px;padding-right:20px;}
     .category-empty-state{padding:40px 20px;}
@@ -630,6 +645,352 @@
   .btn-christmas { background:transparent; border:1px solid var(--border); color:var(--text-dim); display:inline-flex; align-items:center; gap:8px; padding:9px 16px; border-radius:var(--radius); font-family:'DM Sans',sans-serif; font-size:0.8rem; font-weight:500; letter-spacing:0.06em; text-transform:uppercase; cursor:pointer; transition:all 0.15s; white-space:nowrap; }
   .btn-christmas:hover { border-color:rgba(200,48,74,0.55); color:#c8304a; }
   .btn-christmas.active { background:rgba(200,48,74,0.1); border-color:#c8304a; color:#c8304a; }
+
+  /* ── Surprise Me modal ───────────────────────────────────────────────── */
+  #surpriseModal .modal { max-width:460px; }
+  .surprise-svc-chips { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px; }
+  .surprise-svc-chip { padding:7px 15px; border-radius:100px; border:1px solid var(--border); background:transparent; color:var(--text-muted); font-size:0.72rem; letter-spacing:0.08em; text-transform:uppercase; cursor:pointer; font-family:'DM Sans',sans-serif; transition:all 0.15s; display:inline-flex; align-items:center; gap:7px; }
+  .surprise-svc-chip:hover { border-color:var(--gold-dim); color:var(--text); }
+  .surprise-svc-chip .chip-dot { width:6px; height:6px; border-radius:50%; flex-shrink:0; }
+  .surprise-svc-chip[data-service="netflix"].active { border-color:#e50914; color:#ff4a54; background:rgba(229,9,20,0.08); }
+  .surprise-svc-chip[data-service="disney"].active  { border-color:#3b82f6; color:#60a5fa; background:rgba(30,58,138,0.1);  }
+  .surprise-svc-chip[data-service="prime"].active   { border-color:#00a8e1; color:#38bdf8; background:rgba(0,168,225,0.08); }
+  .surprise-svc-chip[data-service="cinema"].active  { border-color:#818cf8; color:#818cf8; background:rgba(129,140,248,0.08); }
+  .surprise-svc-chip[data-service="other"].active   { border-color:#4a7c59; color:#6ee7a0; background:rgba(74,124,89,0.1);  }
+  .surprise-option-row { display:flex; align-items:center; gap:12px; padding:11px 14px; background:var(--bg); border:1px solid var(--border); border-radius:var(--radius); margin-bottom:8px; }
+  .surprise-option-lbl { flex:1; }
+  .surprise-option-lbl strong { font-size:0.72rem; letter-spacing:0.07em; text-transform:uppercase; color:var(--text-dim); font-weight:500; display:block; }
+  .surprise-option-lbl span { font-size:0.66rem; color:var(--text-muted); margin-top:2px; display:block; }
+  .surprise-pool-count { font-size:0.68rem; color:var(--text-muted); margin:10px 0 18px; letter-spacing:0.04em; transition:color 0.2s; }
+  .surprise-pool-count.empty { color:var(--danger); }
+  #surpriseResultArea { border-top:1px solid var(--border); padding-top:18px; padding-bottom:16px; margin-top:2px; }
+  .surprise-result-poster { width:108px; height:162px; object-fit:cover; border-radius:5px; flex-shrink:0; background:var(--surface2); display:block; }
+  .surprise-result-placeholder { width:108px; height:162px; background:var(--surface2); border-radius:5px; display:flex; align-items:center; justify-content:center; font-size:1.8rem; color:var(--text-muted); flex-shrink:0; }
+  .surprise-result-title { font-family:'Playfair Display',serif; font-size:1.15rem; font-weight:400; line-height:1.25; margin-bottom:4px; }
+  .surprise-result-meta { font-size:0.76rem; color:var(--text-dim); line-height:1.5; margin-bottom:3px; }
+  .surprise-result-rating { font-size:0.75rem; color:var(--gold); margin-bottom:6px; }
+  .surprise-collection-note { font-size:0.67rem; color:var(--gold-dim); letter-spacing:0.03em; margin-bottom:8px; }
+  @keyframes diceRoll { 0%{transform:rotate(0)scale(1)} 20%{transform:rotate(-18deg)scale(1.3)} 50%{transform:rotate(16deg)scale(0.88)} 75%{transform:rotate(-9deg)scale(1.1)} 100%{transform:rotate(0)scale(1)} }
+  .dice-spin { display:inline-block; animation:diceRoll 0.42s cubic-bezier(0.34,1.2,0.64,1); }
+  @keyframes surpriseReveal { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:none} }
+  #surpriseResultArea.revealed { animation:surpriseReveal 0.28s cubic-bezier(0.34,1.1,0.64,1); }
+  @media(max-width:640px){
+    #surpriseModal { align-items:flex-end; padding:0; }
+    #surpriseModal .modal { border-radius:22px 22px 0 0; max-width:100%; width:100%; max-height:88vh; border-bottom:none; border-left:none; border-right:none; overflow-y:hidden; display:flex; flex-direction:column; animation:mobileSheetUp 0.3s cubic-bezier(0.33,1,0.68,1); }
+    #surpriseModal .modal::before { content:''; display:block; width:36px; height:4px; background:var(--border-hi); border-radius:2px; margin:14px auto 0; flex-shrink:0; }
+    #surpriseModal .modal-header { flex-shrink:0; padding:8px 20px 0; margin-bottom:12px; }
+    #surpriseModal .modal-body { overflow-y:auto; -webkit-overflow-scrolling:touch; flex:1; padding:0 20px max(20px,env(safe-area-inset-bottom)); }
+  }
+
+  /* ── Letterboxd Import modal ─────────────────────────────────────────── */
+  #importModal .modal { max-width:500px; }
+  .import-step-instructions { font-size:0.78rem; color:var(--text-muted); line-height:1.65; margin-bottom:18px; }
+  .import-step-instructions ol { padding-left:18px; margin:8px 0 0; }
+  .import-step-instructions li { margin-bottom:4px; }
+  .import-step-instructions code { background:var(--surface2); padding:1px 5px; border-radius:3px; font-size:0.76rem; font-family:monospace; }
+  .import-dropzone { border:2px dashed var(--border-hi); border-radius:var(--radius); padding:30px 20px; text-align:center; cursor:pointer; transition:border-color 0.15s,background 0.15s; }
+  .import-dropzone:hover, .import-dropzone.drag-over { border-color:var(--gold-dim); background:rgba(201,168,76,0.04); }
+  .import-dropzone-icon { font-size:2rem; display:block; margin-bottom:8px; opacity:0.45; }
+  .import-dropzone-text { font-size:0.82rem; color:var(--text-dim); }
+  .import-dropzone-hint { font-size:0.7rem; color:var(--text-muted); margin-top:4px; }
+  .import-warning { font-size:0.72rem; color:var(--text-muted); background:rgba(201,168,76,0.05); border:1px solid rgba(201,168,76,0.15); border-radius:var(--radius); padding:10px 12px; line-height:1.55; margin-bottom:18px; }
+  .import-warning strong { color:var(--text-dim); }
+  .import-file-confirmed { display:flex; align-items:center; gap:10px; padding:10px 14px; background:rgba(201,168,76,0.06); border:1px solid rgba(201,168,76,0.22); border-radius:var(--radius); margin-bottom:16px; }
+  .import-file-icon { font-size:1.1rem; flex-shrink:0; }
+  .import-file-name { font-size:0.82rem; color:var(--text); font-weight:500; }
+  .import-file-meta { font-size:0.7rem; color:var(--text-muted); margin-top:2px; }
+  .import-preview-list { list-style:none; margin:0; padding:0; max-height:130px; overflow-y:auto; }
+  .import-preview-list li { font-size:0.78rem; color:var(--text-dim); padding:5px 0; border-bottom:1px solid var(--border); }
+  .import-preview-list li:last-child { border-bottom:none; }
+  .import-progress-bar { height:5px; background:var(--border); border-radius:100px; overflow:hidden; margin:14px 0 8px; }
+  .import-progress-fill { height:100%; background:var(--gold); border-radius:100px; transition:width 0.25s ease; width:0%; }
+  .import-stat-row { display:flex; align-items:center; justify-content:space-between; padding:10px 14px; border-bottom:1px solid var(--border); font-size:0.82rem; }
+  .import-stat-row:last-child { border-bottom:none; }
+  .import-stat-label { color:var(--text-dim); }
+  .import-stat-value { font-weight:500; }
+  @media(max-width:640px){
+    #importModal { align-items:flex-end; padding:0; }
+    #importModal .modal { border-radius:22px 22px 0 0; max-width:100%; width:100%; max-height:90vh; border-bottom:none; border-left:none; border-right:none; overflow-y:hidden; display:flex; flex-direction:column; animation:mobileSheetUp 0.3s cubic-bezier(0.33,1,0.68,1); }
+    #importModal .modal::before { content:''; display:block; width:36px; height:4px; background:var(--border-hi); border-radius:2px; margin:14px auto 0; flex-shrink:0; }
+    #importModal .modal-header { flex-shrink:0; padding:8px 20px 0; margin-bottom:12px; }
+    #importModal .modal-body { overflow-y:auto; -webkit-overflow-scrolling:touch; flex:1; padding:0 20px max(20px,env(safe-area-inset-bottom)); }
+  }
+
+  /* ── Bulk selection ─────────────────────────────────────────────────── */
+  body.bulk-mode { padding-bottom:74px; }
+  #selectModeBtn.active { border-color:var(--gold); color:var(--gold); background:rgba(201,168,76,0.08); }
+
+  /* Selection circle indicator on grid cards */
+  .selection-mode .card { cursor:pointer; user-select:none; }
+  .selection-mode .card::after {
+    content:''; position:absolute; top:8px; left:8px; z-index:3;
+    width:20px; height:20px; border-radius:50%;
+    border:2px solid rgba(255,255,255,0.4); background:rgba(0,0,0,0.55);
+    pointer-events:none; box-sizing:border-box;
+  }
+  .selection-mode .card.card-selected::after {
+    content:'✓'; font-size:11px; font-weight:700; line-height:18px; text-align:center;
+    color:#0c0b0a; border-color:var(--gold); background:var(--gold);
+  }
+  .card.card-selected { border-color:var(--gold) !important; box-shadow:0 0 0 2px rgba(201,168,76,0.2) !important; }
+
+  /* Selection indicator on list rows */
+  .selection-mode .list-row { padding-left:44px !important; cursor:pointer; user-select:none; }
+  .selection-mode .list-row::before {
+    content:''; position:absolute; left:12px; top:50%; transform:translateY(-50%);
+    width:18px; height:18px; border-radius:50%; z-index:2;
+    border:2px solid rgba(255,255,255,0.25); background:rgba(0,0,0,0.45);
+    pointer-events:none; box-sizing:border-box;
+  }
+  .selection-mode .list-row.card-selected::before {
+    content:'✓'; font-size:10px; font-weight:700; line-height:16px; text-align:center;
+    color:#0c0b0a; border-color:var(--gold); background:var(--gold);
+  }
+  .list-row.card-selected { border-color:var(--gold) !important; background:rgba(201,168,76,0.04) !important; }
+
+  /* Bulk action bar */
+  #bulkBar {
+    position:fixed; bottom:0; left:0; right:0; z-index:200;
+    background:var(--surface); border-top:1px solid var(--border-hi);
+    box-shadow:0 -6px 32px rgba(0,0,0,0.55);
+    transform:translateY(110%);
+    transition:transform 0.22s cubic-bezier(0.32,0,0.67,0);
+  }
+  #bulkBar.visible { transform:translateY(0); transition:transform 0.28s cubic-bezier(0.34,1.05,0.64,1); }
+  .bulk-subpanel { display:none; padding:11px 24px 10px; border-bottom:1px solid var(--border); }
+  .bulk-subpanel.visible { display:block; }
+  .bulk-subpanel-label { font-size:0.6rem; letter-spacing:0.13em; text-transform:uppercase; color:var(--text-muted); margin-bottom:8px; }
+  .bulk-subpanel-chips { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:8px; }
+  .bulk-svc-chip { padding:5px 12px; border-radius:100px; border:1px solid var(--border); background:transparent; color:var(--text-muted); font-size:0.68rem; letter-spacing:0.08em; text-transform:uppercase; cursor:pointer; font-family:'DM Sans',sans-serif; transition:all 0.15s; display:inline-flex; align-items:center; gap:5px; }
+  .bulk-svc-chip:hover { border-color:var(--gold-dim); color:var(--text); }
+  .bulk-svc-chip.active { border-color:var(--gold); color:var(--gold); background:rgba(201,168,76,0.08); }
+  .bulk-svc-chip[data-svc="netflix"].active { border-color:#e50914; color:#ff4a54; background:rgba(229,9,20,0.08); }
+  .bulk-svc-chip[data-svc="disney"].active  { border-color:#3b82f6; color:#60a5fa; background:rgba(30,58,138,0.1);  }
+  .bulk-svc-chip[data-svc="prime"].active   { border-color:#00a8e1; color:#38bdf8; background:rgba(0,168,225,0.08); }
+  .bulk-svc-chip[data-svc="cinema"].active  { border-color:#818cf8; color:#818cf8; background:rgba(129,140,248,0.08); }
+  .bulk-svc-chip[data-svc="other"].active   { border-color:#4a7c59; color:#6ee7a0; background:rgba(74,124,89,0.1);  }
+  .bulk-subpanel-options { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .bulk-subpanel-options input[type=text] { background:var(--bg); border:1px solid var(--border); border-radius:var(--radius); color:var(--text); padding:7px 10px; font-family:'DM Sans',sans-serif; font-size:0.82rem; min-width:0; transition:border-color 0.15s; }
+  .bulk-subpanel-options input[type=text]:focus { outline:none; border-color:var(--gold-dim); }
+  .bulk-main { display:flex; align-items:center; gap:8px; padding:11px 24px; flex-wrap:wrap; }
+  .bulk-top { display:contents; } /* transparent on desktop — children join bulk-main flex directly */
+  .bulk-count { font-size:0.72rem; letter-spacing:0.08em; text-transform:uppercase; color:var(--gold); font-weight:500; min-width:92px; flex-shrink:0; }
+  .bulk-actions { display:flex; gap:5px; flex-wrap:wrap; flex:1; }
+  .bulk-sep { width:1px; background:var(--border-hi); margin:2px 2px; flex-shrink:0; align-self:stretch; }
+  .bulk-btn { background:transparent; border:1px solid var(--border); color:var(--text-dim); padding:6px 12px; border-radius:var(--radius); font-family:'DM Sans',sans-serif; font-size:0.7rem; font-weight:500; letter-spacing:0.05em; text-transform:uppercase; cursor:pointer; transition:all 0.15s; white-space:nowrap; flex-shrink:0; }
+  .bulk-btn:not(:disabled):hover { border-color:var(--gold-dim); color:var(--text); }
+  .bulk-btn:disabled { opacity:0.38; cursor:default; }
+  .bulk-btn-danger { color:#c87070; }
+  .bulk-btn-danger:not(:disabled):hover { border-color:#e07070 !important; color:#ff8888 !important; }
+  .bulk-cancel { background:transparent; border:none; color:var(--text-muted); font-family:'DM Sans',sans-serif; font-size:0.7rem; letter-spacing:0.06em; text-transform:uppercase; cursor:pointer; padding:6px 2px; transition:color 0.15s; flex-shrink:0; }
+  .bulk-cancel:hover { color:var(--text); }
+  @media(max-width:640px){
+    .bulk-main { padding:9px 16px max(10px,env(safe-area-inset-bottom)); gap:6px; }
+    .bulk-subpanel { padding:9px 16px 8px; }
+    .bulk-btn { font-size:0.63rem; padding:5px 8px; }
+    .bulk-count { min-width:72px; font-size:0.66rem; }
+    .bulk-sep { display:none; }
+  }
+
+  /* ── Trailer button (red, YouTube-style) ─────────────────────────────── */
+  .btn-trailer { background:rgba(229,9,20,0.08); color:#ff4a54; border:1px solid rgba(229,9,20,0.28); display:inline-flex; align-items:center; gap:7px; padding:8px 16px; border-radius:var(--radius); font-family:'DM Sans',sans-serif; font-size:0.78rem; font-weight:500; letter-spacing:0.05em; text-transform:uppercase; cursor:pointer; transition:all 0.15s; }
+  .btn-trailer:hover:not(:disabled) { background:rgba(229,9,20,0.14); border-color:rgba(229,9,20,0.45); color:#ff6b73; }
+  .btn-trailer:disabled { opacity:0.6; cursor:default; }
+  .trailer-dot { width:0; height:0; border-style:solid; border-width:5px 0 5px 8px; border-color:transparent transparent transparent #ff4a54; flex-shrink:0; }
+  .trailer-loading { display:inline-block; width:10px; height:10px; border:1.5px solid rgba(255,74,84,0.3); border-top-color:#ff4a54; border-radius:50%; animation:spin 0.7s linear infinite; flex-shrink:0; }
+
+  /* ── Companion (watching-with) chip inside detail modal ──────────────── */
+  .detail-watch-with { margin-top:10px; }
+  .detail-watch-with-chip {
+    display:inline-flex; align-items:center; gap:6px;
+    padding:4px 11px; border-radius:100px;
+    background:rgba(201,168,76,0.08);
+    border:1px solid rgba(201,168,76,0.28);
+    color:var(--gold);
+    font-family:'DM Sans',sans-serif; font-size:0.72rem; letter-spacing:0.04em;
+    cursor:pointer; transition:all 0.15s;
+  }
+  .detail-watch-with-chip:hover { background:rgba(201,168,76,0.16); border-color:rgba(201,168,76,0.45); }
+
+  /* ── Companion filter pill above the grid ────────────────────────────── */
+  .watch-with-bar {
+    display:flex; align-items:center; gap:12px;
+    padding:12px 48px;
+    background:rgba(201,168,76,0.03);
+    border-bottom:1px solid var(--border);
+  }
+  .watch-with-bar-label { font-size:0.62rem; letter-spacing:0.14em; text-transform:uppercase; color:var(--text-muted); }
+  .watch-with-bar-chip {
+    display:inline-flex; align-items:center; gap:8px;
+    padding:5px 4px 5px 14px; border-radius:100px;
+    background:rgba(201,168,76,0.1);
+    border:1px solid rgba(201,168,76,0.3);
+    color:var(--gold);
+    font-family:'DM Sans',sans-serif; font-size:0.78rem; letter-spacing:0.03em;
+  }
+  .watch-with-bar-chip button {
+    background:rgba(201,168,76,0.18); border:none; color:var(--gold);
+    width:20px; height:20px; border-radius:50%;
+    cursor:pointer; display:inline-flex; align-items:center; justify-content:center;
+    font-size:0.66rem; padding:0; line-height:1; transition:background 0.15s;
+  }
+  .watch-with-bar-chip button:hover { background:rgba(201,168,76,0.35); color:var(--text); }
+  @media (max-width:640px) { .watch-with-bar { padding:10px 20px; } }
+
+  /* ── Inline expanding search bar ─────────────────────────────────────── */
+  .search-bar-wrap {
+    display:flex; align-items:center;
+    height:32px;
+    border:1px solid var(--border);
+    border-radius:100px;
+    background:transparent;
+    flex-shrink:0;
+    width:32px;
+    overflow:hidden;
+    transition:width 0.22s cubic-bezier(0.32,0,0.32,1), border-color 0.15s, background 0.15s;
+  }
+  .search-bar-wrap:hover { border-color:var(--border-hi); }
+  .search-bar-wrap.expanded { width:220px; border-color:var(--gold-dim); background:var(--bg); }
+  .search-bar-wrap.has-query { border-color:var(--gold); }
+  .search-bar-icon {
+    display:flex; align-items:center; justify-content:center;
+    width:30px; height:30px; flex-shrink:0;
+    color:var(--text-muted); cursor:pointer;
+    transition:color 0.15s;
+  }
+  .search-bar-icon:hover { color:var(--text); }
+  .search-bar-wrap.expanded .search-bar-icon { cursor:default; }
+  .search-bar-wrap.has-query .search-bar-icon { color:var(--gold); }
+  .search-bar-input {
+    flex:1; background:transparent; border:none; outline:none;
+    color:var(--text);
+    font-family:'DM Sans',sans-serif; font-size:0.8rem;
+    padding:0 4px 0 0; min-width:0;
+  }
+  .search-bar-input::placeholder { color:var(--text-muted); }
+  .search-bar-clear {
+    display:none;
+    background:transparent; border:none; color:var(--text-muted);
+    cursor:pointer; padding:4px 10px 4px 4px;
+    font-size:0.95rem; line-height:1;
+    transition:color 0.15s;
+  }
+  .search-bar-clear:hover { color:var(--text); }
+  .search-bar-wrap.has-query .search-bar-clear { display:block; }
+  @media (max-width:640px) {
+    .search-bar-wrap.expanded { width:160px; }
+  }
+
+  /* ── Sort dropdown ─────────────────────────────────────────────────── */
+  .sort-btn {
+    display:inline-flex; align-items:center; gap:7px;
+    flex-shrink:0; padding:6px 12px;
+  }
+  .sort-btn .sort-icon { opacity:0.7; transition:opacity 0.15s; }
+  .sort-btn:hover .sort-icon { opacity:1; }
+  .sort-btn.active {
+    border-color:var(--gold) !important;
+    color:var(--gold) !important;
+    background:rgba(201,168,76,0.08) !important;
+  }
+  .sort-btn-label {
+    font-size:0.7rem; letter-spacing:0.05em;
+  }
+  .sort-menu {
+    position:fixed; z-index:250;
+    background:var(--surface);
+    border:1px solid var(--border-hi);
+    border-radius:var(--radius);
+    box-shadow:0 12px 36px rgba(0,0,0,0.6);
+    min-width:220px;
+    padding:4px;
+    display:none;
+    animation:sortMenuIn 0.14s cubic-bezier(0.32,1.1,0.64,1);
+    transform-origin:top right;
+  }
+  .sort-menu.open { display:block; }
+  @keyframes sortMenuIn {
+    from { opacity:0; transform:translateY(-4px) scale(0.97); }
+    to   { opacity:1; transform:translateY(0) scale(1); }
+  }
+  .sort-menu-label {
+    font-size:0.6rem; letter-spacing:0.14em; text-transform:uppercase;
+    color:var(--text-muted);
+    padding:9px 12px 5px;
+  }
+  .sort-menu-item {
+    display:flex; align-items:center; justify-content:space-between;
+    width:100%;
+    background:transparent; border:none;
+    color:var(--text-dim);
+    font-family:'DM Sans',sans-serif;
+    font-size:0.82rem;
+    padding:8px 12px; border-radius:4px;
+    cursor:pointer; text-align:left;
+    transition:background 0.12s, color 0.12s;
+  }
+  .sort-menu-item:hover { background:var(--surface2); color:var(--text); }
+  .sort-menu-item.active { color:var(--gold); }
+  .sort-menu-item.active::after {
+    content:'\2713';
+    margin-left:14px; font-size:0.78rem;
+  }
+  .sort-menu-detail {
+    color:var(--text-muted);
+    font-size:0.74rem; margin-left:6px;
+  }
+  .sort-menu-item.active .sort-menu-detail { color:var(--gold-dim); }
+  @media (max-width:640px) {
+    .sort-menu { min-width:260px; }
+    .sort-btn-label { display:none; }
+    .sort-btn { padding:6px 9px; }
+  }
+
+  /* ── Letterboxd import — categorise unserviced films ─────────────────── */
+  .import-categorise-prompt {
+    margin-top:16px;
+    padding:12px 14px;
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    display:flex; align-items:center; justify-content:space-between; gap:12px;
+  }
+  .import-categorise-prompt-text-title { font-size:0.8rem; color:var(--text); font-weight:500; }
+  .import-categorise-prompt-text-meta  { font-size:0.7rem; color:var(--text-muted); margin-top:2px; }
+  .categorise-film-row {
+    display:flex; align-items:flex-start; gap:10px;
+    padding:10px 0; border-bottom:1px solid var(--border);
+    transition:opacity 0.2s, max-height 0.28s ease, padding 0.28s ease;
+    overflow:hidden;
+  }
+  .categorise-film-row:last-child { border-bottom:none; }
+  .categorise-film-thumb {
+    width:34px; height:51px; border-radius:3px; object-fit:cover;
+    background:var(--surface2); flex-shrink:0;
+  }
+  .categorise-film-title { font-size:0.82rem; font-weight:500; color:var(--text); }
+  .categorise-film-meta  { font-size:0.7rem; color:var(--text-muted); margin-top:2px; }
+  .categorise-svc-chips  { display:flex; flex-wrap:wrap; gap:5px; margin-top:7px; }
+  .categorise-svc-chip {
+    padding:3px 10px; border-radius:100px; border:1px solid var(--border);
+    background:transparent; color:var(--text-muted);
+    font-size:0.62rem; letter-spacing:0.08em; text-transform:uppercase;
+    cursor:pointer; font-family:'DM Sans',sans-serif; transition:all 0.13s;
+  }
+  .categorise-svc-chip.netflix:hover { border-color:#e50914; color:#ff4a54; background:rgba(229,9,20,0.07); }
+  .categorise-svc-chip.disney:hover  { border-color:#3b82f6; color:#60a5fa; background:rgba(30,58,138,0.08); }
+  .categorise-svc-chip.prime:hover   { border-color:#00a8e1; color:#38bdf8; background:rgba(0,168,225,0.07); }
+  .categorise-svc-chip.cinema:hover  { border-color:#818cf8; color:#818cf8; background:rgba(129,140,248,0.07); }
+  .categorise-svc-chip.other:hover   { border-color:#4a7c59; color:#6ee7a0; background:rgba(74,124,89,0.08); }
+  .categorise-svc-chip.skip { opacity:0.45; }
+  .categorise-svc-chip.skip:hover { opacity:1; border-color:var(--text-muted); color:var(--text-dim); }
+  .categorise-svc-chip.jw-chip { text-decoration:none; border-color:rgba(247,107,28,0.3); color:#f76b1c; margin-left:4px; }
+  .categorise-svc-chip.jw-chip:hover { border-color:#f76b1c; background:rgba(247,107,28,0.08); color:#ff8c40; }
+  .categorise-svc-chips input {
+    background:var(--bg); border:1px solid var(--border-hi); border-radius:var(--radius);
+    color:var(--text); padding:4px 8px; font-family:'DM Sans',sans-serif; font-size:0.75rem;
+    flex:1; min-width:80px; outline:none; transition:border-color 0.15s;
+  }
+  .categorise-svc-chips input:focus { border-color:var(--gold-dim); }
 
   </style>
 </head>
@@ -1000,7 +1361,8 @@
   <div style="display:flex;gap:10px;align-items:center;">
     <button id="_sb_cloud_btn" class="btn btn-ghost btn-sm" onclick="window._sbOpenPanel&&window._sbOpenPanel()"><svg viewBox="0 0 24 24" width="13" height="13" style="flex-shrink:0"><path fill="currentColor" d="M19.35 10.04A7.49 7.49 0 0 0 12 4C9.11 4 6.6 5.64 5.35 8.04A5.994 5.994 0 0 0 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96z"/></svg>Cloud Save</button>
     <button class="btn btn-ghost btn-sm" onclick="showApiSettings()">🔑 API Key</button>
-    <button class="btn-christmas" id="christmasToggleBtn" onclick="toggleChristmasMode()">🎄 Christmas</button>
+    <button class="btn btn-ghost btn-sm" onclick="openImportModal()">📥 Letterboxd</button>
+    <button class="btn btn-ghost btn-sm" onclick="openSurpriseModal()" title="Let the list decide">🎲 Surprise</button>
     <button class="btn btn-primary" onclick="openAddModal()">
       <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
       Add Film
@@ -1013,7 +1375,7 @@
 <div class="controls">
   <div class="filter-bar">
     <button class="filter-btn active" onclick="setFilter('all',this)">All</button>
-    <button class="filter-btn" onclick="setFilter('soon',this)"><span class="dot" style="background:var(--soon)"></span>Watching Soon</button>
+    <button class="filter-btn" id="filterSoon" onclick="setFilter('soon',this)"><span class="dot" style="background:var(--soon)"></span>Watching Soon</button>
     <button class="filter-btn" onclick="setFilter('netflix',this)"><span class="dot" style="background:#e50914"></span>Netflix</button>
     <button class="filter-btn" onclick="setFilter('disney',this)"><span class="dot" style="background:#3b82f6"></span>Disney+</button>
     <button class="filter-btn" onclick="setFilter('prime',this)"><span class="dot" style="background:#00a8e1"></span>Prime</button>
@@ -1022,17 +1384,44 @@
     <button class="filter-btn" onclick="setFilter('vpn',this)"><span class="dot" style="background:#7c3aed"></span>VPN only</button>
     <button class="filter-btn" onclick="setFilter('unwatched',this)">Unwatched</button>
     <button class="filter-btn" onclick="setFilter('watched',this)">Watched</button>
-    <button class="filter-btn" onclick="setFilter('graveyard',this)">💀 Graveyard</button>
+    <button class="filter-btn" id="filterGraveyard" onclick="setFilter('graveyard',this)">💀 Graveyard</button>
     <button class="filter-btn" id="filterCategories" onclick="setFilter('categories',this)">&#128196; Categories</button>
   </div>
+  <div class="search-bar-wrap" id="searchBarWrap">
+    <span class="search-bar-icon" onclick="toggleSearchBar()" title="Search films (Ctrl/Cmd+K)">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="6" cy="6" r="4.5"/><line x1="9.5" y1="9.5" x2="12.5" y2="12.5" stroke-linecap="round"/></svg>
+    </span>
+    <input type="text" id="searchBar" class="search-bar-input" placeholder="Search title, director, with…" autocomplete="off"
+      oninput="onSearchBarInput(this.value)" onkeydown="onSearchBarKeyDown(event)" onblur="onSearchBarBlur()">
+    <button class="search-bar-clear" onclick="clearSearchBar()" title="Clear search">&times;</button>
+  </div>
+  <button id="sortBtn" class="btn btn-ghost btn-sm sort-btn" onclick="toggleSortMenu()" title="Sort films">
+    <svg class="sort-icon" width="11" height="11" viewBox="0 0 11 11" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M3 1.5v8M3 9.5l-1.5-1.5M3 9.5l1.5-1.5M8 9.5v-8M8 1.5l-1.5 1.5M8 1.5l1.5 1.5"/></svg>
+    <span id="sortBtnLabel" class="sort-btn-label">Oldest</span>
+  </button>
+  <button class="btn btn-ghost btn-sm" id="selectModeBtn" onclick="enterSelectMode()" style="flex-shrink:0;">Select</button>
   <div class="view-toggle">
+    <button id="groupToggleBtn" class="view-toggle-btn active" onclick="toggleGrouping()" title="Switch to flat list">
+      <svg width="13" height="10" viewBox="0 0 13 10" fill="currentColor"><rect x="0" y="0" width="13" height="4" rx="1.5"/><rect x="0" y="6" width="13" height="4" rx="1.5"/></svg>
+    </button>
+    <button id="hideWatchedBtn" class="view-toggle-btn" onclick="toggleHideWatched()" title="Hide watched films">
+      <svg width="15" height="11" viewBox="0 0 15 11" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1.5 5.5C3.5 2.2 5.4 1 7.5 1c2.1 0 4 1.2 6 4.5-2 3.3-3.9 4.5-6 4.5-2.1 0-4-1.2-6-4.5z"/><circle cx="7.5" cy="5.5" r="1.9" fill="currentColor" stroke="none"/></svg>
+    </button>
+    <span class="view-toggle-sep"></span>
     <button id="viewGrid" class="view-toggle-btn active" onclick="setView('grid')" title="Grid view">
       <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="1" width="5" height="5" rx="1" fill="currentColor"/><rect x="8" y="1" width="5" height="5" rx="1" fill="currentColor"/><rect x="1" y="8" width="5" height="5" rx="1" fill="currentColor"/><rect x="8" y="8" width="5" height="5" rx="1" fill="currentColor"/></svg>
     </button>
     <button id="viewList" class="view-toggle-btn" onclick="setView('list')" title="List view">
       <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="2" width="12" height="2" rx="1" fill="currentColor"/><rect x="1" y="6" width="12" height="2" rx="1" fill="currentColor"/><rect x="1" y="10" width="12" height="2" rx="1" fill="currentColor"/></svg>
     </button>
+    <span class="view-toggle-sep"></span>
+    <button id="christmasToggleBtn" class="view-toggle-btn" onclick="toggleChristmasMode()" title="Christmas mode">🎄</button>
   </div>
+</div>
+
+<div id="watchWithFilterBar" class="watch-with-bar" style="display:none;">
+  <span class="watch-with-bar-label">Filtering by</span>
+  <span class="watch-with-bar-chip">👥 <span id="watchWithFilterName"></span><button onclick="clearWatchWithFilter()" title="Clear filter">&times;</button></span>
 </div>
 
 <div id="categoryBar">
@@ -1109,7 +1498,7 @@
           <div class="field full"><label>Notes</label><textarea id="fNotes" placeholder="Why you want to watch it, who recommended it, etc."></textarea></div>
         </div>
       </div>
-      <div class="form-grid" id="collectionFields" style="margin-top:14px;">
+      <div class="form-grid" id="collectionFields" style="margin-top:14px;grid-template-columns:1fr 1fr 1fr;">
         <div class="field" style="position:relative;">
           <label>Collection</label>
           <input type="text" id="fCollection" placeholder="e.g. Hunger Games Series" autocomplete="off"
@@ -1121,6 +1510,12 @@
           <input type="text" id="fCategory" placeholder="e.g. Sci-Fi, Date Night..." autocomplete="off"
             oninput="filterCategorySuggestions()" onfocus="filterCategorySuggestions()" onblur="setTimeout(hideCategorySuggestions,150)" onkeydown="onCategoryKeyDown(event)">
           <div id="categoryDropdown" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:9999;background:var(--surface2);border:1px solid var(--border-hi);border-radius:var(--radius);margin-top:4px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,0.5);"></div>
+        </div>
+        <div class="field" style="position:relative;">
+          <label>Watching With</label>
+          <input type="text" id="fWatchWith" placeholder="e.g. Dad, Movie club..." autocomplete="off"
+            oninput="filterWatchWithSuggestions()" onfocus="filterWatchWithSuggestions()" onblur="setTimeout(hideWatchWithSuggestions,150)" onkeydown="onWatchWithKeyDown(event)">
+          <div id="watchWithDropdown" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:9999;background:var(--surface2);border:1px solid var(--border-hi);border-radius:var(--radius);margin-top:4px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,0.5);"></div>
         </div>
       </div>
 
@@ -1205,6 +1600,14 @@ function countryFlag(name){
 }
 
 const SERVICES=['netflix','disney','prime','cinema','other'];
+// Returns true when a film has no streaming service set at all (no direct, VPN, or
+// cinema flags on any service). These films are treated as implicit "Other" — they
+// appear in every Other section/filter automatically, but lose that classification
+// the moment any real service is assigned to them.
+function hasNoStreaming(m){
+  const s=m.streaming||{};
+  return !SERVICES.some(sv=>s[sv]?.direct||s[sv]?.vpn)&&!s.cinema?.coming;
+}
 const TMDB_IMG='https://image.tmdb.org/t/p/w500';
 const TMDB_SM='https://image.tmdb.org/t/p/w92';
 // TMDB's search tokeniser drops single-character tokens and mis-handles
@@ -1220,6 +1623,13 @@ let christmasMovies=JSON.parse(localStorage.getItem('christmas_watchlist_v1')||'
 let christmasMode=localStorage.getItem('christmas_mode_active')==='true';
 let _normalMovies=null;
 let currentFilter='all',currentCategory=null,currentDetailId=null,editingId=null,searchTimer=null,searchHighlightIndex=-1,_pendingTmdbId=null;
+let searchQuery='';
+let currentWatchWith=null;
+let _watchWithNames=[];
+let watchWithHighlightIndex=-1;
+let currentSort=localStorage.getItem('watchlist_sort')||'dateAdded-asc';
+let currentGrouping=localStorage.getItem('watchlist_grouping')||'grouped';
+let hideWatched=localStorage.getItem('watchlist_hideWatched')==='true';
 let _preloadId=null,_preloadPromise=null;
 let currentView=localStorage.getItem('watchlist_view')||'grid';
 let tmdbKey=localStorage.getItem('tmdb_api_key')||'';
@@ -1275,32 +1685,6 @@ function toggleChristmasMode(){
   showInfoToast(christmasMode?'🎄 Christmas Mode — films here are completely separate from your main watchlist.':'Returned to your main watchlist.',4000);
 }
 
-function adjustFilterBar(){
-  // Mobile uses a horizontally scrolling single row — no adjustment needed
-  if(window.innerWidth<=640)return;
-  const soonBtn=document.querySelector('.filter-btn[onclick*="\'soon\'"]');
-  const filterBar=document.querySelector('.filter-bar');
-  if(!soonBtn||!filterBar)return;
-
-  // Ensure "Watching Soon" is visible so we can measure whether it causes wrapping
-  soonBtn.style.display='';
-
-  // getBoundingClientRect forces a synchronous layout, giving accurate positions
-  const buttons=Array.from(filterBar.querySelectorAll('.filter-btn'));
-  if(buttons.length<2)return;
-  const firstTop=buttons[0].getBoundingClientRect().top;
-  const wraps=buttons.some(btn=>btn.getBoundingClientRect().top>firstTop+4);
-
-  soonBtn.style.display=wraps?'none':'';
-
-  // If "Watching Soon" was the active filter and we just hid it, fall back to All
-  if(wraps&&currentFilter==='soon'){
-    currentFilter='all';
-    document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
-    document.querySelector('.filter-btn[onclick*="\'all\'"]')?.classList.add('active');
-    render();
-  }
-}
 
 function init(){
   updateBanner();updateSearchSection();
@@ -1314,22 +1698,20 @@ function init(){
     document.getElementById('christmasBanner').classList.add('visible');
   }
   render();
-  requestAnimationFrame(adjustFilterBar);
+  updateSortBtnLabel();
   if(christmasMode)requestAnimationFrame(startChristmasEffects);
   // Backfill runtimes for any existing movies that don't have one yet
   setTimeout(backfillRuntimes,1000);
 }
 
-let _filterBarResizeTimer=null;
 window.addEventListener('resize',()=>{
   if(window.innerWidth<=640&&currentView!=='list'){
     currentView='list';applyViewToggleUI();render();
   }
-  clearTimeout(_filterBarResizeTimer);
-  _filterBarResizeTimer=setTimeout(adjustFilterBar,80);
 });
 
 function setView(v){
+  if(window.selectionMode) exitSelectMode(false);
   currentView=v;
   localStorage.setItem('watchlist_view',v);
   applyViewToggleUI();
@@ -1339,6 +1721,38 @@ function setView(v){
 function applyViewToggleUI(){
   document.getElementById('viewGrid')?.classList.toggle('active',currentView==='grid');
   document.getElementById('viewList')?.classList.toggle('active',currentView==='list');
+  // Group toggle
+  const groupBtn=document.getElementById('groupToggleBtn');
+  if(groupBtn){
+    const onAll=currentFilter==='all';
+    groupBtn.classList.toggle('active',currentGrouping==='grouped'&&onAll);
+    groupBtn.style.opacity=onAll?'':'0.35';
+    groupBtn.style.pointerEvents=onAll?'':'none';
+    groupBtn.title=currentGrouping==='grouped'
+      ?'Switch to flat list (no service sections)'
+      :'Group by streaming service';
+  }
+  // Hide-watched toggle
+  const eyeBtn=document.getElementById('hideWatchedBtn');
+  if(eyeBtn){
+    eyeBtn.classList.toggle('active',hideWatched);
+    eyeBtn.title=hideWatched?'Show watched films':'Hide watched films';
+  }
+}
+
+function toggleGrouping(){
+  if(currentFilter!=='all')return;
+  currentGrouping=currentGrouping==='grouped'?'flat':'grouped';
+  localStorage.setItem('watchlist_grouping',currentGrouping);
+  applyViewToggleUI();
+  render();
+}
+
+function toggleHideWatched(){
+  hideWatched=!hideWatched;
+  localStorage.setItem('watchlist_hideWatched',hideWatched);
+  applyViewToggleUI();
+  render();
 }
 
 function updateBanner(){document.getElementById('apiBanner').classList.toggle('hidden',!!tmdbKey);}
@@ -1518,6 +1932,16 @@ async function selectMovie(id){
   updateModalJustWatch();updateModalLetterboxd();
   // Remove focus from the search input after selection
   document.getElementById('searchInput').blur();
+  // Populate the collapsed banner directly from the TMDB response so year/genre
+  // are guaranteed to show regardless of whether the form fields are accessible.
+  const _yr=d.release_date?d.release_date.slice(0,4):'';
+  const _genres=d.genres?d.genres.map(g=>g.name).join(', '):'';
+  document.getElementById('collapsedTitleText').textContent=d.title||'Untitled';
+  document.getElementById('collapsedTitleMeta').textContent=[_yr,_genres].filter(Boolean).join(' · ');
+  document.getElementById('movieDetailsCollapsible').classList.add('collapsed');
+  document.getElementById('collapsedTitleBanner').style.display='flex';
+  document.getElementById('showMovieDetailsBtn').style.display='none';
+  document.getElementById('collectionFields').style.marginTop='0';
 }
 
 function updateModalJustWatch(){
@@ -1733,7 +2157,8 @@ function buildListGrouped(allMovies){
     }else{
       const directUnwatched=sortWithCollections(groups[k].filter(m=>!m.watched&&m.streaming?.[k]?.direct),cdMap);
       const vpnUnwatched=sortWithCollections(groups[k].filter(m=>!m.watched&&!m.streaming?.[k]?.direct&&m.streaming?.[k]?.vpn),cdMap);
-      groups[k]=[...directUnwatched,...vpnUnwatched,...watched];
+      const implicitUnwatched=k==='other'?sortWithCollections(groups[k].filter(m=>!m.watched&&hasNoStreaming(m)),cdMap):[];
+      groups[k]=[...directUnwatched,...vpnUnwatched,...implicitUnwatched,...watched];
     }
   }
   let html='',rowIdx=0;
@@ -1764,9 +2189,17 @@ function buildListGrouped(allMovies){
 function render(){
   const cnt=movies.filter(m=>!m.graveyard&&!isDetachedMovie(m)).length;
   document.getElementById('headerCount').textContent=christmasMode?(cnt===1?'1 Christmas film':`${cnt} Christmas films`):(cnt===1?'1 film':`${cnt} films`);
-  const soon=movies.filter(m=>m.watchingSoon&&!m.graveyard);
+  // Show/hide companion filter pill
+  const wf=document.getElementById('watchWithFilterBar');
+  if(wf){
+    if(currentWatchWith){
+      document.getElementById('watchWithFilterName').textContent=currentWatchWith;
+      wf.style.display='';
+    } else { wf.style.display='none'; }
+  }
+  const soon=_postFilter(sortWithCollections(movies.filter(m=>m.watchingSoon&&!m.graveyard)));
   const ss=document.getElementById('soonSection'),sd=document.getElementById('soonDivider'),sr=document.getElementById('soonStrip');
-  if(soon.length&&currentFilter==='all'){ss.classList.add('visible');sd.style.display='none';sr.innerHTML=soon.map((m,i)=>buildSoonCard(m,i)).join('');}
+  if(soon.length&&currentFilter==='all'&&!searchQuery){ss.classList.add('visible');sd.style.display='none';sr.innerHTML=soon.map((m,i)=>buildSoonCard(m,i)).join('');}
   else{ss.classList.remove('visible');sd.style.display='none';}
 
   if(currentFilter==='categories'){renderCategoriesView();return;}
@@ -1781,26 +2214,52 @@ function render(){
   if(currentView==='list'){
     g.className='list-container';
     if(currentFilter==='all'){
-      const base=movies.filter(m=>!m.watchingSoon&&!m.graveyard&&!isArchivedWatched(m)&&!isDetachedMovie(m));
-      g.innerHTML=base.length?buildListGrouped(base):emptyAll;
+      const base=searchQuery
+        ?_postFilter(movies.filter(m=>!m.graveyard&&!isDetachedMovie(m)))
+        :_postFilter(movies.filter(m=>!m.watchingSoon&&!m.graveyard&&!isArchivedWatched(m)&&!isDetachedMovie(m)));
+      if(searchQuery){
+        g.innerHTML=base.length?`<div class="list-rows">${base.map((m,i)=>buildListRow(m,i)).join('')}</div>`:emptyFilter;
+      }else if(currentGrouping==='flat'){
+        g.innerHTML=base.length?`<div class="list-rows">${buildListItems(groupIntoRenderItems(sortWithCollections(base)))}</div>`:emptyAll;
+      }else{
+        g.innerHTML=base.length?buildListGrouped(base):emptyAll;
+      }
     }else{
       const f=getFiltered();
       if(!f.length){g.innerHTML=emptyFilter;return;}
-      g.innerHTML=`<div class="list-rows">${buildListItems(groupIntoRenderItems(f))}</div>`;
+      if(searchQuery){
+        g.innerHTML=`<div class="list-rows">${f.map((m,i)=>buildListRow(m,i)).join('')}</div>`;
+      }else{
+        g.innerHTML=`<div class="list-rows">${buildListItems(groupIntoRenderItems(f))}</div>`;
+      }
     }
     return;
   }
 
   if(currentFilter==='all'){
-    g.className='movie-container';
-    const base=movies.filter(m=>!m.watchingSoon&&!m.graveyard&&!isArchivedWatched(m)&&!isDetachedMovie(m));
-    const grouped=buildGrouped(base);
-    g.innerHTML=grouped||emptyAll;
+    const base=searchQuery
+      ?_postFilter(movies.filter(m=>!m.graveyard&&!isDetachedMovie(m)))
+      :_postFilter(movies.filter(m=>!m.watchingSoon&&!m.graveyard&&!isArchivedWatched(m)&&!isDetachedMovie(m)));
+    if(searchQuery){
+      g.className='grid';
+      g.innerHTML=base.length?base.map((m,i)=>buildCard(m,i)).join(''):emptyFilter;
+    }else if(currentGrouping==='flat'){
+      g.className='grid';
+      g.innerHTML=base.length?renderItems(groupIntoRenderItems(sortWithCollections(base))):emptyAll;
+    }else{
+      g.className='movie-container';
+      const grouped=buildGrouped(base);
+      g.innerHTML=grouped||emptyAll;
+    }
   }else{
     g.className='grid';
     const f=getFiltered();
     if(!f.length){g.innerHTML=emptyFilter;return;}
-    g.innerHTML=renderItems(groupIntoRenderItems(f));
+    if(searchQuery){
+      g.innerHTML=f.map((m,i)=>buildCard(m,i)).join('');
+    }else{
+      g.innerHTML=renderItems(groupIntoRenderItems(f));
+    }
   }
   trimCardMetas();
 }
@@ -1871,9 +2330,9 @@ function renderCategoriesView(){
     opts.classList.remove('visible');opts.innerHTML='';
   }
 
-  // Show movies in the selected category, sorted by release year
+  // Show movies in the selected category, sorted by the user's chosen sort
   const inCat=movies.filter(m=>m.category===currentCategory);
-  const sorted=inCat.slice().sort((a,b)=>(parseInt(a.year)||Infinity)-(parseInt(b.year)||Infinity));
+  const sorted=sortWithCollections(inCat);
 
   if(!sorted.length){
     g.className='grid';
@@ -1914,13 +2373,72 @@ function collectionDateMap(){
   return map;
 }
 
-// Sort an array by effective date (collection's earliest across all movies)
+// ── Sort helpers ────────────────────────────────────────────────────────
+// Compact labels for the sort button (matches the menu options)
+const SORT_LABELS={
+  'dateAdded-desc':'Newest',
+  'dateAdded-asc':'Oldest',
+  'year-desc':'Year \u2193',
+  'year-asc':'Year \u2191',
+  'title-asc':'A\u2013Z',
+  'runtime-desc':'Runtime',
+  'rating-desc':'Rating'
+};
+
+// Returns the raw value used for sort comparison for the given field.
+// Title strips leading articles so "The Dark Knight" files under D, not T.
+function _movieSortValue(m,field){
+  switch(field){
+    case 'dateAdded':
+      return m.dateAdded?new Date(m.dateAdded).getTime():0;
+    case 'year':
+      return parseInt(m.year)||0;
+    case 'title':
+      return (m.title||'').replace(/^(the|a|an)\s+/i,'').toLowerCase();
+    case 'runtime':
+      return m.runtime||0;
+    case 'rating':
+      return parseFloat(String(m.rating||'').replace(/\/.*/,''))||0;
+    default:
+      return 0;
+  }
+}
+
+// For collection films, anchor the whole collection at the value of its
+// chronologically-earliest entry. Keeps collections together and gives them
+// a single, stable sort position regardless of the field being sorted on.
+function _collectionAnchorMap(arr,field){
+  const anchor={};
+  for(const m of arr){
+    if(!m.collection)continue;
+    const yr=parseInt(m.year)||9999;
+    if(!(m.collection in anchor)||yr<anchor[m.collection].yr){
+      anchor[m.collection]={yr,val:_movieSortValue(m,field)};
+    }
+  }
+  const map={};
+  for(const c in anchor)map[c]=anchor[c].val;
+  return map;
+}
+
+// Sort an array using the user-selected sort field & direction.
+// Collections stay grouped together; non-collection films are compared
+// against either other films or against a collection's anchor value.
+// The cdMap parameter is kept for backward compatibility but no longer used —
+// each call computes its own field-appropriate anchor map.
 function sortWithCollections(arr,cdMap){
-  if(!cdMap)cdMap=collectionDateMap();
+  const [field,dir]=(currentSort||'dateAdded-desc').split('-');
+  const mult=dir==='asc'?1:-1;
+  const collMap=_collectionAnchorMap(arr,field);
   return arr.slice().sort((a,b)=>{
-    const ta=a.collection&&cdMap[a.collection]!==undefined?cdMap[a.collection]:(a.dateAdded?new Date(a.dateAdded).getTime():Infinity);
-    const tb=b.collection&&cdMap[b.collection]!==undefined?cdMap[b.collection]:(b.dateAdded?new Date(b.dateAdded).getTime():Infinity);
-    return ta-tb;
+    const av=(a.collection&&collMap[a.collection]!==undefined)?collMap[a.collection]:_movieSortValue(a,field);
+    const bv=(b.collection&&collMap[b.collection]!==undefined)?collMap[b.collection]:_movieSortValue(b,field);
+    if(field==='title'){
+      if(av<bv)return -1*mult;
+      if(av>bv)return 1*mult;
+      return 0;
+    }
+    return (av-bv)*mult;
   });
 }
 
@@ -1983,7 +2501,8 @@ function buildGrouped(allMovies){
     }else{
       const directUnwatched=sortWithCollections(groups[k].filter(m=>!m.watched&&m.streaming?.[k]?.direct),cdMap);
       const vpnUnwatched=sortWithCollections(groups[k].filter(m=>!m.watched&&!m.streaming?.[k]?.direct&&m.streaming?.[k]?.vpn),cdMap);
-      groups[k]=[...directUnwatched,...vpnUnwatched,...watched];
+      const implicitUnwatched=k==='other'?sortWithCollections(groups[k].filter(m=>!m.watched&&hasNoStreaming(m)),cdMap):[];
+      groups[k]=[...directUnwatched,...vpnUnwatched,...implicitUnwatched,...watched];
     }
   }
 
@@ -2012,7 +2531,59 @@ function buildGrouped(allMovies){
   return html;
 }
 
+// Apply user search and companion filters on top of the regular filter pipeline.
+// When a search query is active, results are ranked by match quality:
+//   title exact → title starts-with → title contains (all outrank everything else)
+//   then: director → watchWith → genre/collection/category → year → notes
+// Stable sort preserves the pipeline's existing order within each score tier.
+function _postFilter(arr){
+  let r=arr;
+  // Hide all watched films globally when the eye toggle is active.
+  // The Watched and Graveyard filter views are exempt — they explicitly surface those films.
+  if(hideWatched&&currentFilter!=='watched'&&currentFilter!=='graveyard'){
+    r=r.filter(m=>!m.watched);
+  }
+  if(currentWatchWith){
+    const w=currentWatchWith.toLowerCase();
+    r=r.filter(m=>(m.watchWith||'').toLowerCase()===w);
+  }
+  if(!searchQuery) return r;
+
+  const q=searchQuery.toLowerCase();
+
+  const scored=r.map(m=>{
+    const title=(m.title||'').toLowerCase();
+    let score=0;
+
+    // ── Title tier (always wins over every other field) ──────────────────
+    if(title===q)                   score=100; // exact
+    else if(title.startsWith(q))    score=80;  // prefix
+    else if(title.includes(q))      score=60;  // substring
+
+    // ── Secondary fields (only reached when there is no title match) ─────
+    if(score===0){
+      if((m.director||'').toLowerCase().includes(q))    score=Math.max(score,20);
+      if((m.watchWith||'').toLowerCase().includes(q))   score=Math.max(score,15);
+      if((m.genre||'').toLowerCase().includes(q))       score=Math.max(score,10);
+      if((m.collection||'').toLowerCase().includes(q))  score=Math.max(score,10);
+      if((m.category||'').toLowerCase().includes(q))    score=Math.max(score, 8);
+      if(String(m.year||'').includes(q))                score=Math.max(score, 5);
+      if((m.notes||'').toLowerCase().includes(q))       score=Math.max(score, 3);
+    }
+
+    return {m,score};
+  }).filter(({score})=>score>0);
+
+  // Stable sort: items with equal scores keep their relative order from `r`
+  scored.sort((a,b)=>b.score-a.score);
+  return scored.map(({m})=>m);
+}
+
 function getFiltered(){
+  return _postFilter(_getFilteredCore());
+}
+
+function _getFilteredCore(){
   const cdMap=collectionDateMap();
   let result;
   if(currentFilter==='all')result=movies.filter(m=>!m.watchingSoon&&!m.graveyard&&!isArchivedWatched(m)&&!isDetachedMovie(m));
@@ -2026,6 +2597,14 @@ function getFiltered(){
     const unwatched=sortWithCollections(result.filter(m=>!m.watched),cdMap);
     const watched=sortWithCollections(result.filter(m=>m.watched),cdMap);
     return[...unwatched,...watched];
+  } else if(currentFilter==='other'){
+    // Include both explicit Other and implicit Other (no service set at all)
+    result=movies.filter(m=>!m.graveyard&&!isDetachedMovie(m)&&(m.streaming?.other?.direct||m.streaming?.other?.vpn||hasNoStreaming(m)));
+    const directUnwatched=sortWithCollections(result.filter(m=>!m.watched&&m.streaming?.other?.direct),cdMap);
+    const vpnUnwatched=sortWithCollections(result.filter(m=>!m.watched&&!m.streaming?.other?.direct&&m.streaming?.other?.vpn),cdMap);
+    const implicitUnwatched=sortWithCollections(result.filter(m=>!m.watched&&hasNoStreaming(m)),cdMap);
+    const watched=sortWithCollections(result.filter(m=>m.watched),cdMap);
+    return[...directUnwatched,...vpnUnwatched,...implicitUnwatched,...watched];
   } else {
     result=movies.filter(m=>!m.graveyard&&!isDetachedMovie(m)&&(m.streaming?.[currentFilter]?.direct||m.streaming?.[currentFilter]?.vpn));
     const directUnwatched=sortWithCollections(result.filter(m=>!m.watched&&m.streaming?.[currentFilter]?.direct),cdMap);
@@ -2092,6 +2671,7 @@ function buildBadges(m,c){
 }
 
 function setFilter(f,btn){
+  if(window.selectionMode) exitSelectMode(false);
   if(currentFilter===f&&f!=='all'){
     currentFilter='all';currentCategory=null;
     document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
@@ -2108,6 +2688,7 @@ function setFilter(f,btn){
 }
 
 function openDetail(id){
+  if(window.selectionMode){ toggleSelect(id); return; }
   const m=movies.find(x=>x.id===id);if(!m)return;
   const soonAllowed=!m.graveyard&&!m.watched;
   const posterInner=m.poster?`<img class="detail-poster" src="${esc(m.poster)}" alt="${esc(m.title)}" onerror="this.outerHTML='<div class=\\'detail-poster-placeholder\\'>&#127917;</div>'">`:`<div class="detail-poster-placeholder">&#127917;</div>`;
@@ -2132,10 +2713,12 @@ function openDetail(id){
           ?`<span id="detailDateWatched" onclick="editDateWatched('${m.id}')" title="Click to edit" style="cursor:pointer;font-size:0.68rem;color:var(--text-muted);letter-spacing:0.05em;border-bottom:1px dashed var(--border-hi);padding-bottom:1px;transition:color 0.15s;" onmouseover="this.style.color='var(--text-dim)'" onmouseout="this.style.color='var(--text-muted)'">${formatDateWatched(m.dateWatched)}</span>`
           :`<span id="detailDateAdded" onclick="editDateAdded('${m.id}')" title="Click to edit" style="cursor:pointer;font-size:0.68rem;color:var(--text-muted);letter-spacing:0.05em;border-bottom:1px dashed var(--border-hi);padding-bottom:1px;transition:color 0.15s;" onmouseover="this.style.color='var(--text-dim)'" onmouseout="this.style.color='var(--text-muted)'">${formatDateAdded(m.dateAdded)}</span>`}
       </div>
+      ${m.watchWith?`<div class="detail-watch-with"><span class="detail-watch-with-chip" onclick="filterByWatchWith(${JSON.stringify(m.watchWith)})" title="Show all films tagged ${esc(m.watchWith)}">👥 ${esc(m.watchWith)}</span></div>`:''}
     </div></div>
     <div class="detail-services-section"><div class="detail-services-title">Where to Watch</div><div class="detail-services-grid">${svc}</div></div>
     <div style="margin-top:20px;display:flex;gap:10px;justify-content:space-between;align-items:center;flex-wrap:wrap;">
-      <div style="display:flex;gap:8px;align-items:center;">
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        ${m.tmdbId?`<button class="btn-trailer" onclick="openTrailer(${m.tmdbId},this)" title="Watch trailer on YouTube"><span class="trailer-dot"></span>Trailer</button>`:''}
         <a class="btn-justwatch" href="${jw}" target="_blank" rel="noopener" style="text-decoration:none"><span class="jw-dot"></span>JW</a>
         <a class="btn-letterboxd" href="${lb}" target="_blank" rel="noopener" style="text-decoration:none"><span class="lb-dot"></span>LB</a>
         <button class="btn btn-ghost btn-sm" onclick="toggleGraveyard('${m.id}')" title="${m.graveyard?'Remove from graveyard':'Move to graveyard — never watching this'}" style="${m.graveyard?'color:#c084fc;border-color:rgba(124,58,237,0.4);':'color:var(--text-muted);'}">${m.graveyard?'💀 Unbury':'💀'}</button>
@@ -2228,7 +2811,7 @@ function openAddModal(){
   document.getElementById('deleteRow').style.display='none';
   document.getElementById('addModal').classList.add('open');
   lockScroll();
-  updateModalJustWatch();updateModalLetterboxd();populateCollectionSuggestions();populateCategorySuggestions();
+  updateModalJustWatch();updateModalLetterboxd();populateCollectionSuggestions();populateCategorySuggestions();populateWatchWithSuggestions();
   expandMovieDetails();
   if(tmdbKey)setTimeout(()=>document.getElementById('searchInput').focus(),80);
   else document.getElementById('fTitle').focus();
@@ -2326,11 +2909,220 @@ function updateCategoryHighlight(items){
   if(categoryHighlightIndex>=0)items[categoryHighlightIndex].scrollIntoView({block:'nearest'});
 }
 
+// ── Watching-With (companion) suggestions ─────────────────────────────────
+// Mirrors the category suggestion pattern: cached list, filtered dropdown,
+// arrow-key + Enter navigation.
+function populateWatchWithSuggestions(){
+  _watchWithNames=[...new Set(movies.map(m=>m.watchWith).filter(Boolean))].sort();
+}
+function filterWatchWithSuggestions(){
+  const dd=document.getElementById('watchWithDropdown');
+  const q=document.getElementById('fWatchWith').value.trim().toLowerCase();
+  const matches=q?_watchWithNames.filter(n=>n.toLowerCase().includes(q)):_watchWithNames;
+  watchWithHighlightIndex=-1;
+  if(!matches.length){dd.style.display='none';return;}
+  dd.innerHTML=matches.map(n=>`<div class="cat-suggestion" data-name="${esc(n)}" onmousedown="pickWatchWith('${n.replace(/'/g,"\\'")}')"><span class="cat-icon">👥</span>${esc(n)}</div>`).join('');
+  dd.style.display='';
+}
+function hideWatchWithSuggestions(){
+  watchWithHighlightIndex=-1;
+  document.getElementById('watchWithDropdown').style.display='none';
+}
+function pickWatchWith(name){
+  document.getElementById('fWatchWith').value=name;
+  hideWatchWithSuggestions();
+}
+function onWatchWithKeyDown(e){
+  const dd=document.getElementById('watchWithDropdown');
+  if(dd.style.display==='none')return;
+  const items=dd.querySelectorAll('.cat-suggestion');
+  if(!items.length)return;
+  if(e.key==='ArrowDown'){
+    e.preventDefault();
+    watchWithHighlightIndex=Math.min(watchWithHighlightIndex+1,items.length-1);
+    updateWatchWithHighlight(items);
+  }else if(e.key==='ArrowUp'){
+    e.preventDefault();
+    watchWithHighlightIndex=Math.max(watchWithHighlightIndex-1,-1);
+    updateWatchWithHighlight(items);
+  }else if(e.key==='Enter'){
+    const target=watchWithHighlightIndex>=0?items[watchWithHighlightIndex]:items[0];
+    if(target){e.preventDefault();e.stopPropagation();pickWatchWith(target.dataset.name);}
+  }
+}
+function updateWatchWithHighlight(items){
+  items.forEach((el,i)=>el.classList.toggle('active',i===watchWithHighlightIndex));
+  if(watchWithHighlightIndex>=0)items[watchWithHighlightIndex].scrollIntoView({block:'nearest'});
+}
+
+// ── Watching-With filter (set from detail modal chip) ─────────────────────
+function filterByWatchWith(name){
+  if(!name)return;
+  currentWatchWith=name;
+  closeDetail();
+  // Scroll the grid into view so the filtered result is immediately visible
+  window.scrollTo({top:0,behavior:'smooth'});
+  render();
+}
+function clearWatchWithFilter(){
+  currentWatchWith=null;
+  render();
+}
+
+// ── Trailer button: fetch TMDB videos and open the best YouTube match ─────
+async function openTrailer(tmdbId,btnEl){
+  if(!tmdbId)return;
+  if(!tmdbKey){
+    showInfoToast('TMDB API key required to load trailers.',3000);
+    return;
+  }
+  const original=btnEl?btnEl.innerHTML:'';
+  if(btnEl){
+    btnEl.innerHTML='<span class="trailer-loading"></span>Loading…';
+    btnEl.disabled=true;
+  }
+  try{
+    const res=await fetch(`https://api.themoviedb.org/3/movie/${tmdbId}/videos?api_key=${encodeURIComponent(tmdbKey)}`);
+    if(!res.ok)throw new Error('TMDB videos request failed');
+    const data=await res.json();
+    const yt=(data.results||[]).filter(v=>v.site==='YouTube');
+    if(!yt.length){
+      showInfoToast('No trailers available on TMDB for this film.',3000);
+      return;
+    }
+    // Selection order: official Trailer > any Trailer > official Teaser > any Teaser > anything
+    const pick=
+      yt.find(v=>v.type==='Trailer'&&v.official) ||
+      yt.find(v=>v.type==='Trailer') ||
+      yt.find(v=>v.type==='Teaser'&&v.official) ||
+      yt.find(v=>v.type==='Teaser') ||
+      yt[0];
+    window.open(`https://www.youtube.com/watch?v=${pick.key}`,'_blank','noopener');
+  }catch(err){
+    showInfoToast('Could not load trailer. Check your connection.',3000);
+  }finally{
+    if(btnEl){btnEl.innerHTML=original;btnEl.disabled=false;}
+  }
+}
+
+// ── Sort dropdown menu ────────────────────────────────────────────────────
+function toggleSortMenu(){
+  const menu=document.getElementById('sortMenu');
+  const btn=document.getElementById('sortBtn');
+  if(!menu||!btn)return;
+  if(menu.classList.contains('open')){closeSortMenu();return;}
+  // Position the menu directly below the button, aligned to its right edge
+  const rect=btn.getBoundingClientRect();
+  menu.style.top=(rect.bottom+6)+'px';
+  menu.style.right=Math.max(8,window.innerWidth-rect.right)+'px';
+  menu.style.left='auto';
+  menu.classList.add('open');
+  btn.classList.add('active');
+  // Mark the currently-active option with a checkmark
+  menu.querySelectorAll('.sort-menu-item').forEach(item=>{
+    item.classList.toggle('active',item.dataset.sort===currentSort);
+  });
+}
+
+function closeSortMenu(){
+  document.getElementById('sortMenu')?.classList.remove('open');
+  document.getElementById('sortBtn')?.classList.remove('active');
+}
+
+function setSort(value){
+  if(currentSort===value){closeSortMenu();return;}
+  currentSort=value;
+  localStorage.setItem('watchlist_sort',value);
+  closeSortMenu();
+  updateSortBtnLabel();
+  if(window.selectionMode)exitSelectMode(false);
+  render();
+}
+
+function updateSortBtnLabel(){
+  const el=document.getElementById('sortBtnLabel');
+  if(el)el.textContent=SORT_LABELS[currentSort]||'Sort';
+}
+
+// Close the sort menu on any click outside of it
+document.addEventListener('click',e=>{
+  const menu=document.getElementById('sortMenu');
+  if(!menu||!menu.classList.contains('open'))return;
+  if(!e.target.closest('#sortMenu')&&!e.target.closest('#sortBtn'))closeSortMenu();
+});
+
+// ── Inline text search bar ────────────────────────────────────────────────
+function toggleSearchBar(){
+  const w=document.getElementById('searchBarWrap');
+  const i=document.getElementById('searchBar');
+  if(w.classList.contains('expanded')){
+    // Only collapse if empty — otherwise the icon does nothing while there's text
+    if(!i.value){
+      w.classList.remove('expanded');
+    } else {
+      i.focus();
+    }
+  } else {
+    w.classList.add('expanded');
+    setTimeout(()=>i.focus(),60);
+  }
+}
+function onSearchBarInput(v){
+  if(window.selectionMode)exitSelectMode(false);
+  searchQuery=v.trim();
+  document.getElementById('searchBarWrap').classList.toggle('has-query',!!searchQuery);
+  render();
+}
+function clearSearchBar(){
+  const i=document.getElementById('searchBar');
+  i.value='';
+  if(window.selectionMode)exitSelectMode(false);
+  searchQuery='';
+  const w=document.getElementById('searchBarWrap');
+  w.classList.remove('has-query');
+  render();
+  i.focus();
+}
+function onSearchBarKeyDown(e){
+  if(e.key==='Escape'){
+    e.preventDefault();
+    if(document.getElementById('searchBar').value){
+      clearSearchBar();
+    } else {
+      const w=document.getElementById('searchBarWrap');
+      w.classList.remove('expanded');
+      document.getElementById('searchBar').blur();
+    }
+  }
+}
+function onSearchBarBlur(){
+  // Auto-collapse on blur if the input is empty so the controls bar stays tidy
+  const w=document.getElementById('searchBarWrap');
+  const i=document.getElementById('searchBar');
+  if(!i.value)setTimeout(()=>w.classList.remove('expanded'),100);
+}
+
+// Cmd/Ctrl+K opens & focuses the inline search bar from anywhere on the page.
+// Skipped when typing in another input or while a modal is open, to avoid
+// hijacking text shortcuts the user actually wants.
+document.addEventListener('keydown',e=>{
+  if((e.metaKey||e.ctrlKey)&&e.key==='k'){
+    const inModalInput=e.target.closest('.modal-overlay.open input, .modal-overlay.open textarea');
+    if(inModalInput)return;
+    e.preventDefault();
+    const w=document.getElementById('searchBarWrap');
+    if(!w)return;
+    w.classList.add('expanded');
+    document.getElementById('searchBar').focus();
+    document.getElementById('searchBar').select();
+  }
+});
+
 function openEditModal(id){
   const m=movies.find(x=>x.id===id);if(!m)return;
   editingId=id;document.getElementById('modalTitle').textContent=christmasMode?'🎄 Edit Christmas Film':'Edit Film';
   document.getElementById('deleteRow').style.display='flex';
-  populateForm(m);document.getElementById('addModal').classList.add('open');lockScroll();updateModalJustWatch();updateModalLetterboxd();populateCollectionSuggestions();populateCategorySuggestions();
+  populateForm(m);document.getElementById('addModal').classList.add('open');lockScroll();updateModalJustWatch();updateModalLetterboxd();populateCollectionSuggestions();populateCategorySuggestions();populateWatchWithSuggestions();
   expandMovieDetails();
 }
 
@@ -2345,7 +3137,7 @@ function closeAddModal(){
 function handleOverlayClick(e){if(e.target===document.getElementById('addModal'))closeAddModal();}
 
 function clearForm(){
-  ['fTitle','fYear','fGenre','fDirector','fRating','fRuntime','fPoster','fNotes','fOtherName','fCollection','fCategory','searchInput',
+  ['fTitle','fYear','fGenre','fDirector','fRating','fRuntime','fPoster','fNotes','fOtherName','fCollection','fCategory','fWatchWith','searchInput',
    'fVpnCountry-netflix','fVpnCountry-disney','fVpnCountry-prime','fVpnCountry-other'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   document.getElementById('fWatched').checked=false;
   document.getElementById('fWatchingSoon').checked=false;
@@ -2370,6 +3162,7 @@ function populateForm(m){
   document.getElementById('fOtherName').value=m.otherName||'';
   document.getElementById('fCollection').value=m.collection||'';
   document.getElementById('fCategory').value=m.category||'';
+  document.getElementById('fWatchWith').value=m.watchWith||'';
   document.getElementById('fWatched').checked=!!m.watched;
   document.getElementById('fWatchingSoon').checked=!!m.watchingSoon;
   updatePosterPreview(m.poster||'');
@@ -2429,6 +3222,7 @@ function saveMovie(){
     otherName:document.getElementById('fOtherName').value.trim(),
     collection:document.getElementById('fCollection').value.trim(),
     category:document.getElementById('fCategory').value.trim(),
+    watchWith:document.getElementById('fWatchWith').value.trim(),
     tmdbId:_pendingTmdbId||existing?.tmdbId||null,
     watched,
     // If marked watched, strip watchingSoon
@@ -2573,7 +3367,7 @@ function save(){
 function esc(s){if(!s)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
 document.addEventListener('keydown',e=>{
-  if(e.key==='Escape'){closePillMenu();closeAddModal();closeDetail();return;}
+  if(e.key==='Escape'){if(window.selectionMode)exitSelectMode();closeSortMenu();closePillMenu();closeAddModal();closeDetail();return;}
   if(e.key==='Enter'&&!e.shiftKey){
     const modalOpen=document.getElementById('addModal').classList.contains('open');
     if(modalOpen){
@@ -2975,8 +3769,10 @@ function initSheetDrag(modalId, closeFn) {
 
 (function() {
   function setup() {
-    initSheetDrag('detailModal', closeDetail);
-    initSheetDrag('addModal',    closeAddModal);
+    initSheetDrag('detailModal',   closeDetail);
+    initSheetDrag('addModal',      closeAddModal);
+    initSheetDrag('surpriseModal', closeSurpriseModal);
+    initSheetDrag('importModal',   closeImportModal);
   }
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', setup);
@@ -2984,6 +3780,1160 @@ function initSheetDrag(modalId, closeFn) {
     setup();
   }
 })();
+</script>
+
+<!-- ── SURPRISE ME MODAL ───────────────────────────────────────────────── -->
+<div class="modal-overlay" id="surpriseModal" onclick="handleSurpriseOverlay(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 class="modal-title"><span id="surpriseDiceIcon">🎲</span> Surprise Me</h2>
+      <button class="modal-close" onclick="closeSurpriseModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+
+      <div class="form-section-label" style="margin-top:0;">Services</div>
+      <div class="surprise-svc-chips" id="surpriseSvcChips">
+        <button class="surprise-svc-chip" data-service="netflix" onclick="toggleSurpriseChip(this)">
+          <span class="chip-dot" style="background:#e50914"></span>Netflix
+        </button>
+        <button class="surprise-svc-chip" data-service="disney" onclick="toggleSurpriseChip(this)">
+          <span class="chip-dot" style="background:#3b82f6"></span>Disney+
+        </button>
+        <button class="surprise-svc-chip" data-service="prime" onclick="toggleSurpriseChip(this)">
+          <span class="chip-dot" style="background:#00a8e1"></span>Prime
+        </button>
+        <button class="surprise-svc-chip" data-service="cinema" onclick="toggleSurpriseChip(this)">
+          <span class="chip-dot" style="background:#818cf8"></span>Cinema
+        </button>
+        <button class="surprise-svc-chip" data-service="other" onclick="toggleSurpriseChip(this)">
+          <span class="chip-dot" style="background:#4a7c59"></span>Other
+        </button>
+      </div>
+
+      <div class="surprise-option-row">
+        <div class="surprise-option-lbl">
+          <strong>Include VPN films</strong>
+          <span>Films that require a VPN to stream</span>
+        </div>
+        <label class="toggle-row" style="margin:0;">
+          <input type="checkbox" id="surpriseIncludeVpn" checked onchange="onSurpriseOptionChange()">
+          <span class="track"></span>
+        </label>
+      </div>
+
+      <div class="surprise-pool-count" id="surprisePoolCount"></div>
+
+      <!-- Result appears here once a film is picked -->
+      <div id="surpriseResultArea" style="display:none;"></div>
+
+      <!-- Action buttons -->
+      <div id="surpriseActionRow" style="display:flex;gap:8px;">
+        <button class="btn btn-primary" style="flex:1;justify-content:center;" onclick="runSurprise()">🎲 Surprise Me</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Surprise Me ────────────────────────────────────────────────────────────
+
+let _surpriseLastId = null;
+
+function openSurpriseModal(){
+  // Reset state
+  const ra = document.getElementById('surpriseResultArea');
+  ra.style.display = 'none';
+  ra.classList.remove('revealed');
+  document.getElementById('surpriseActionRow').innerHTML =
+    `<button class="btn btn-primary" style="flex:1;justify-content:center;" onclick="runSurprise()">🎲 Surprise Me</button>`;
+  _surpriseLastId = null;
+  // Update pool count immediately so the user sees how many films match
+  updateSurprisePoolCount();
+  document.getElementById('surpriseModal').classList.add('open');
+  lockScroll();
+}
+
+function closeSurpriseModal(){
+  document.getElementById('surpriseModal').classList.remove('open');
+  _surpriseLastId = null;
+  unlockScroll();
+}
+
+function handleSurpriseOverlay(e){
+  if(e.target === document.getElementById('surpriseModal')) closeSurpriseModal();
+}
+
+function toggleSurpriseChip(btn){
+  btn.classList.toggle('active');
+  onSurpriseOptionChange();
+}
+
+function onSurpriseOptionChange(){
+  updateSurprisePoolCount();
+  // Clear any existing result since filters changed
+  const ra = document.getElementById('surpriseResultArea');
+  if(ra && ra.style.display !== 'none'){
+    ra.style.display = 'none';
+    ra.classList.remove('revealed');
+    document.getElementById('surpriseActionRow').innerHTML =
+      `<button class="btn btn-primary" style="flex:1;justify-content:center;" onclick="runSurprise()">🎲 Surprise Me</button>`;
+  }
+}
+
+function updateSurprisePoolCount(){
+  const el = document.getElementById('surprisePoolCount');
+  if(!el) return;
+  const n = getSurprisePool().length;
+  if(n === 0){
+    el.textContent = 'No unwatched films match these filters.';
+    el.classList.add('empty');
+  } else {
+    el.textContent = `${n} unwatched film${n !== 1 ? 's' : ''} in the pool`;
+    el.classList.remove('empty');
+  }
+}
+
+// Returns the pool of films eligible to be picked, respecting all filters
+// and the collection-ordering safety rule.
+function getSurprisePool(){
+  const includeVpn = document.getElementById('surpriseIncludeVpn').checked;
+  const active = [...document.querySelectorAll('.surprise-svc-chip.active')].map(c => c.dataset.service);
+  const anyService = active.length === 0;
+
+  // Base pool: unwatched, non-graveyard, non-detached
+  let pool = movies.filter(m => !m.watched && !m.graveyard && !isDetachedMovie(m));
+
+  // Service filter
+  if(!anyService){
+    pool = pool.filter(m => {
+      const s = m.streaming || {};
+      return active.some(svc => {
+        if(svc === 'cinema') return s.cinema?.direct || s.cinema?.coming;
+        // Implicit Other films (no service set) match when 'other' is selected
+        if(svc === 'other') return s.other?.direct || (includeVpn && s.other?.vpn) || hasNoStreaming(m);
+        return s[svc]?.direct || (includeVpn && s[svc]?.vpn);
+      });
+    });
+  } else if(!includeVpn){
+    // All services but VPN excluded: must have at least one direct/non-VPN availability.
+    // Implicit Other (no service set) is treated as a direct-accessible Other.
+    pool = pool.filter(m => {
+      const s = m.streaming || {};
+      return SERVICES.some(sv => s[sv]?.direct) || s.cinema?.coming || hasNoStreaming(m);
+    });
+  }
+
+  // Collection safety: a film is only eligible if every film that appears
+  // earlier in its collection (sorted by year, ascending) is already watched.
+  // This prevents suggesting film 2 when film 1 hasn't been seen yet.
+  pool = pool.filter(m => {
+    if(!m.collection) return true;
+
+    // Sort all films in this collection by year (films without a year go last)
+    const siblings = movies
+      .filter(x => x.collection === m.collection)
+      .sort((a, b) => (parseInt(a.year) || 9999) - (parseInt(b.year) || 9999));
+
+    const idx = siblings.findIndex(x => x.id === m.id);
+    if(idx <= 0) return true; // First in collection — always eligible
+
+    // Every film before this one must be watched
+    for(let i = 0; i < idx; i++){
+      if(!siblings[i].watched) return false;
+    }
+    return true;
+  });
+
+  return pool;
+}
+
+function buildSurpriseBadges(m){
+  let o = '';
+  const s = m.streaming || {};
+  const fl = {netflix:'Netflix', disney:'Disney+', prime:'Prime Video', cinema:'In Cinemas', other:m.otherName||'Other'};
+  for(const k of SERVICES){
+    const label = fl[k];
+    if(s[k]?.direct) o += `<span class="service-badge ${k}">${label}</span>`;
+    if(s[k]?.vpn){
+      const country = s[k]?.vpnCountry;
+      const countryText = country ? ` · ${esc(country)}` : '';
+      o += `<span class="service-badge vpn">${countryFlag(s[k]?.vpnCountry)} ${label}${countryText}</span>`;
+    }
+  }
+  if(s.cinema?.coming) o += `<span class="service-badge cinema-soon">&#127916; Coming Soon</span>`;
+  return o || `<span class="service-badge other">Other</span>`;
+}
+
+function runSurprise(){
+  // Animate the dice icon in the title
+  const diceEl = document.getElementById('surpriseDiceIcon');
+  if(diceEl){
+    diceEl.classList.remove('dice-spin');
+    void diceEl.offsetWidth; // force reflow to restart animation
+    diceEl.classList.add('dice-spin');
+    setTimeout(() => diceEl.classList.remove('dice-spin'), 450);
+  }
+
+  const pool = getSurprisePool();
+
+  if(!pool.length){
+    showSurpriseEmpty();
+    return;
+  }
+
+  // Avoid immediately repeating the last pick when the pool is large enough
+  let candidates = pool;
+  if(_surpriseLastId && pool.length > 1){
+    candidates = pool.filter(m => m.id !== _surpriseLastId);
+  }
+  const m = candidates[Math.floor(Math.random() * candidates.length)];
+  _surpriseLastId = m.id;
+
+  showSurprisePick(m);
+}
+
+function showSurprisePick(m){
+  const poster = m.poster
+    ? `<img class="surprise-result-poster" src="${esc(m.poster)}" alt="${esc(m.title)}" onerror="this.outerHTML='<div class=\\'surprise-result-placeholder\\'>🎬</div>'">`
+    : `<div class="surprise-result-placeholder">🎬</div>`;
+
+  const meta = [m.year, m.genre, formatRuntime(m.runtime)].filter(Boolean).join(' · ');
+  const rating = m.rating ? `<div class="surprise-result-rating">★ ${esc(m.rating)}</div>` : '';
+
+  // Collection position note
+  let collNote = '';
+  if(m.collection){
+    const siblings = movies
+      .filter(x => x.collection === m.collection)
+      .sort((a, b) => (parseInt(a.year) || 9999) - (parseInt(b.year) || 9999));
+    const idx = siblings.findIndex(x => x.id === m.id);
+    if(idx >= 0 && siblings.length > 1){
+      collNote = `<div class="surprise-collection-note">🎬 Film ${idx + 1} of ${siblings.length} &middot; ${esc(m.collection)}</div>`;
+    }
+  }
+
+  const badges = buildSurpriseBadges(m);
+
+  const ra = document.getElementById('surpriseResultArea');
+  ra.innerHTML = `
+    <div style="display:flex;gap:16px;align-items:flex-start;">
+      ${poster}
+      <div style="flex:1;min-width:0;">
+        <div class="surprise-result-title">${esc(m.title)}</div>
+        ${meta ? `<div class="surprise-result-meta">${meta}</div>` : ''}
+        ${rating}
+        ${collNote}
+        <div style="display:flex;flex-wrap:wrap;gap:4px;">${badges}</div>
+      </div>
+    </div>`;
+
+  ra.style.display = 'block';
+  ra.classList.remove('revealed');
+  void ra.offsetWidth;
+  ra.classList.add('revealed');
+
+  document.getElementById('surpriseActionRow').innerHTML = `
+    <button class="btn btn-primary" style="flex:1;justify-content:center;" onclick="openSurprisedFilm('${m.id}')">Open Film</button>
+    <button class="btn btn-ghost" onclick="runSurprise()">🎲 Again</button>`;
+}
+
+function showSurpriseEmpty(){
+  const ra = document.getElementById('surpriseResultArea');
+  ra.innerHTML = `
+    <div style="text-align:center;padding:22px 0 8px;">
+      <span style="font-size:2.2rem;display:block;margin-bottom:10px;opacity:0.4;">🤷</span>
+      <p style="font-size:0.82rem;color:var(--text-muted);line-height:1.6;">No unwatched films match these filters.<br>Try selecting fewer services or enabling VPN films.</p>
+    </div>`;
+  ra.style.display = 'block';
+  ra.classList.remove('revealed');
+  void ra.offsetWidth;
+  ra.classList.add('revealed');
+  document.getElementById('surpriseActionRow').innerHTML =
+    `<button class="btn btn-primary" style="flex:1;justify-content:center;" onclick="runSurprise()">🎲 Try Again</button>`;
+}
+
+function openSurprisedFilm(id){
+  closeSurpriseModal();
+  setTimeout(() => openDetail(id), 100);
+}
+</script>
+
+<!-- ── LETTERBOXD IMPORT MODAL ────────────────────────────────────────────── -->
+<div class="modal-overlay" id="importModal" onclick="handleImportOverlay(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 class="modal-title">📥 Letterboxd Import</h2>
+      <button class="modal-close" onclick="closeImportModal()">&times;</button>
+    </div>
+    <div class="modal-body" id="importBody"></div>
+  </div>
+</div>
+
+<script>
+// ── Letterboxd Import ──────────────────────────────────────────────────────
+
+let _importRows   = [];
+let _importSnap   = null;
+let _importActive = false;
+
+function openImportModal(){
+  _importRows   = [];
+  _importSnap   = null;
+  _importActive = false;
+  _importCategoriseSkipped = new Set();
+  _renderImportSelect();
+  document.getElementById('importModal').classList.add('open');
+  lockScroll();
+}
+
+function closeImportModal(){
+  if(_importActive) return;
+  document.getElementById('importModal').classList.remove('open');
+  unlockScroll();
+}
+
+function handleImportOverlay(e){
+  if(e.target === document.getElementById('importModal')) closeImportModal();
+}
+
+// ── CSV parser ──
+function _parseCSVLine(line){
+  const out = [];
+  let cur = '', inQ = false;
+  for(let i = 0; i < line.length; i++){
+    const ch = line[i];
+    if(ch === '"'){
+      if(inQ && line[i+1] === '"'){ cur += '"'; i++; }
+      else inQ = !inQ;
+    } else if(ch === ',' && !inQ){
+      out.push(cur.trim()); cur = '';
+    } else { cur += ch; }
+  }
+  out.push(cur.trim());
+  return out;
+}
+
+function _parseLetterboxdCSV(text){
+  const lines = text.replace(/\r\n/g,'\n').replace(/\r/g,'\n').trim().split('\n');
+  if(lines.length < 2) return [];
+  const headers = _parseCSVLine(lines[0]);
+  return lines.slice(1)
+    .filter(l => l.trim())
+    .map(l => {
+      const vals = _parseCSVLine(l);
+      const obj = {};
+      headers.forEach((h,i) => { obj[h] = vals[i] || ''; });
+      return obj;
+    });
+}
+
+// ── Step 1: file selection UI ──
+function _renderImportSelect(){
+  const hasKey = !!tmdbKey;
+  const uncatCount = movies.filter(m=>hasNoStreaming(m)&&!m.graveyard).length;
+  document.getElementById('importBody').innerHTML = `
+    <div class="import-step-instructions">
+      <p>Import your watch history from Letterboxd. Films already in your list will have their watched date updated with the Letterboxd date.</p>
+      <ol>
+        <li>On Letterboxd, go to <strong>Settings → Import &amp; Export</strong></li>
+        <li>Under <em>Export</em>, click <strong>Export Your Data</strong></li>
+        <li>Upload the <code>diary.csv</code> file below</li>
+      </ol>
+    </div>
+    ${!hasKey ? `<div class="import-warning">⚠ <strong>No TMDB key set.</strong> Films will be imported with title and date only — no poster, genre, or director. <a href="#" onclick="closeImportModal();showApiSettings();return false;" style="color:var(--gold)">Add a key</a> for full details.</div>` : ''}
+    <div class="import-dropzone" id="importDropzone"
+         ondragover="importDragOver(event)"
+         ondragleave="importDragLeave(event)"
+         ondrop="importDrop(event)"
+         onclick="document.getElementById('importFileInput').click()">
+      <span class="import-dropzone-icon">📂</span>
+      <div class="import-dropzone-text">Drag &amp; drop <strong>diary.csv</strong> here</div>
+      <div class="import-dropzone-hint">or click to browse</div>
+    </div>
+    <input type="file" id="importFileInput" accept=".csv,text/csv" style="display:none" onchange="importFileChosen(this)">
+    ${uncatCount > 0 ? `
+    <div class="import-categorise-prompt">
+      <div>
+        <div class="import-categorise-prompt-text-title">🗂 Assign streaming services</div>
+        <div class="import-categorise-prompt-text-meta">${uncatCount} film${uncatCount!==1?'s':''} in your list have no service set yet</div>
+      </div>
+      <button class="btn btn-ghost btn-sm" style="flex-shrink:0;" onclick="renderImportCategorise()">Review →</button>
+    </div>` : ''}`;
+}
+
+function importDragOver(e){
+  e.preventDefault();
+  document.getElementById('importDropzone')?.classList.add('drag-over');
+}
+function importDragLeave(e){
+  document.getElementById('importDropzone')?.classList.remove('drag-over');
+}
+function importDrop(e){
+  e.preventDefault();
+  document.getElementById('importDropzone')?.classList.remove('drag-over');
+  const file = e.dataTransfer?.files?.[0];
+  if(file) _readImportFile(file);
+}
+function importFileChosen(input){
+  const file = input.files?.[0];
+  if(file) _readImportFile(file);
+}
+
+function _readImportFile(file){
+  const reader = new FileReader();
+  reader.onload = e => {
+    const rows = _parseLetterboxdCSV(e.target.result);
+    if(!rows.length || !('Name' in (rows[0]||{}))){
+      const dz = document.getElementById('importDropzone');
+      if(dz) dz.insertAdjacentHTML('afterend',
+        `<p style="color:var(--danger);font-size:0.78rem;margin-top:10px;">
+          Couldn't read this file. Make sure it's a Letterboxd <code>diary.csv</code> export.</p>`);
+      return;
+    }
+    // Deduplicate rewatches: keep the entry with the most recent Watched Date
+    const seen = new Map();
+    for(const row of rows){
+      const key = (row.Name||'').toLowerCase().trim() + '|' + (row.Year||'');
+      const existing = seen.get(key);
+      const d = row['Watched Date'] || '';
+      if(!existing || d > (existing['Watched Date']||'')) seen.set(key, row);
+    }
+    _importRows = [...seen.values()];
+    _renderImportPreview(_importRows, file.name);
+  };
+  reader.readAsText(file);
+}
+
+// ── Step 2: preview & confirm ──
+function _renderImportPreview(rows, filename){
+  const alreadyIn = rows.filter(r => _findExistingForImport(null, r.Name, r.Year)).length;
+  const newCount  = rows.length - alreadyIn;
+  const hasKey    = !!tmdbKey;
+  const preview   = rows.slice(0,6).map(r =>
+    `<li>${esc(r.Name||'')}${r.Year?' ('+esc(r.Year)+')':''}${r['Watched Date']?' · '+esc(r['Watched Date']):''}</li>`
+  ).join('');
+  const more = rows.length > 6 ? `<li style="color:var(--text-muted);">…and ${rows.length - 6} more</li>` : '';
+
+  document.getElementById('importBody').innerHTML = `
+    <div class="import-file-confirmed">
+      <span class="import-file-icon">✓</span>
+      <div style="flex:1;min-width:0;">
+        <div class="import-file-name">${esc(filename)}</div>
+        <div class="import-file-meta">${rows.length} entr${rows.length===1?'y':'ies'} found${alreadyIn?` · ${alreadyIn} already in your list`:''}</div>
+      </div>
+      <button class="btn btn-ghost btn-sm" style="flex-shrink:0;" onclick="_renderImportSelect()">Change</button>
+    </div>
+    <div class="import-warning">
+      ${alreadyIn ? `<strong>${alreadyIn} film${alreadyIn!==1?'s':''}</strong> already in your list — their watched date will be overridden with the Letterboxd date. ` : ''}
+      ${newCount  ? `<strong>${newCount} new film${newCount!==1?'s':''}</strong> will be added as watched${hasKey?' with TMDB metadata (poster, genre, director)':' with title and date only'}. ` : ''}
+      Streaming service info is not imported.
+    </div>
+    <div style="margin-bottom:18px;">
+      <div style="font-size:0.68rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-muted);margin-bottom:8px;">Preview</div>
+      <ul class="import-preview-list">${preview}${more}</ul>
+    </div>
+    <button class="btn btn-primary" style="width:100%;justify-content:center;" onclick="runLetterboxdImport()">
+      📥 Import ${rows.length} Film${rows.length!==1?'s':''}
+    </button>`;
+}
+
+// ── Existing-movie matcher ──
+function _findExistingForImport(tmdbId, title, year){
+  const pool = christmasMode ? (_normalMovies||movies) : movies;
+  if(tmdbId){
+    const m = pool.find(x => x.tmdbId && x.tmdbId === tmdbId);
+    if(m) return m;
+  }
+  const tl = (title||'').toLowerCase().trim();
+  return pool.find(m =>
+    m.title.toLowerCase().trim() === tl &&
+    String(m.year||'') === String(year||'')
+  ) || null;
+}
+
+// ── TMDB helpers ──
+async function _tmdbSearchForImport(title, year){
+  if(!tmdbKey) return null;
+  try {
+    const q = title.replace(/[-\u2010-\u2015]/g,' ').replace(/\s+/g,' ').trim();
+    const base = `https://api.themoviedb.org/3/search/movie?api_key=${encodeURIComponent(tmdbKey)}&query=${encodeURIComponent(q)}&include_adult=false`;
+    const res = await fetch(year ? base+'&year='+encodeURIComponent(year) : base);
+    if(!res.ok) return null;
+    const data = await res.json();
+    let results = data.results || [];
+    // Year filter sometimes causes misses — retry without it
+    if(!results.length && year){
+      const res2 = await fetch(base);
+      if(res2.ok){ const d2 = await res2.json(); results = d2.results || []; }
+    }
+    return results[0] || null;
+  } catch { return null; }
+}
+
+async function _tmdbDetailsForImport(id){
+  if(!tmdbKey || !id) return null;
+  try {
+    const [dr, cr] = await Promise.all([
+      fetch(`https://api.themoviedb.org/3/movie/${id}?api_key=${encodeURIComponent(tmdbKey)}`),
+      fetch(`https://api.themoviedb.org/3/movie/${id}/credits?api_key=${encodeURIComponent(tmdbKey)}`)
+    ]);
+    const d = await dr.json();
+    const c = cr.ok ? await cr.json() : null;
+    return { d, c };
+  } catch { return null; }
+}
+
+// ── Main import runner ──
+async function runLetterboxdImport(){
+  if(!_importRows.length || _importActive) return;
+  _importActive = true;
+
+  // Snapshot for undo
+  _importSnap = JSON.parse(JSON.stringify(movies));
+
+  const total = _importRows.length;
+  let added = 0, updated = 0, noTmdb = 0;
+
+  // Render progress UI
+  document.getElementById('importBody').innerHTML = `
+    <div style="padding:8px 0;">
+      <div style="font-size:0.82rem;color:var(--text-dim);margin-bottom:14px;">
+        Importing ${total} film${total!==1?'s':''}…
+        ${!tmdbKey?'<span style="color:var(--text-muted);font-size:0.72rem;"> (no TMDB key — title and date only)</span>':''}
+      </div>
+      <div class="import-progress-bar"><div class="import-progress-fill" id="impFill"></div></div>
+      <div style="display:flex;justify-content:space-between;font-size:0.7rem;color:var(--text-muted);margin-top:4px;">
+        <span id="impLabel" style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">Starting…</span>
+        <span id="impCount" style="flex-shrink:0;margin-left:12px;">0 / ${total}</span>
+      </div>
+    </div>`;
+
+  for(let i = 0; i < _importRows.length; i++){
+    const row     = _importRows[i];
+    const title   = row.Name  || '';
+    const year    = row.Year  || '';
+    // Letterboxd diary has both "Date" (log date) and "Watched Date" (actual viewing date)
+    const watchedStr = row['Watched Date'] || row['Date'] || '';
+    const watchedISO = watchedStr
+      ? new Date(watchedStr + 'T12:00:00').toISOString()
+      : new Date().toISOString();
+
+    // Update progress bar
+    const pct = Math.round((i / total) * 100);
+    const fill  = document.getElementById('impFill');
+    const label = document.getElementById('impLabel');
+    const count = document.getElementById('impCount');
+    if(fill)  fill.style.width  = pct + '%';
+    if(label) label.textContent = title + (year ? ' ('+year+')' : '');
+    if(count) count.textContent = `${i} / ${total}`;
+    // Yield to browser so the progress bar actually renders
+    await new Promise(r => setTimeout(r, 0));
+
+    try {
+      // Fetch TMDB data
+      const hit     = await _tmdbSearchForImport(title, year);
+      const tmdbId  = hit?.id || null;
+      const details = tmdbId ? await _tmdbDetailsForImport(tmdbId) : null;
+      if(!tmdbId) noTmdb++;
+
+      const d   = details?.d;
+      const c   = details?.c;
+      const dir = c ? (c.crew||[]).find(x => x.job === 'Director') : null;
+
+      // Match against existing list
+      const existing = _findExistingForImport(tmdbId, title, year);
+
+      if(existing){
+        // Always override the watched date with Letterboxd's date
+        existing.watched      = true;
+        existing.watchingSoon = false;
+        existing.dateWatched  = watchedISO;
+        // Backfill missing metadata while we have it
+        if(tmdbId  && !existing.tmdbId)   existing.tmdbId   = tmdbId;
+        if(d?.poster_path && !existing.poster)
+          existing.poster = TMDB_IMG + d.poster_path;
+        if(d?.runtime && !existing.runtime)
+          existing.runtime = d.runtime;
+        if(d?.genres?.length && !existing.genre)
+          existing.genre = d.genres.map(g=>g.name).join(', ');
+        if(dir && !existing.director)
+          existing.director = dir.name;
+        if(d?.vote_average && !existing.rating)
+          existing.rating = d.vote_average.toFixed(1)+'/10';
+        updated++;
+      } else {
+        // Add as new watched film
+        movies.push({
+          id:          crypto.randomUUID(),
+          title:       d?.title || title,
+          year:        d?.release_date ? d.release_date.slice(0,4) : year,
+          genre:       d?.genres ? d.genres.map(g=>g.name).join(', ') : '',
+          director:    dir ? dir.name : '',
+          rating:      d?.vote_average ? d.vote_average.toFixed(1)+'/10' : '',
+          runtime:     d?.runtime || undefined,
+          poster:      d?.poster_path ? TMDB_IMG+d.poster_path : '',
+          notes:       '',
+          otherName:   '',
+          collection:  '',
+          category:    '',
+          tmdbId:      tmdbId,
+          watched:     true,
+          watchingSoon:false,
+          graveyard:   false,
+          streaming:   {},
+          dateAdded:   watchedISO,
+          dateWatched: watchedISO,
+        });
+        added++;
+      }
+    } catch(err){
+      console.warn('[Import] Failed:', title, err);
+      noTmdb++;
+    }
+
+    // ~6 films/sec — respectful of TMDB's rate limit
+    await new Promise(r => setTimeout(r, 160));
+  }
+
+  // Final tick
+  const fill = document.getElementById('impFill');
+  if(fill) fill.style.width = '100%';
+  await new Promise(r => setTimeout(r, 80));
+
+  save();
+  render();
+  _importActive = false;
+  _renderImportResults(added, updated, noTmdb, total);
+}
+
+// ── Step 3: results ──
+function _renderImportResults(added, updated, noTmdb, total){
+  document.getElementById('importBody').innerHTML = `
+    <div style="text-align:center;padding:10px 0 22px;">
+      <div style="font-size:2.2rem;margin-bottom:8px;">✓</div>
+      <div style="font-family:'Playfair Display',serif;font-size:1.1rem;margin-bottom:4px;">Import complete</div>
+      <div style="font-size:0.72rem;color:var(--text-muted);">${total} entr${total!==1?'ies':'y'} processed</div>
+    </div>
+    <div style="border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:20px;">
+      <div class="import-stat-row">
+        <span class="import-stat-label">Films added</span>
+        <span class="import-stat-value" style="color:var(--gold);">${added}</span>
+      </div>
+      <div class="import-stat-row">
+        <span class="import-stat-label">Films updated</span>
+        <span class="import-stat-value">${updated}</span>
+      </div>
+      ${noTmdb > 0 ? `<div class="import-stat-row">
+        <span class="import-stat-label">Not found on TMDB</span>
+        <span class="import-stat-value" style="color:var(--text-muted);">${noTmdb}</span>
+      </div>` : ''}
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-primary" style="flex:1;justify-content:center;" onclick="closeImportModal()">Done</button>
+      ${_importSnap ? `<button class="btn btn-ghost" onclick="_undoLetterboxdImport()">Undo Import</button>` : ''}
+    </div>`;
+}
+
+function _undoLetterboxdImport(){
+  if(!_importSnap) return;
+  movies = _importSnap;
+  _importSnap = null;
+  save();
+  render();
+  closeImportModal();
+  showInfoToast('Letterboxd import undone.', 3500);
+}
+
+// ── Categorise unserviced films ────────────────────────────────────────────
+let _importCategoriseSkipped = new Set();
+let _lastCategoriseAction = null; // { id, streaming, otherName } — for Cmd+Z undo
+
+// Cmd/Ctrl+Z undoes the last service assignment while the categorise panel is open
+document.addEventListener('keydown', e=>{
+  if(!(e.metaKey||e.ctrlKey)||e.key!=='z') return;
+  const list = document.getElementById('categoriseList');
+  if(!list||!_lastCategoriseAction) return;
+  e.preventDefault();
+  const {id, streaming, otherName} = _lastCategoriseAction;
+  _lastCategoriseAction = null;
+  const m = movies.find(x=>x.id===id);
+  if(!m) return;
+  m.streaming = streaming;
+  m.otherName  = otherName;
+  save();
+  // Re-insert the row at the top of the list
+  const temp = document.createElement('div');
+  temp.innerHTML = _buildCategoriseRow(m);
+  list.insertBefore(temp.firstElementChild, list.firstChild);
+  const count = list.querySelectorAll('.categorise-film-row').length;
+  const countEl = document.getElementById('categoriseCount');
+  if(countEl) countEl.textContent = count+' film'+(count!==1?'s':'')+' without a service';
+});
+
+function renderImportCategorise(){
+  const all     = movies.filter(m=>hasNoStreaming(m)&&!m.graveyard);
+  const visible = all.filter(m=>!_importCategoriseSkipped.has(m.id));
+  document.getElementById('importBody').innerHTML = `
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+      <button class="btn btn-ghost btn-sm" onclick="_renderImportSelect()" style="flex-shrink:0;">← Back</button>
+      <div>
+        <div style="font-size:0.82rem;font-weight:500;color:var(--text);">Assign streaming services</div>
+        <div style="font-size:0.7rem;color:var(--text-muted);margin-top:2px;" id="categoriseCount">${visible.length} film${visible.length!==1?'s':''} without a service</div>
+      </div>
+    </div>
+    <div id="categoriseList">
+      ${visible.length ? visible.map(m=>_buildCategoriseRow(m)).join('') : _categoriseDoneMsg()}
+    </div>`;
+  // Align each JW chip with its corresponding Skip chip after layout settles
+  requestAnimationFrame(()=>requestAnimationFrame(_alignJWWithSkip));
+}
+
+// Nudge each JW row's right padding so JW sits directly above Skip
+function _alignJWWithSkip(){
+  document.querySelectorAll('.categorise-film-row').forEach(row=>{
+    const skipBtn = row.querySelector('.categorise-svc-chip.skip');
+    const jwDiv   = row.querySelector('.jw-row');
+    if(!skipBtn||!jwDiv) return;
+    const skipRect      = skipBtn.getBoundingClientRect();
+    const containerRect = jwDiv.parentElement.getBoundingClientRect();
+    const offset = Math.max(0, containerRect.right - skipRect.right);
+    jwDiv.style.paddingRight = offset + 'px';
+  });
+}
+
+function _categoriseDoneMsg(){
+  return `<div style="text-align:center;padding:28px 0;color:var(--text-muted);font-size:0.82rem;">All films have been assigned a service.</div>`;
+}
+
+function _buildCategoriseRow(m){
+  const thumb = m.poster
+    ? `<img src="${esc(m.poster)}" class="categorise-film-thumb" onerror="this.style.background='var(--surface2)';this.removeAttribute('src')">`
+    : `<div class="categorise-film-thumb"></div>`;
+  const meta = [m.year, m.genre?m.genre.split(',')[0].trim():null].filter(Boolean).join(' · ');
+  const jwUrl = `https://www.justwatch.com/au/search?q=${encodeURIComponent(m.title||'')}`;
+  return `<div class="categorise-film-row" id="catrow-${m.id}">
+    ${thumb}
+    <div style="flex:1;min-width:0;">
+      <div class="categorise-film-title">${esc(m.title||'')}</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:2px;">
+        <div class="categorise-film-meta">${esc(meta||'')}</div>
+        <a class="categorise-svc-chip jw-chip" href="${jwUrl}" target="_blank" rel="noopener" title="Find on JustWatch" style="flex-shrink:0;">JW</a>
+      </div>
+      <div class="categorise-svc-chips" id="catrow-chips-${m.id}" style="margin-top:6px;justify-content:space-between;">
+        ${_categoriseChipsHTML(m.id)}
+      </div>
+    </div>
+  </div>`;
+}
+
+function _categoriseChipsHTML(id){
+  return `<button class="categorise-svc-chip netflix" onclick="assignServiceFromCategorise('${id}','netflix')">Netflix</button>
+    <button class="categorise-svc-chip disney"  onclick="assignServiceFromCategorise('${id}','disney')">Disney+</button>
+    <button class="categorise-svc-chip prime"   onclick="assignServiceFromCategorise('${id}','prime')">Prime</button>
+    <button class="categorise-svc-chip cinema"  onclick="assignServiceFromCategorise('${id}','cinema')">Cinema</button>
+    <button class="categorise-svc-chip other"   onclick="showCategoriseOtherInput('${id}')">Other</button>
+    <button class="categorise-svc-chip skip"    onclick="skipFromCategorise('${id}')">Skip</button>`;
+}
+
+function showCategoriseOtherInput(id){
+  const chips = document.getElementById('catrow-chips-'+id);
+  if(!chips) return;
+  chips.innerHTML = `<input type="text" id="catother-${id}" placeholder="Service name (e.g. Apple TV)…"
+    onkeydown="if(event.key==='Enter')confirmCategoriseOther('${id}');if(event.key==='Escape')restoreCategoriseChips('${id}')">
+    <button class="categorise-svc-chip other" onclick="confirmCategoriseOther('${id}')">Set</button>
+    <button class="categorise-svc-chip skip"  onclick="restoreCategoriseChips('${id}')">Cancel</button>`;
+  setTimeout(()=>document.getElementById('catother-'+id)?.focus(), 30);
+}
+
+function confirmCategoriseOther(id){
+  const name = (document.getElementById('catother-'+id)?.value||'').trim();
+  assignServiceFromCategorise(id, 'other', name);
+}
+
+function restoreCategoriseChips(id){
+  const chips = document.getElementById('catrow-chips-'+id);
+  if(chips) chips.innerHTML = _categoriseChipsHTML(id);
+}
+
+function assignServiceFromCategorise(id, svc, name){
+  const m = movies.find(x=>x.id===id);
+  if(!m) return;
+  // Snapshot for Cmd+Z undo
+  _lastCategoriseAction = { id, streaming:{...m.streaming}, otherName:m.otherName };
+  m.streaming = {};
+  m.streaming[svc] = { direct:true, vpn:false, vpnCountry:'' };
+  if(svc==='other'&&name) m.otherName = name;
+  save();
+  _removeCategoriseRow(id);
+}
+
+function skipFromCategorise(id){
+  _importCategoriseSkipped.add(id);
+  _removeCategoriseRow(id);
+}
+
+function _removeCategoriseRow(id){
+  const row = document.getElementById('catrow-'+id);
+  if(!row) return;
+  const h = row.offsetHeight;
+  row.style.maxHeight = h+'px';
+  row.style.opacity   = '0';
+  row.style.paddingTop='0';
+  row.style.paddingBottom='0';
+  row.style.overflow  ='hidden';
+  requestAnimationFrame(()=>{ row.style.maxHeight='0'; });
+  setTimeout(()=>{
+    row.remove();
+    const list  = document.getElementById('categoriseList');
+    const count = list ? list.querySelectorAll('.categorise-film-row').length : 0;
+    const countEl = document.getElementById('categoriseCount');
+    if(countEl) countEl.textContent = count+' film'+(count!==1?'s':'')+' without a service';
+    if(count===0 && list) list.innerHTML = _categoriseDoneMsg();
+  }, 310);
+}
+</script>
+
+<!-- ── SORT DROPDOWN MENU ───────────────────────────────────────────────── -->
+<div id="sortMenu" class="sort-menu" role="menu" aria-label="Sort films">
+  <div class="sort-menu-label">Sort by</div>
+  <button class="sort-menu-item" data-sort="dateAdded-desc" onclick="setSort('dateAdded-desc')">Date added<span class="sort-menu-detail">newest first</span></button>
+  <button class="sort-menu-item" data-sort="dateAdded-asc"  onclick="setSort('dateAdded-asc')">Date added<span class="sort-menu-detail">oldest first</span></button>
+  <button class="sort-menu-item" data-sort="year-desc"      onclick="setSort('year-desc')">Year<span class="sort-menu-detail">newest first</span></button>
+  <button class="sort-menu-item" data-sort="year-asc"       onclick="setSort('year-asc')">Year<span class="sort-menu-detail">oldest first</span></button>
+  <button class="sort-menu-item" data-sort="title-asc"      onclick="setSort('title-asc')">Title<span class="sort-menu-detail">A&ndash;Z</span></button>
+  <button class="sort-menu-item" data-sort="runtime-desc"   onclick="setSort('runtime-desc')">Runtime<span class="sort-menu-detail">longest first</span></button>
+  <button class="sort-menu-item" data-sort="rating-desc"    onclick="setSort('rating-desc')">Rating<span class="sort-menu-detail">highest first</span></button>
+</div>
+
+<!-- ── BULK ACTION BAR ──────────────────────────────────────────────────── -->
+<div id="bulkBar">
+  <div id="bulkSubpanel" class="bulk-subpanel"></div>
+  <div class="bulk-main">
+    <div class="bulk-top">
+      <span id="bulkCount" class="bulk-count">0 selected</span>
+      <div class="bulk-sep"></div>
+      <button class="bulk-btn" id="bulkSelectAllBtn" onclick="bulkSelectAll()">Select All</button>
+      <div class="bulk-sep"></div>
+      <button class="bulk-cancel" onclick="exitSelectMode()">Cancel</button>
+    </div>
+    <div class="bulk-actions">
+      <button class="bulk-btn bulk-action-btn" onclick="bulkWatch()"                 disabled>✓ Watched</button>
+      <button class="bulk-btn bulk-action-btn" onclick="bulkUnwatch()"               disabled>✗ Unwatched</button>
+      <button class="bulk-btn bulk-action-btn" onclick="bulkWatchingSoon()"          disabled>⏰ Soon</button>
+      <button class="bulk-btn bulk-action-btn" onclick="openBulkSubpanel('service')" disabled>📺 Service</button>
+      <button class="bulk-btn bulk-action-btn" onclick="openBulkSubpanel('category')" disabled>🏷 Category</button>
+      <button class="bulk-btn bulk-action-btn" onclick="bulkGraveyard()"             disabled>💀 Graveyard</button>
+      <button class="bulk-btn bulk-action-btn" id="bulkChristmasBtn" onclick="bulkMoveToChristmas()" disabled>🎄 Christmas</button>
+      <button class="bulk-btn bulk-action-btn bulk-btn-danger" onclick="bulkDelete()" disabled>🗑 Delete</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Bulk Selection ─────────────────────────────────────────────────────────
+
+window.selectionMode = false;
+window.selectedIds   = new Set();
+
+function enterSelectMode(){
+  window.selectionMode = true;
+  window.selectedIds   = new Set();
+  document.getElementById('selectModeBtn')?.classList.add('active');
+  document.getElementById('movieGrid').classList.add('selection-mode');
+  document.getElementById('bulkBar').classList.add('visible');
+  document.body.classList.add('bulk-mode');
+  // Label flips based on which list is currently active
+  const xBtn = document.getElementById('bulkChristmasBtn');
+  if(xBtn) xBtn.textContent = christmasMode ? '📋 Normal List' : '🎄 Christmas';
+  updateBulkBar();
+}
+
+// doRender=false lets callers run render() themselves after cleanup,
+// avoiding a double render when called from setFilter/setView/bulk actions.
+// Cancel and Escape pass no argument and get false — no re-render needed
+// since no data has changed, only visual selection state is being cleared.
+function exitSelectMode(doRender=false){
+  if(!window.selectionMode) return;
+  window.selectionMode = false;
+  window.selectedIds   = new Set();
+  document.getElementById('selectModeBtn')?.classList.remove('active');
+  document.getElementById('movieGrid').classList.remove('selection-mode');
+  document.querySelectorAll('.card-selected').forEach(el=>el.classList.remove('card-selected'));
+  document.getElementById('bulkBar').classList.remove('visible');
+  closeBulkSubpanel();
+  document.body.classList.remove('bulk-mode');
+  if(doRender) render();
+}
+
+function toggleSelect(id){
+  const els = document.querySelectorAll(`[data-id="${id}"]`);
+  if(window.selectedIds.has(id)){
+    window.selectedIds.delete(id);
+    els.forEach(el=>el.classList.remove('card-selected'));
+  } else {
+    window.selectedIds.add(id);
+    els.forEach(el=>el.classList.add('card-selected'));
+  }
+  updateBulkBar();
+}
+
+function bulkSelectAll(){
+  const visibleIds = [...new Set(
+    [...document.querySelectorAll('#movieGrid [data-id]')].map(el=>el.dataset.id)
+  )];
+  const allSelected = visibleIds.length > 0 &&
+    visibleIds.every(id => window.selectedIds.has(id));
+
+  if(allSelected){
+    window.selectedIds.clear();
+    document.querySelectorAll('#movieGrid .card-selected').forEach(el=>el.classList.remove('card-selected'));
+  } else {
+    visibleIds.forEach(id=>{
+      window.selectedIds.add(id);
+      document.querySelectorAll(`[data-id="${id}"]`).forEach(el=>el.classList.add('card-selected'));
+    });
+  }
+  updateBulkBar();
+}
+
+function updateBulkBar(){
+  const n = window.selectedIds.size;
+  const countEl = document.getElementById('bulkCount');
+  if(countEl) countEl.textContent = n === 0 ? 'None selected' : `${n} selected`;
+
+  const allBtn = document.getElementById('bulkSelectAllBtn');
+  if(allBtn){
+    const visEls = document.querySelectorAll('#movieGrid [data-id]');
+    const allSel = visEls.length > 0 && [...visEls].every(el=>window.selectedIds.has(el.dataset.id));
+    allBtn.textContent = allSel ? 'Deselect All' : 'Select All';
+  }
+
+  document.querySelectorAll('.bulk-action-btn').forEach(btn=>{ btn.disabled = n === 0; });
+}
+
+// ── Sub-panel ──
+let _bulkPanel = null;
+
+function openBulkSubpanel(type){
+  _bulkPanel = type;
+  const sp = document.getElementById('bulkSubpanel');
+  const n  = window.selectedIds.size;
+
+  if(type === 'service'){
+    sp.innerHTML = `
+      <div class="bulk-subpanel-label">Set streaming service — replaces existing info on ${n} film${n!==1?'s':''}</div>
+      <div class="bulk-subpanel-chips">
+        <button class="bulk-svc-chip" data-svc="netflix" onclick="onBulkSvcPick(this)"><span style="width:5px;height:5px;border-radius:50%;background:#e50914;display:inline-block;flex-shrink:0;"></span>Netflix</button>
+        <button class="bulk-svc-chip" data-svc="disney"  onclick="onBulkSvcPick(this)"><span style="width:5px;height:5px;border-radius:50%;background:#3b82f6;display:inline-block;flex-shrink:0;"></span>Disney+</button>
+        <button class="bulk-svc-chip" data-svc="prime"   onclick="onBulkSvcPick(this)"><span style="width:5px;height:5px;border-radius:50%;background:#00a8e1;display:inline-block;flex-shrink:0;"></span>Prime</button>
+        <button class="bulk-svc-chip" data-svc="cinema"  onclick="onBulkSvcPick(this)"><span style="width:5px;height:5px;border-radius:50%;background:#818cf8;display:inline-block;flex-shrink:0;"></span>Cinema</button>
+        <button class="bulk-svc-chip" data-svc="other"   onclick="onBulkSvcPick(this)"><span style="width:5px;height:5px;border-radius:50%;background:#4a7c59;display:inline-block;flex-shrink:0;"></span>Other</button>
+        <button class="bulk-svc-chip" data-svc="clear"   onclick="onBulkSvcPick(this)">✕ Clear service</button>
+      </div>
+      <div class="bulk-subpanel-options" id="bulkSvcOpts" style="display:none;">
+        <label class="toggle-row" id="bulkVpnLabel" style="margin:0;">
+          <input type="checkbox" id="bulkSvcVpn" onchange="document.getElementById('bulkSvcCountry').style.display=this.checked?'':'none'">
+          <span class="track"></span>
+          <span class="toggle-label">VPN only</span>
+        </label>
+        <input type="text" id="bulkSvcCountry" placeholder="VPN country…" style="display:none;max-width:160px;">
+        <input type="text" id="bulkOtherName"  placeholder="Service name (e.g. Apple TV)…" style="display:none;flex:1;">
+        <button class="bulk-btn" style="border-color:var(--gold-dim);color:var(--gold);" onclick="applyBulkService()">Apply</button>
+        <button class="bulk-btn" onclick="closeBulkSubpanel()">Cancel</button>
+      </div>`;
+  } else if(type === 'category'){
+    const existing = [...new Set(movies.map(m=>m.category).filter(Boolean))].sort();
+    const chips = existing.map(c =>
+      `<button class="bulk-svc-chip" onclick="document.getElementById('bulkCatInput').value='${esc(c).replace(/'/g,"\\'")}'">${esc(c)}</button>`
+    ).join('');
+    sp.innerHTML = `
+      <div class="bulk-subpanel-label">Set category on ${n} film${n!==1?'s':''} — leave blank to clear</div>
+      ${chips ? `<div class="bulk-subpanel-chips">${chips}</div>` : ''}
+      <div class="bulk-subpanel-options">
+        <input type="text" id="bulkCatInput" placeholder="Category name… (leave blank to clear)" style="flex:1;">
+        <button class="bulk-btn" style="border-color:var(--gold-dim);color:var(--gold);" onclick="applyBulkCategory()">Apply</button>
+        <button class="bulk-btn" onclick="closeBulkSubpanel()">Cancel</button>
+      </div>`;
+  }
+  sp.classList.add('visible');
+}
+
+function onBulkSvcPick(btn){
+  document.querySelectorAll('#bulkSubpanel .bulk-svc-chip').forEach(c=>c.classList.remove('active'));
+  btn.classList.add('active');
+  const svc  = btn.dataset.svc;
+  const opts = document.getElementById('bulkSvcOpts');
+  const vpnL = document.getElementById('bulkVpnLabel');
+  const oth  = document.getElementById('bulkOtherName');
+  if(!opts) return;
+  opts.style.display = '';
+  if(vpnL)  vpnL.style.display  = (svc==='cinema'||svc==='clear') ? 'none' : '';
+  if(oth)   oth.style.display   = svc === 'other' ? '' : 'none';
+}
+
+function closeBulkSubpanel(){
+  _bulkPanel = null;
+  const sp = document.getElementById('bulkSubpanel');
+  if(sp){ sp.classList.remove('visible'); sp.innerHTML=''; }
+}
+
+// ── Bulk action implementations ──
+
+function applyBulkService(){
+  const chip = document.querySelector('#bulkSubpanel .bulk-svc-chip.active');
+  if(!chip) return;
+  // Read all values before any DOM teardown
+  const svc       = chip.dataset.svc;
+  const isVpn     = document.getElementById('bulkSvcVpn')?.checked || false;
+  const country   = document.getElementById('bulkSvcCountry')?.value.trim() || '';
+  const otherName = document.getElementById('bulkOtherName')?.value.trim() || '';
+  const targets   = movies.filter(m=>window.selectedIds.has(m.id));
+
+  undoStack.push(JSON.parse(JSON.stringify(movies))); redoStack=[];
+  targets.forEach(m=>{
+    m.streaming = {};
+    if(svc === 'clear'){ m.otherName=''; return; }
+    if(svc === 'other') m.otherName = otherName;
+    m.streaming[svc] = { direct:!isVpn, vpn:!!isVpn, vpnCountry:isVpn?country:'' };
+  });
+  save(); exitSelectMode(false); render();
+  showInfoToast(`Service updated for ${targets.length} film${targets.length!==1?'s':''}.`, 3000);
+}
+
+function applyBulkCategory(){
+  const cat     = (document.getElementById('bulkCatInput')?.value||'').trim();
+  const targets = movies.filter(m=>window.selectedIds.has(m.id));
+  undoStack.push(JSON.parse(JSON.stringify(movies))); redoStack=[];
+  targets.forEach(m=>{ m.category=cat; });
+  save(); exitSelectMode(false); render();
+  showInfoToast(
+    cat ? `Category set to "${esc(cat)}" for ${targets.length} film${targets.length!==1?'s':''}.`
+        : `Category cleared for ${targets.length} film${targets.length!==1?'s':''}.`,
+    3000
+  );
+}
+
+function bulkWatch(){
+  if(!window.selectedIds.size) return;
+  const now     = new Date().toISOString();
+  const targets = movies.filter(m=>window.selectedIds.has(m.id));
+  undoStack.push(JSON.parse(JSON.stringify(movies))); redoStack=[];
+  targets.forEach(m=>{ m.watched=true; m.watchingSoon=false; if(!m.dateWatched)m.dateWatched=now; });
+  save(); exitSelectMode(false); render();
+  showInfoToast(`${targets.length} film${targets.length!==1?'s':''} marked as watched.`, 3000);
+}
+
+function bulkUnwatch(){
+  if(!window.selectedIds.size) return;
+  const targets = movies.filter(m=>window.selectedIds.has(m.id));
+  undoStack.push(JSON.parse(JSON.stringify(movies))); redoStack=[];
+  targets.forEach(m=>{ m.watched=false; m.dateWatched=undefined; });
+  save(); exitSelectMode(false); render();
+  showInfoToast(`${targets.length} film${targets.length!==1?'s':''} marked as unwatched.`, 3000);
+}
+
+function bulkWatchingSoon(){
+  if(!window.selectedIds.size) return;
+  const targets = movies.filter(m=>window.selectedIds.has(m.id)&&!m.watched&&!m.graveyard);
+  if(!targets.length){
+    showInfoToast('No eligible films — watched or graveyard films are skipped.', 3000);
+    return;
+  }
+  const allSoon = targets.every(m=>m.watchingSoon);
+  undoStack.push(JSON.parse(JSON.stringify(movies))); redoStack=[];
+  targets.forEach(m=>{ m.watchingSoon=!allSoon; });
+  save(); exitSelectMode(false); render();
+  showInfoToast(`${targets.length} film${targets.length!==1?'s':''} ${allSoon?'removed from':'added to'} Watching Soon.`, 3000);
+}
+
+function bulkGraveyard(){
+  if(!window.selectedIds.size) return;
+  const targets     = movies.filter(m=>window.selectedIds.has(m.id));
+  const allInGrave  = targets.every(m=>m.graveyard);
+  undoStack.push(JSON.parse(JSON.stringify(movies))); redoStack=[];
+  targets.forEach(m=>{
+    m.graveyard=!allInGrave;
+    if(m.graveyard){ m.watched=false; m.watchingSoon=false; }
+  });
+  save(); exitSelectMode(false); render();
+  showInfoToast(`${targets.length} film${targets.length!==1?'s':''} ${allInGrave?'removed from':'moved to'} Graveyard.`, 3000);
+}
+
+function bulkMoveToChristmas(){
+  if(!window.selectedIds.size) return;
+  const targets = movies.filter(m=>window.selectedIds.has(m.id));
+  const n = targets.length;
+
+  if(!christmasMode){
+    // Normal → Christmas: remove from normal list, add to christmas list
+    movies = movies.filter(m=>!window.selectedIds.has(m.id));
+    christmasMovies = [...(christmasMovies||[]), ...targets];
+    save(); // saves updated normal movies to watchlist_v2
+    localStorage.setItem('christmas_watchlist_v1', JSON.stringify(christmasMovies));
+    if(window._sbSyncNow&&!window._sbPaused) window._sbSyncNow();
+    exitSelectMode(false); render();
+    showInfoToast(`${n} film${n!==1?'s':''} moved to Christmas list. 🎄`, 3500);
+  } else {
+    // Christmas → Normal: remove from christmas list, add to normal list
+    // In christmas mode: movies = christmas list, _normalMovies = normal list
+    movies = movies.filter(m=>!window.selectedIds.has(m.id));
+    _normalMovies = [...(_normalMovies||[]), ...targets];
+    save(); // saves updated christmas movies to christmas_watchlist_v1
+    localStorage.setItem('watchlist_v2', JSON.stringify(_normalMovies));
+    if(window._sbSyncNow&&!window._sbPaused) window._sbSyncNow();
+    exitSelectMode(false); render();
+    showInfoToast(`${n} film${n!==1?'s':''} moved to Normal list.`, 3500);
+  }
+}
+
+function bulkDelete(){
+  if(!window.selectedIds.size) return;
+  const n   = window.selectedIds.size;
+  const ids = new Set(window.selectedIds); // capture before exitSelectMode clears it
+  undoStack.push(JSON.parse(JSON.stringify(movies))); redoStack=[];
+  movies = movies.filter(m=>!ids.has(m.id));
+  save(); exitSelectMode(false); render();
+  // Undo toast (matches existing single-delete pattern)
+  const DUR = 8000;
+  const t   = document.createElement('div'); t.className='toast';
+  t.innerHTML=`<span class="toast-msg"><strong>${n} film${n!==1?'s':''}</strong> deleted.</span><button class="toast-undo" onclick="undoDelete(this.closest('.toast'))">Undo</button><div class="toast-progress" style="animation:toastProgress ${DUR}ms linear forwards;width:100%"></div>`;
+  document.getElementById('toastContainer').appendChild(t);
+  t._timer=setTimeout(()=>dismissToast(t),DUR);
+}
+
+// Forward trackpad/wheel scroll on the backdrop into the modal.
+// On desktop the scrollable element is .modal (the card); on mobile it's .modal-body.
+(function(){
+  const overlay = document.getElementById('addModal');
+  if(!overlay) return;
+  overlay.addEventListener('wheel', function(e){
+    if(!overlay.classList.contains('open')) return;
+    const card = overlay.querySelector('.modal');
+    if(!card) return;
+    if(card.contains(e.target)) return; // inside the card — scroll naturally
+    // Pick whichever element actually scrolls
+    const scrollEl = card.scrollHeight > card.clientHeight
+      ? card
+      : (card.querySelector('.modal-body') || card);
+    e.preventDefault();
+    let delta = e.deltaY;
+    if(e.deltaMode === 1) delta *= 16;
+    if(e.deltaMode === 2) delta *= scrollEl.clientHeight;
+    scrollEl.scrollTop += delta;
+  }, { passive: false });
+})();
+// Uses the capturing phase so this fires before the card's inline onclick="openDetail(id)",
+// letting stopPropagation() prevent openDetail from running.
+document.addEventListener('click', function(e){
+  if(!e.shiftKey && !e.metaKey && !e.ctrlKey) return;
+  const card = e.target.closest('[data-id]');
+  if(!card) return;
+  e.stopPropagation();
+  e.preventDefault();
+  if(!window.selectionMode) enterSelectMode();
+  toggleSelect(card.dataset.id);
+}, true);
 </script>
 
 </body>
