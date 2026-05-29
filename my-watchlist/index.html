@@ -897,7 +897,7 @@
     font-size:0.7rem; letter-spacing:0.05em;
   }
   .sort-menu {
-    position:fixed; z-index:250;
+    position:absolute; z-index:250;
     background:var(--surface);
     border:1px solid var(--border-hi);
     border-radius:var(--radius);
@@ -3013,7 +3013,7 @@ function toggleSortMenu(){
   if(menu.classList.contains('open')){closeSortMenu();return;}
   // Position the menu directly below the button, aligned to its right edge
   const rect=btn.getBoundingClientRect();
-  menu.style.top=(rect.bottom+6)+'px';
+  menu.style.top=(rect.bottom+window.scrollY+6)+'px';
   menu.style.right=Math.max(8,window.innerWidth-rect.right)+'px';
   menu.style.left='auto';
   menu.classList.add('open');
