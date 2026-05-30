@@ -1367,6 +1367,66 @@ const STORAGE_KEY      = "album_atlas_v1";
 const COVER_CACHE_KEY  = "album_atlas_covers_v1";
 let state = { listen: [], fathom: [], loved: [], enough: [] };
 let coverCache = {}; // { [mbid]: "data:image/jpeg;base64,..." }
+
+/* ── Undo / redo ──────────────────────────────────────────────────────────────
+   Snapshots include both album state and the current search-input text, so
+   completed typing sessions and album operations share one linear history.
+   The input elements are defined later in this script but are always
+   initialised before any of these functions are first called. */
+let undoStack = [];
+let redoStack = [];
+const UNDO_LIMIT = 50;
+
+function captureSnapshot() {
+  const ai = document.getElementById('input-album');
+  const ri = document.getElementById('input-artist');
+  return {
+    st: JSON.parse(JSON.stringify(state)),
+    ai: ai ? ai.value : '',
+    ri: ri ? ri.value : '',
+  };
+}
+
+/* Call before every album mutation. Clears redo to keep history linear. */
+function pushUndo() {
+  undoStack.push(captureSnapshot());
+  if (undoStack.length > UNDO_LIMIT) undoStack.shift();
+  redoStack = [];
+}
+
+function restoreSnapshot(snap) {
+  state = snap.st;
+  const elAi = document.getElementById('input-album');
+  const elRi = document.getElementById('input-artist');
+  const textChanged = elAi.value !== snap.ai || elRi.value !== snap.ri;
+  elAi.value = snap.ai;
+  elRi.value = snap.ri;
+  saveState();
+  renderAll();
+  updateCount();
+  if (textChanged) {
+    if (snap.ai || snap.ri) {
+      elAi.focus();
+      scheduleSearch();
+    } else {
+      closeResults();
+    }
+  }
+}
+
+function applyUndo() {
+  if (!undoStack.length) return;
+  redoStack.push(captureSnapshot());
+  restoreSnapshot(undoStack.pop());
+}
+
+function applyRedo() {
+  if (!redoStack.length) return;
+  undoStack.push(captureSnapshot());
+  restoreSnapshot(redoStack.pop());
+}
+/* ── End undo / redo ─────────────────────────────────────────────────────── */
+
 let draggingId = null;
 let draggingFrom = null;
 let placeholderEl = null;
@@ -1731,6 +1791,34 @@ function scheduleSearch() {
 
 [inputAlbum, inputArtist].forEach(inp => inp.addEventListener("input", scheduleSearch));
 
+/* Text-undo integration ─────────────────────────────────────────────────────
+   Record the input values at focus-time. On blur, if either value changed,
+   push a snapshot capturing the PRE-typing state so it lands in the undo
+   history. This means after you finish typing and click elsewhere, a
+   subsequent Cmd+Z will step back through album operations and then clear the
+   text — all in one linear stack.
+   While an input is still focused, Cmd+Z is left to the browser so native
+   per-character text undo keeps working as expected. */
+let _focusAi = '';
+let _focusRi = '';
+
+inputAlbum.addEventListener('focus',  () => { _focusAi = inputAlbum.value; });
+inputArtist.addEventListener('focus', () => { _focusRi = inputArtist.value; });
+
+function pushTextSnapshotIfChanged() {
+  if (inputAlbum.value === _focusAi && inputArtist.value === _focusRi) return;
+  /* Push the state as it was when the user STARTED this typing session. */
+  const snap = captureSnapshot();
+  snap.ai = _focusAi;
+  snap.ri = _focusRi;
+  undoStack.push(snap);
+  if (undoStack.length > UNDO_LIMIT) undoStack.shift();
+  redoStack = [];
+}
+
+inputAlbum.addEventListener('blur',  pushTextSnapshotIfChanged);
+inputArtist.addEventListener('blur', pushTextSnapshotIfChanged);
+
 inputAlbum.addEventListener("keydown", (e) => {
   if (e.key === "Enter") {
     if (highlightedIndex >= 0) {
@@ -1836,6 +1924,7 @@ function closeResults() {
 
 function pickResult(album) {
   if (getAllAlbums().find(a => a.id === album.id)) return;
+  pushUndo();
   album.addedAt = new Date().toISOString();
   album._animateIn = true;
   state.listen.unshift(album);
@@ -2028,6 +2117,7 @@ function createCard(album, sectionId) {
       if (!dateInput.value) return;
       const album_ref = state.listen.find(a => a.id === album.id);
       if (album_ref) {
+        pushUndo();
         album_ref.addedAt = new Date(dateInput.value).toISOString();
         saveState();
         renderSectionBody("listen");
@@ -2185,6 +2275,7 @@ function setupDropZone(col, sectionId) {
 
     col.classList.remove("drag-over");
     removePlaceholder();
+    pushUndo();
 
     if (fromId === sectionId) {
       /* Reorder within same section.
@@ -2217,6 +2308,7 @@ function setupDropZone(col, sectionId) {
 function moveAlbum(albumId, from, to) {
   const idx = state[from].findIndex(a => a.id === albumId);
   if (idx === -1) return;
+  pushUndo();
   const [album] = state[from].splice(idx, 1);
   state[to].unshift(album);
   saveState();
@@ -2227,6 +2319,7 @@ function moveAlbum(albumId, from, to) {
 }
 
 function removeAlbum(albumId, sectionId) {
+  pushUndo();
   state[sectionId] = state[sectionId].filter(a => a.id !== albumId);
   saveState();
   renderSectionBody(sectionId);
@@ -2236,6 +2329,19 @@ function removeAlbum(albumId, sectionId) {
 
 /* ---------- Keyboard shortcuts ---------- */
 document.addEventListener("keydown", e => {
+  const inEditable = document.activeElement.matches("input, textarea, [contenteditable]");
+
+  /* Undo / redo ─────────────────────────────────────────────────────────────
+     When an input is focused, let the browser handle Cmd+Z so native
+     per-character text undo keeps working during active typing. When no input
+     is focused, our handler takes over and steps through the unified stack
+     (which includes text snapshots pushed on blur). */
+  if ((e.metaKey || e.ctrlKey) && !inEditable) {
+    if (e.key === 'z' && !e.shiftKey) { e.preventDefault(); applyUndo(); return; }
+    if (e.key === 'z' &&  e.shiftKey) { e.preventDefault(); applyRedo(); return; }
+    if (e.key === 'y')                { e.preventDefault(); applyRedo(); return; }
+  }
+
   // If "/" is pressed and we're not already typing in an input
   if (e.key === "/" && !document.activeElement.matches("input")) {
     e.preventDefault();
