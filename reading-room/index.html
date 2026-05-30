@@ -582,6 +582,76 @@ input, textarea { user-select: text; }
   color: var(--espresso);
 }
 
+/* ── Cover picker panel ── */
+#floating-menu.wide { min-width: 258px; }
+
+.fmenu-cover-url-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0.3rem 0.7rem 0.38rem;
+}
+
+.fmenu-cover-url-input {
+  flex: 1;
+  min-width: 0;
+  background: var(--parchment);
+  border: 1px solid var(--parchment-dk);
+  border-radius: 6px;
+  padding: 0.3rem 0.45rem;
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 0.74rem;
+  color: var(--espresso);
+  outline: none;
+}
+.fmenu-cover-url-input:focus {
+  border-color: var(--tan);
+  box-shadow: 0 0 0 2px rgba(196,144,96,0.2);
+}
+.fmenu-cover-url-input::placeholder { color: var(--tan); opacity: 0.55; }
+
+[data-theme="dark"] .fmenu-cover-url-input {
+  background: var(--parchment-mid);
+  border-color: var(--parchment-dk);
+  color: var(--espresso);
+}
+
+.fmenu-cover-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  padding: 0.25rem 0.7rem 0.4rem;
+  min-height: 36px;
+}
+
+.fmenu-cover-empty {
+  font-size: 0.72rem;
+  color: var(--sienna);
+  font-style: italic;
+  padding: 0.1rem 0;
+  align-self: center;
+}
+
+.fmenu-cover-thumb {
+  width: 36px;
+  height: 52px;
+  flex-shrink: 0;
+  border-radius: 3px;
+  overflow: hidden;
+  background: linear-gradient(135deg, var(--sienna), var(--brown));
+  border: 2px solid transparent;
+  cursor: pointer;
+  padding: 0;
+  transition: border-color 0.12s, transform 0.1s;
+  box-shadow: 0 1px 4px rgba(44,26,14,0.2);
+}
+.fmenu-cover-thumb:hover { border-color: var(--tan); transform: scale(1.06); }
+.fmenu-cover-thumb.selected {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 2px rgba(184,134,11,0.3);
+}
+.fmenu-cover-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
 /* ── Three-dot button ── */
 .card-menu-btn {
   position: absolute;
@@ -604,7 +674,7 @@ input, textarea { user-select: text; }
 
 /* ── Floating portal menu (child of body, not card) ── */
 #floating-menu {
-  position: fixed;
+  position: absolute;
   background: var(--cream);
   border: 1px solid var(--card-border);
   border-radius: 10px;
@@ -1330,6 +1400,7 @@ let activeMenuBtn  = null; /* the ⋮ button currently open */
 
 function closeFloatingMenu() {
   floatingMenu.classList.remove('open');
+  floatingMenu.classList.remove('wide');
   floatingMenu.innerHTML = '';
   if (activeMenuBtn) {
     activeMenuBtn.classList.remove('active');
@@ -1349,6 +1420,16 @@ function openFloatingMenu(btn, bookId, sectionId) {
 
   const showEditDate = AGE_SECTIONS.has(sectionId);
 
+  /* ── Helper: apply a custom URL directly ── */
+  function applyCustomUrl(url) {
+    if (!url) return;
+    book.customCoverUrl = url;
+    closeFloatingMenu();
+    saveState();
+    renderSectionBody(sectionId);
+    showToast('Cover updated');
+  }
+
   function renderMainMenu() {
     const moveItems = SECTIONS
       .filter(s => s.id !== sectionId)
@@ -1359,9 +1440,89 @@ function openFloatingMenu(btn, bookId, sectionId) {
       <div class="fmenu-section-label">Move to shelf</div>
       ${moveItems}
       <div class="fmenu-divider"></div>
-      ${showEditDate ? `<button class="fmenu-item" data-action="edit-date">🕐 Edit date added…</button><div class="fmenu-divider"></div>` : ''}
+      ${showEditDate ? `<button class="fmenu-item" data-action="edit-date">🕐 Edit date added…</button>` : ''}
+      <button class="fmenu-item" data-action="change-cover">🖼 Change cover…</button>
+      <div class="fmenu-divider"></div>
       <button class="fmenu-item danger" data-action="remove">Remove from shelf</button>
     `;
+  }
+
+  function showChangeCoverPanel() {
+    floatingMenu.classList.add('wide');
+    const currentlyCustom = !!book.customCoverUrl;
+    floatingMenu.innerHTML = `
+      <div class="fmenu-section-label">Change cover</div>
+      <div class="fmenu-cover-url-row">
+        <input type="url" class="fmenu-cover-url-input" id="fmenu-cover-url"
+               placeholder="Paste any image URL…" autocomplete="off">
+        <button class="fmenu-save-btn" data-action="use-url">Use</button>
+      </div>
+      <div class="fmenu-divider" style="margin:2px 0"></div>
+      <div class="fmenu-section-label" style="padding-top:0.3rem">Edition covers</div>
+      <div class="fmenu-cover-grid" id="fmenu-cover-grid">
+        <span class="fmenu-cover-empty">Loading…</span>
+      </div>
+      <div class="fmenu-divider"></div>
+      ${currentlyCustom
+        ? `<button class="fmenu-item" data-action="remove-cover">✕ Remove custom cover</button>`
+        : (book.coverId
+          ? `<button class="fmenu-item" data-action="remove-cover">✕ Remove cover</button>`
+          : '')}
+      <button class="fmenu-item" data-action="back-to-menu">← Back</button>
+    `;
+
+    /* Widen the menu and re-anchor from the right */
+    const menuW = 262;
+    let left = activeMenuBtn.getBoundingClientRect().right + window.scrollX - menuW;
+    if (left < window.scrollX + 8) left = window.scrollX + 8;
+    if (left + menuW > window.scrollX + window.innerWidth - 8) left = window.scrollX + window.innerWidth - menuW - 8;
+    floatingMenu.style.left = `${left}px`;
+
+    /* Focus URL field; wire up Enter key */
+    setTimeout(() => {
+      const urlEl = document.getElementById('fmenu-cover-url');
+      if (!urlEl) return;
+      urlEl.focus();
+      urlEl.addEventListener('keydown', ev => {
+        if (ev.key === 'Enter') { ev.preventDefault(); ev.stopPropagation(); applyCustomUrl(urlEl.value.trim()); }
+      });
+    }, 30);
+
+    /* Fetch edition covers from Open Library */
+    const grid = document.getElementById('fmenu-cover-grid');
+    fetch(`https://openlibrary.org${book.id}/editions.json?limit=40&fields=covers`)
+      .then(r => r.json())
+      .then(data => {
+        const liveGrid = document.getElementById('fmenu-cover-grid');
+        if (!liveGrid) return; /* panel was closed */
+        const entries = data.entries || [];
+        const coverIds = [...new Set(
+          entries.flatMap(e => Array.isArray(e.covers) ? e.covers : []).filter(id => id > 0)
+        )].slice(0, 18);
+
+        if (!coverIds.length) {
+          liveGrid.innerHTML = '<span class="fmenu-cover-empty">No alternative covers found.</span>';
+          return;
+        }
+        liveGrid.innerHTML = '';
+        coverIds.forEach(id => {
+          const btn = document.createElement('button');
+          btn.className = 'fmenu-cover-thumb' + (book.coverId === id && !book.customCoverUrl ? ' selected' : '');
+          btn.dataset.action = 'pick-cover';
+          btn.dataset.coverId = id;
+          const img = document.createElement('img');
+          img.src = `https://covers.openlibrary.org/b/id/${id}-S.jpg`;
+          img.alt = '';
+          img.loading = 'lazy';
+          img.onerror = function() { this.parentElement.style.display = 'none'; };
+          btn.appendChild(img);
+          liveGrid.appendChild(btn);
+        });
+      })
+      .catch(() => {
+        const liveGrid = document.getElementById('fmenu-cover-grid');
+        if (liveGrid) liveGrid.innerHTML = '<span class="fmenu-cover-empty">Could not load editions.</span>';
+      });
   }
 
   renderMainMenu();
@@ -1373,12 +1534,12 @@ function openFloatingMenu(btn, bookId, sectionId) {
   const vw = window.innerWidth;
   const vh = window.innerHeight;
 
-  let top  = btnRect.bottom + 6;
-  let left = btnRect.right - menuW;
+  let top  = btnRect.bottom + window.scrollY + 6;
+  let left = btnRect.right  + window.scrollX - menuW;
 
-  if (top + menuEstH > vh - 12) top = btnRect.top - menuEstH - 6;
-  if (left < 8) left = 8;
-  if (left + menuW > vw - 8) left = vw - menuW - 8;
+  if (top + menuEstH > window.scrollY + vh - 12) top = btnRect.top + window.scrollY - menuEstH - 6;
+  if (left < window.scrollX + 8) left = window.scrollX + 8;
+  if (left + menuW > window.scrollX + vw - 8) left = window.scrollX + vw - menuW - 8;
 
   floatingMenu.style.top  = `${top}px`;
   floatingMenu.style.left = `${left}px`;
@@ -1386,7 +1547,7 @@ function openFloatingMenu(btn, bookId, sectionId) {
 
   /* Actions */
   floatingMenu.addEventListener('click', function handler(e) {
-    const item = e.target.closest('.fmenu-item, .fmenu-save-btn');
+    const item = e.target.closest('[data-action]');
     if (!item) return;
     e.stopPropagation();
     const action = item.dataset.action;
@@ -1424,6 +1585,53 @@ function openFloatingMenu(btn, bookId, sectionId) {
       saveState();
       renderSectionBody(sectionId);
       showToast('Date updated');
+
+    } else if (action === 'change-cover') {
+      showChangeCoverPanel();
+
+    } else if (action === 'use-url') {
+      const urlEl = document.getElementById('fmenu-cover-url');
+      const url = urlEl ? urlEl.value.trim() : '';
+      if (!url) return;
+      floatingMenu.removeEventListener('click', handler);
+      applyCustomUrl(url);
+
+    } else if (action === 'pick-cover') {
+      const newId = parseInt(item.dataset.coverId, 10);
+      if (!newId) return;
+      book.coverId = newId;
+      book.customCoverUrl = null;
+      floatingMenu.removeEventListener('click', handler);
+      closeFloatingMenu();
+      saveState();
+      resolveCoverUrl(newId).then(() => renderSectionBody(sectionId));
+      showToast('Cover updated');
+
+    } else if (action === 'remove-cover') {
+      if (book.customCoverUrl) {
+        /* Remove custom URL only — reverts to API cover if coverId still present */
+        book.customCoverUrl = null;
+      } else {
+        book.coverId = null;
+      }
+      floatingMenu.removeEventListener('click', handler);
+      closeFloatingMenu();
+      saveState();
+      renderSectionBody(sectionId);
+      showToast('Cover removed');
+
+    } else if (action === 'back-to-menu') {
+      floatingMenu.classList.remove('wide');
+      renderMainMenu();
+      /* Re-anchor for standard width */
+      const menuW = 190;
+      const btnR  = activeMenuBtn ? activeMenuBtn.getBoundingClientRect() : null;
+      if (btnR) {
+        let left = btnR.right + window.scrollX - menuW;
+        if (left < window.scrollX + 8) left = window.scrollX + 8;
+        if (left + menuW > window.scrollX + window.innerWidth - 8) left = window.scrollX + window.innerWidth - menuW - 8;
+        floatingMenu.style.left = `${left}px`;
+      }
     }
   });
 }
@@ -1546,10 +1754,12 @@ function buildCard(book, sectionId) {
   card.setAttribute('draggable', 'true');
   card.title = (showAge && book.addedAt) ? `Added ${formatAESTDate(book.addedAt)}` : '';
 
-  const cachedUrl = book.coverId ? coverMemCache.get(String(book.coverId)) : null;
-  const coverUrl  = cachedUrl || (book.coverId
-    ? `https://covers.openlibrary.org/b/id/${book.coverId}-M.jpg`
-    : null);
+  const cachedUrl = (!book.customCoverUrl && book.coverId) ? coverMemCache.get(String(book.coverId)) : null;
+  const coverUrl  = book.customCoverUrl
+    ? book.customCoverUrl
+    : (cachedUrl || (book.coverId
+        ? `https://covers.openlibrary.org/b/id/${book.coverId}-M.jpg`
+        : null));
 
   card.innerHTML = `
     <div class="book-inner">
@@ -1569,7 +1779,7 @@ function buildCard(book, sectionId) {
   `;
 
   /* If cover wasn't cached yet, fetch it and swap the src in-place */
-  if (book.coverId && !cachedUrl) {
+  if (book.coverId && !book.customCoverUrl && !cachedUrl) {
     resolveCoverUrl(book.coverId).then(url => {
       if (!url) return;
       const img = card.querySelector('.book-thumb img');
