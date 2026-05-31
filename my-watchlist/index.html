@@ -122,6 +122,7 @@
     .graveyard-stamp { font-size:0.6rem; font-weight:500; letter-spacing:0.12em; text-transform:uppercase; padding:4px 8px; border:1px solid rgba(120,100,120,0.55); color:#9a8a9a; border-radius:3px; background:rgba(12,11,10,0.75); }
     .card-rewatch-overlay { position:absolute; inset:0; background:rgba(12,11,10,0.55); display:flex; align-items:flex-start; justify-content:flex-end; padding:10px; pointer-events:none; }
     .rewatch-stamp { font-size:0.6rem; font-weight:500; letter-spacing:0.12em; text-transform:uppercase; padding:4px 8px; border:1px solid rgba(45,212,191,0.5); color:#2dd4bf; border-radius:3px; background:rgba(12,11,10,0.7); }
+    .detach-exempt-pip { position:absolute; top:8px; left:8px; z-index:4; background:rgba(12,11,10,0.72); border:1px solid rgba(96,165,250,0.45); border-radius:3px; padding:3px 6px; font-size:0.52rem; font-weight:500; letter-spacing:0.1em; text-transform:uppercase; color:#60a5fa; pointer-events:none; }
 
 
   .card.card-graveyard { filter:saturate(0.25) brightness(0.7); }
@@ -2160,6 +2161,7 @@ function buildListRow(m,i){
     ?`<span class="list-status graveyard">💀 Never</span>`
     :m.watched&&m.rewatch?`<span class="list-status rewatch">↻ Rewatch</span>`
     :m.watched?`<span class="list-status watched">✓ Watched</span>`:'';
+  const exemptTag=(currentFilter==='categories'&&m.detachExempt&&categorySettings[m.category]?.detached)?`<span class="list-status" style="background:rgba(96,165,250,0.08);color:#60a5fa;border:1px solid rgba(96,165,250,0.22);">👁 Visible</span>`:'';
   const dateLabel=m.watched?formatDateWatched(m.dateWatched):formatDateAdded(m.dateAdded);
   const rowClass=`list-row${m.watched?' list-row-watched':''}${m.graveyard?' list-row-graveyard':''}${staleClass?staleClass.replace('card-stale','list-stale'):''}`;
   return`<div class="${rowClass}" data-id="${m.id}" onclick="openDetail('${m.id}')" style="animation-delay:${i*0.02}s">
@@ -2170,7 +2172,7 @@ function buildListRow(m,i){
       <div class="list-badges">${badges}</div>
     </div>
     <div class="list-right">
-      ${statusTag}
+      ${statusTag}${exemptTag}
       <span class="list-date">${dateLabel}</span>
     </div>
   </div>`;
@@ -2683,7 +2685,8 @@ function buildCard(m,i){
   const graveyardCls=m.graveyard?' card-graveyard':'';
   const ph=m.poster?`<img class="card-poster" src="${esc(m.poster)}" alt="${esc(m.title)}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="card-poster-placeholder" style="display:none">&#127917;<span>No poster</span></div>`:`<div class="card-poster-placeholder">&#127917;<span>No poster</span></div>`;
   const ov=m.graveyard?`<div class="card-graveyard-overlay"><span class="graveyard-stamp">💀 Never</span></div>`:m.watched&&m.rewatch?`<div class="card-rewatch-overlay"><span class="rewatch-stamp">↻ Rewatch</span></div>`:m.watched?`<div class="card-watched-overlay"><span class="watched-stamp">Watched</span></div>`:'';
-  return`<div class="card${stale}${graveyardCls}" data-id="${m.id}" onclick="openDetail('${m.id}')" style="animation-delay:${i*0.03}s">${ph}${ov}<div class="card-body"><div class="card-title">${esc(m.title)}</div><div class="card-meta" data-year="${esc(m.year||'')}" data-genre="${esc(m.genre||'')}" data-runtime="${esc(formatRuntime(m.runtime)||'')}">${[m.year,m.genre,formatRuntime(m.runtime)].filter(Boolean).join(' &middot; ')}</div><div class="card-services">${buildBadges(m,true)}</div></div></div>`;
+  const exemptPip=(currentFilter==='categories'&&m.detachExempt&&categorySettings[m.category]?.detached)?`<div class="detach-exempt-pip">Visible</div>`:'';
+  return`<div class="card${stale}${graveyardCls}" data-id="${m.id}" onclick="openDetail('${m.id}')" style="animation-delay:${i*0.03}s">${ph}${ov}${exemptPip}<div class="card-body"><div class="card-title">${esc(m.title)}</div><div class="card-meta" data-year="${esc(m.year||'')}" data-genre="${esc(m.genre||'')}" data-runtime="${esc(formatRuntime(m.runtime)||'')}">${[m.year,m.genre,formatRuntime(m.runtime)].filter(Boolean).join(' &middot; ')}</div><div class="card-services">${buildBadges(m,true)}</div></div></div>`;
 }
 
 function trimCardMetas(){
@@ -2774,6 +2777,7 @@ function openDetail(id){
       ${m.watchWith?`<div class="detail-watch-with"><span class="detail-watch-with-chip" onclick="filterByWatchWith(${JSON.stringify(m.watchWith)})" title="Show all films tagged ${esc(m.watchWith)}">👥 ${esc(m.watchWith)}</span></div>`:''}
     </div></div>
     <div class="detail-services-section"><div class="detail-services-title">Where to Watch</div><div class="detail-services-grid">${svc}</div></div>
+    ${categorySettings[m.category]?.detached?`<div style="margin-top:12px;display:flex;align-items:center;gap:12px;padding:9px 14px;background:rgba(201,168,76,0.04);border:1px solid rgba(201,168,76,0.12);border-radius:var(--radius);"><div style="flex:1;"><div style="font-size:0.68rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-dim);">Show in main list</div><div style="font-size:0.62rem;color:var(--text-muted);margin-top:1px;">Exception to detached category</div></div><label class="toggle-row" style="margin:0;flex-shrink:0;"><input type="checkbox" ${m.detachExempt?'checked':''} onchange="toggleDetachExempt('${m.id}')"><span class="track"></span></label></div>`:''}
     <div style="margin-top:20px;display:flex;gap:10px;justify-content:space-between;align-items:center;flex-wrap:wrap;">
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
         ${m.tmdbId?`<button class="btn-trailer" onclick="openTrailer(${m.tmdbId},this)" title="Watch trailer on YouTube"><span class="trailer-dot"></span>Trailer</button>`:''}
@@ -3291,6 +3295,7 @@ function saveMovie(){
     category:document.getElementById('fCategory').value.trim(),
     watchWith:document.getElementById('fWatchWith').value.trim(),
     tmdbId:_pendingTmdbId||existing?.tmdbId||null,
+    detachExempt:existing?.detachExempt||false,
     watched,
     // If marked watched, strip watchingSoon
     watchingSoon:watched?false:document.getElementById('fWatchingSoon').checked,
@@ -3359,6 +3364,7 @@ function _allMoviesPool(){
 
 function isDetachedMovie(m){
   if(!m.category)return false;
+  if(m.detachExempt)return false;
   return!!(categorySettings[m.category]?.detached);
 }
 
@@ -3421,6 +3427,12 @@ function toggleCategoryDetachedByName(name){
   const pop=document.getElementById('categoryPillPopover');
   const toggle=pop.querySelector('input[type=checkbox]');
   if(toggle)toggle.checked=!!(categorySettings[name]?.detached);
+}
+
+function toggleDetachExempt(id){
+  const m=movies.find(x=>x.id===id);if(!m)return;
+  m.detachExempt=!m.detachExempt;
+  save();render();openDetail(id);
 }
 
 function save(){
