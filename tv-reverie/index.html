@@ -230,6 +230,7 @@
     .finished-stamp { font-size:0.6rem; font-weight:500; letter-spacing:0.12em; text-transform:uppercase; padding:4px 8px; border:1px solid rgba(96,165,250,0.5); color:var(--gold); border-radius:3px; background:rgba(12,11,10,0.7); }
     .card-graveyard-overlay { position:absolute; inset:0; background:rgba(12,11,10,0.62); display:flex; align-items:flex-start; justify-content:flex-end; padding:10px; pointer-events:none; }
     .graveyard-stamp { font-size:0.6rem; font-weight:500; letter-spacing:0.12em; text-transform:uppercase; padding:4px 8px; border:1px solid rgba(120,100,120,0.55); color:#9a8a9a; border-radius:3px; background:rgba(12,11,10,0.75); }
+    .detach-exempt-pip { position:absolute; top:8px; left:8px; z-index:4; background:rgba(12,11,10,0.72); border:1px solid rgba(96,165,250,0.45); border-radius:3px; padding:3px 6px; font-size:0.52rem; font-weight:500; letter-spacing:0.1em; text-transform:uppercase; color:#60a5fa; pointer-events:none; }
     .card.card-graveyard { filter:saturate(0.25) brightness(0.7); }
     .card.card-graveyard:hover { filter:saturate(0.4) brightness(0.85); }
     .card.card-finished { opacity:0.75; }
@@ -1581,7 +1582,8 @@ function buildCard(m,i){
   const tooltip=m.watched?formatDateWatched(m.dateWatched):formatDateAdded(m.dateAdded);
   const binge=getBingeTime(m);
   const clickFn=`selectionMode?toggleSelectShow('${m.id}'):openDetail('${m.id}')`;
-  return`<div class="card${stale}${graveyardCls}${finishedCls}${selectedCls}" onclick="${clickFn}" data-id="${m.id}" data-tooltip="${tooltip}" style="animation-delay:${i*0.03}s">${ph}${ov}<div class="card-body"><div class="card-title">${esc(m.title)}</div><div class="card-meta">${[m.year,m.genre].filter(Boolean).join(' &middot; ')}</div>${binge?`<div class="card-meta" style="color:var(--text-muted);font-size:0.68rem;margin-top:1px;">⏱ ${binge}</div>`:''}<div class="card-services">${buildBadges(m,true)}</div></div></div>`;
+  const exemptPip=(currentFilter==='categories'&&m.detachExempt&&categorySettings[m.category]?.detached)?`<div class="detach-exempt-pip">Visible</div>`:'';
+  return`<div class="card${stale}${graveyardCls}${finishedCls}${selectedCls}" onclick="${clickFn}" data-id="${m.id}" data-tooltip="${tooltip}" style="animation-delay:${i*0.03}s">${ph}${ov}${exemptPip}<div class="card-body"><div class="card-title">${esc(m.title)}</div><div class="card-meta">${[m.year,m.genre].filter(Boolean).join(' &middot; ')}</div>${binge?`<div class="card-meta" style="color:var(--text-muted);font-size:0.68rem;margin-top:1px;">⏱ ${binge}</div>`:''}<div class="card-services">${buildBadges(m,true)}</div></div></div>`;
 }
 
 function buildWatchingCard(m,i){
@@ -1830,6 +1832,7 @@ function setFilter(f,btn){
 
 function isDetachedShow(m){
   if(!m.category)return false;
+  if(m.detachExempt)return false;
   return!!(categorySettings[m.category]?.detached);
 }
 
@@ -1933,6 +1936,12 @@ function toggleCategoryDetachedByName(name){
   const pop=document.getElementById('categoryPillPopover');
   const toggle=pop.querySelector('input[type=checkbox]');
   if(toggle)toggle.checked=!!(categorySettings[name]?.detached);
+}
+
+function toggleDetachExempt(id){
+  const m=shows.find(x=>x.id===id);if(!m)return;
+  m.detachExempt=!m.detachExempt;
+  save();render();openDetail(id);
 }
 
 function dismissCategoryOptions(){
@@ -2306,6 +2315,7 @@ function buildListRow(m,i){
   else if(m.watched&&m.watchStatus==='more_to_come')statusTag=`<span class="list-status more">More Seasons</span>`;
   else if(m.watched&&m.watchStatus==='finished_for_good')statusTag=`<span class="list-status finished">✓ Finished</span>`;
   const dateLabel=m.watched?formatDateWatched(m.dateWatched):formatDateAdded(m.dateAdded);
+  const exemptTag=(currentFilter==='categories'&&m.detachExempt&&categorySettings[m.category]?.detached)?`<span class="list-status" style="background:rgba(96,165,250,0.08);color:#60a5fa;border:1px solid rgba(96,165,250,0.22);">👁 Visible</span>`:'';
   const selectedCls=selectedIds.has(m.id)?' selected':'';
   const rowClass=`list-row${m.graveyard?' list-row-graveyard':''}${staleClass?staleClass.replace('card-stale','list-stale'):''}${selectedCls}`;
   const clickFn=`selectionMode?toggleSelectShow('${m.id}'):openDetail('${m.id}')`;
@@ -2317,7 +2327,7 @@ function buildListRow(m,i){
       <div class="list-badges">${badges}</div>
     </div>
     <div class="list-right">
-      ${statusTag}
+      ${statusTag}${exemptTag}
       <span class="list-date">${dateLabel}</span>
     </div>
   </div>`;
@@ -2397,6 +2407,7 @@ function openDetail(id){
       <div style="margin-top:8px;">${dateSpan}</div>
     </div></div>
     <div class="detail-services-section"><div class="detail-services-title">Where to Watch</div><div class="detail-services-grid">${svc}</div></div>
+    ${categorySettings[m.category]?.detached?`<div style="margin-top:12px;display:flex;align-items:center;gap:12px;padding:9px 14px;background:rgba(96,165,250,0.04);border:1px solid rgba(96,165,250,0.12);border-radius:var(--radius);"><div style="flex:1;"><div style="font-size:0.68rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-dim);">Show in main list</div><div style="font-size:0.62rem;color:var(--text-muted);margin-top:1px;">Exception to detached category</div></div><label class="toggle-row" style="margin:0;flex-shrink:0;"><input type="checkbox" ${m.detachExempt?'checked':''} onchange="toggleDetachExempt('${m.id}')"><span class="track"></span></label></div>`:''}
     <div id="detailActionBar" style="margin-top:20px;display:flex;gap:10px;justify-content:space-between;align-items:center;flex-wrap:wrap;">
       <div style="display:flex;gap:8px;align-items:center;">
         <a class="btn-justwatch" href="${jw}" target="_blank" rel="noopener" style="text-decoration:none"><span class="jw-dot"></span>JustWatch AU</a>
@@ -2626,6 +2637,7 @@ function saveShow(){
     dateAdded:existing?.dateAdded||new Date().toISOString(),
     dateWatched:watched?(existing?.dateWatched||(existing?.watched?undefined:new Date().toISOString())):undefined,
     graveyard:existing?.graveyard||false,
+    detachExempt:existing?.detachExempt||false,
   };
   if(editingId){const i=shows.findIndex(m=>m.id===editingId);if(i!==-1)shows[i]=show;}
   else shows.push(show);
