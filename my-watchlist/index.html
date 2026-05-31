@@ -120,6 +120,8 @@
     .watched-stamp { font-size:0.6rem; font-weight:500; letter-spacing:0.12em; text-transform:uppercase; padding:4px 8px; border:1px solid rgba(201,168,76,0.5); color:var(--gold); border-radius:3px; background:rgba(12,11,10,0.7); }
     .card-graveyard-overlay { position:absolute; inset:0; background:rgba(12,11,10,0.62); display:flex; align-items:flex-start; justify-content:flex-end; padding:10px; pointer-events:none; }
     .graveyard-stamp { font-size:0.6rem; font-weight:500; letter-spacing:0.12em; text-transform:uppercase; padding:4px 8px; border:1px solid rgba(120,100,120,0.55); color:#9a8a9a; border-radius:3px; background:rgba(12,11,10,0.75); }
+    .card-rewatch-overlay { position:absolute; inset:0; background:rgba(12,11,10,0.55); display:flex; align-items:flex-start; justify-content:flex-end; padding:10px; pointer-events:none; }
+    .rewatch-stamp { font-size:0.6rem; font-weight:500; letter-spacing:0.12em; text-transform:uppercase; padding:4px 8px; border:1px solid rgba(45,212,191,0.5); color:#2dd4bf; border-radius:3px; background:rgba(12,11,10,0.7); }
 
 
   .card.card-graveyard { filter:saturate(0.25) brightness(0.7); }
@@ -281,6 +283,7 @@
     .list-date { font-size:0.63rem; color:var(--text-muted); letter-spacing:0.04em; white-space:nowrap; }
     .list-status { font-size:0.58rem; font-weight:500; letter-spacing:0.1em; text-transform:uppercase; padding:3px 7px; border-radius:3px; white-space:nowrap; }
     .list-status.watched { background:rgba(201,168,76,0.1); color:var(--gold); border:1px solid rgba(201,168,76,0.25); }
+    .list-status.rewatch { background:rgba(45,212,191,0.1); color:#2dd4bf; border:1px solid rgba(45,212,191,0.25); }
     .list-status.graveyard { background:rgba(80,60,80,0.2); color:#9a8a9a; border:1px solid rgba(120,100,120,0.35); }
     .list-collection-label { font-size:0.6rem; letter-spacing:0.14em; text-transform:uppercase; color:var(--gold-dim); padding:6px 12px 2px; font-weight:500; }
     .list-collection-group { border:1px solid rgba(201,168,76,0.15); border-radius:6px; background:rgba(201,168,76,0.02); overflow:hidden; }
@@ -302,6 +305,21 @@
     .view-toggle-btn:hover { color:var(--text); }
     .view-toggle-btn.active { background:var(--surface); color:var(--gold); box-shadow:0 1px 4px rgba(0,0,0,0.3); }
     .view-toggle-sep { width:1px; background:var(--border-hi); margin:3px 2px; flex-shrink:0; }
+
+    /* ── Compact card mode ── */
+    body.compact-cards .card { width:132px; }
+    body.compact-cards .card-body { padding:8px 9px 10px; }
+    body.compact-cards .card-title { font-size:0.8rem; }
+    body.compact-cards .card-meta { font-size:0.62rem; min-height:2em; }
+    body.compact-cards .service-badge { font-size:0.55rem; padding:2px 5px; }
+    body.compact-cards .watched-stamp,
+    body.compact-cards .graveyard-stamp,
+    body.compact-cards .rewatch-stamp { font-size:0.52rem; padding:3px 5px; }
+    body.compact-cards .grid { gap:14px; }
+    body.compact-cards .service-grid { gap:14px; }
+    body.compact-cards .collection-inner { gap:26px; }
+    body.compact-cards .collection-inner .card { width:120px; }
+    body.compact-cards .collection-group { padding:16px 6px 8px; }
     @media(max-width:640px){
       /* Prevent iOS Safari from zooming on input focus (triggered when font-size < 16px).
          !important is necessary here because class selectors (.search-input, .banner-input etc.)
@@ -330,7 +348,7 @@
       #searchBarWrap{margin-left:auto;}
 
       /* Hide the layout buttons on mobile (list view is forced via JS), keep Christmas button */
-      #viewGrid,#viewList{display:none;}
+      #viewGrid,#viewCompact,#viewList{display:none;}
       .view-toggle{background:transparent;border-color:transparent;padding:0;}
       .view-toggle-sep{display:none;}
 
@@ -670,6 +688,10 @@
   .surprise-result-meta { font-size:0.76rem; color:var(--text-dim); line-height:1.5; margin-bottom:3px; }
   .surprise-result-rating { font-size:0.75rem; color:var(--gold); margin-bottom:6px; }
   .surprise-collection-note { font-size:0.67rem; color:var(--gold-dim); letter-spacing:0.03em; margin-bottom:8px; }
+  .surprise-runtime-chips { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px; }
+  .surprise-runtime-chip { padding:7px 15px; border-radius:100px; border:1px solid var(--border); background:transparent; color:var(--text-muted); font-size:0.72rem; letter-spacing:0.08em; text-transform:uppercase; cursor:pointer; font-family:'DM Sans',sans-serif; transition:all 0.15s; }
+  .surprise-runtime-chip:hover { border-color:var(--gold-dim); color:var(--text); }
+  .surprise-runtime-chip.active { border-color:var(--gold); color:var(--gold); background:rgba(201,168,76,0.08); }
   @keyframes diceRoll { 0%{transform:rotate(0)scale(1)} 20%{transform:rotate(-18deg)scale(1.3)} 50%{transform:rotate(16deg)scale(0.88)} 75%{transform:rotate(-9deg)scale(1.1)} 100%{transform:rotate(0)scale(1)} }
   .dice-spin { display:inline-block; animation:diceRoll 0.42s cubic-bezier(0.34,1.2,0.64,1); }
   @keyframes surpriseReveal { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:none} }
@@ -992,6 +1014,28 @@
   }
   .categorise-svc-chips input:focus { border-color:var(--gold-dim); }
 
+  /* ── Keyboard shortcuts panel ── */
+  .shortcuts-btn { background:none; border:1px solid var(--border); border-radius:var(--radius); padding:5px 11px; display:flex; align-items:center; gap:6px; color:var(--text-muted); font-size:0.58rem; letter-spacing:0.12em; text-transform:uppercase; cursor:pointer; transition:border-color 0.2s,color 0.2s; margin-left:auto; font-family:'DM Sans',sans-serif; flex-shrink:0; }
+  .shortcuts-btn:hover { border-color:var(--border-hi); color:var(--text-dim); }
+  .shortcuts-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.72); backdrop-filter:blur(4px); z-index:300; display:flex; align-items:center; justify-content:center; opacity:0; pointer-events:none; transition:opacity 0.2s; }
+  .shortcuts-overlay.open { opacity:1; pointer-events:all; }
+  .shortcuts-panel { background:var(--surface); border:1px solid var(--border-hi); border-radius:12px; width:min(600px,92vw); max-height:82vh; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 24px 60px rgba(0,0,0,0.7); transform:translateY(14px); transition:transform 0.26s cubic-bezier(0.22,1,0.36,1); }
+  .shortcuts-overlay.open .shortcuts-panel { transform:translateY(0); }
+  .shortcuts-panel-header { display:flex; align-items:center; gap:11px; padding:18px 22px 16px; border-bottom:1px solid var(--border); flex-shrink:0; }
+  .shortcuts-panel-title { font-size:0.75rem; letter-spacing:0.14em; text-transform:uppercase; color:var(--gold); font-weight:500; flex:1; }
+  .shortcuts-panel-close { background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:1.15rem; line-height:1; padding:2px 4px; transition:color 0.15s; }
+  .shortcuts-panel-close:hover { color:var(--text); }
+  .shortcuts-panel-body { overflow-y:auto; padding:20px 22px 16px; display:grid; grid-template-columns:1fr 1fr; gap:0 32px; }
+  .shortcut-section { margin-bottom:22px; }
+  .shortcut-section:last-child { margin-bottom:4px; }
+  .shortcut-section-label { font-size:0.54rem; letter-spacing:0.18em; text-transform:uppercase; color:var(--gold-dim); font-weight:500; margin-bottom:10px; padding-bottom:7px; border-bottom:1px solid var(--border); }
+  .shortcut-row { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:3px 0; min-height:25px; }
+  .shortcut-desc { font-size:0.72rem; color:var(--text-dim); font-weight:300; line-height:1.3; }
+  .shortcut-keys { display:flex; align-items:center; gap:3px; flex-shrink:0; }
+  .kbd { display:inline-flex; align-items:center; justify-content:center; min-width:20px; height:18px; padding:0 6px; background:rgba(201,168,76,0.07); border:1px solid rgba(201,168,76,0.22); border-radius:4px; font-size:0.62rem; font-weight:500; color:var(--gold-dim); letter-spacing:0.02em; white-space:nowrap; font-family:'DM Sans',sans-serif; }
+  .kbd-sep { font-size:0.54rem; color:var(--text-muted); margin:0 1px; }
+  .shortcuts-panel-footer { padding:10px 22px; border-top:1px solid var(--border); font-size:0.57rem; color:var(--text-muted); opacity:0.55; flex-shrink:0; }
+  @media(max-width:640px){ .shortcuts-panel-body { grid-template-columns:1fr; } }
   </style>
 </head>
 <body>
@@ -1384,6 +1428,7 @@
     <button class="filter-btn" onclick="setFilter('vpn',this)"><span class="dot" style="background:#7c3aed"></span>VPN only</button>
     <button class="filter-btn" onclick="setFilter('unwatched',this)">Unwatched</button>
     <button class="filter-btn" onclick="setFilter('watched',this)">Watched</button>
+    <button class="filter-btn" onclick="setFilter('rewatch',this)">↻ Rewatch</button>
     <button class="filter-btn" id="filterGraveyard" onclick="setFilter('graveyard',this)">💀 Graveyard</button>
     <button class="filter-btn" id="filterCategories" onclick="setFilter('categories',this)">&#128196; Categories</button>
   </div>
@@ -1410,6 +1455,9 @@
     <span class="view-toggle-sep"></span>
     <button id="viewGrid" class="view-toggle-btn active" onclick="setView('grid')" title="Grid view">
       <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="1" width="5" height="5" rx="1" fill="currentColor"/><rect x="8" y="1" width="5" height="5" rx="1" fill="currentColor"/><rect x="1" y="8" width="5" height="5" rx="1" fill="currentColor"/><rect x="8" y="8" width="5" height="5" rx="1" fill="currentColor"/></svg>
+    </button>
+    <button id="viewCompact" class="view-toggle-btn" onclick="setView('compact')" title="Compact grid">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="1" width="3" height="3" rx="0.6" fill="currentColor"/><rect x="5.5" y="1" width="3" height="3" rx="0.6" fill="currentColor"/><rect x="10" y="1" width="3" height="3" rx="0.6" fill="currentColor"/><rect x="1" y="5.5" width="3" height="3" rx="0.6" fill="currentColor"/><rect x="5.5" y="5.5" width="3" height="3" rx="0.6" fill="currentColor"/><rect x="10" y="5.5" width="3" height="3" rx="0.6" fill="currentColor"/><rect x="1" y="10" width="3" height="3" rx="0.6" fill="currentColor"/><rect x="5.5" y="10" width="3" height="3" rx="0.6" fill="currentColor"/><rect x="10" y="10" width="3" height="3" rx="0.6" fill="currentColor"/></svg>
     </button>
     <button id="viewList" class="view-toggle-btn" onclick="setView('list')" title="List view">
       <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="2" width="12" height="2" rx="1" fill="currentColor"/><rect x="1" y="6" width="12" height="2" rx="1" fill="currentColor"/><rect x="1" y="10" width="12" height="2" rx="1" fill="currentColor"/></svg>
@@ -1720,7 +1768,9 @@ function setView(v){
 
 function applyViewToggleUI(){
   document.getElementById('viewGrid')?.classList.toggle('active',currentView==='grid');
+  document.getElementById('viewCompact')?.classList.toggle('active',currentView==='compact');
   document.getElementById('viewList')?.classList.toggle('active',currentView==='list');
+  document.body.classList.toggle('compact-cards',currentView==='compact');
   // Group toggle
   const groupBtn=document.getElementById('groupToggleBtn');
   if(groupBtn){
@@ -2091,6 +2141,7 @@ function getStaleClass(m){
 // Watched films watched 6+ months ago are hidden from "all" to reduce clutter
 function isArchivedWatched(m){
   if(!m.watched)return false;
+  if(m.rewatch)return false;
   const ref=m.dateWatched||m.dateAdded;
   if(!ref)return false;
   return(Date.now()-new Date(ref).getTime())/86400000>180;
@@ -2107,6 +2158,7 @@ function buildListRow(m,i){
   const staleClass=getStaleClass(m);
   const statusTag=m.graveyard
     ?`<span class="list-status graveyard">💀 Never</span>`
+    :m.watched&&m.rewatch?`<span class="list-status rewatch">↻ Rewatch</span>`
     :m.watched?`<span class="list-status watched">✓ Watched</span>`:'';
   const dateLabel=m.watched?formatDateWatched(m.dateWatched):formatDateAdded(m.dateAdded);
   const rowClass=`list-row${m.watched?' list-row-watched':''}${m.graveyard?' list-row-graveyard':''}${staleClass?staleClass.replace('card-stale','list-stale'):''}`;
@@ -2150,15 +2202,16 @@ function buildListGrouped(allMovies){
     if(!placed)groups.other.push(m);
   }
   for(const k of GROUP_ORDER){
-    const watched=sortWithCollections(groups[k].filter(m=>m.watched),cdMap);
+    const rewatch=sortWithCollections(groups[k].filter(m=>m.watched&&m.rewatch),cdMap);
+    const regularWatched=sortWithCollections(groups[k].filter(m=>m.watched&&!m.rewatch),cdMap);
     if(k==='cinema'){
       const unwatched=sortWithCollections(groups[k].filter(m=>!m.watched),cdMap);
-      groups[k]=[...unwatched,...watched];
+      groups[k]=[...unwatched,...rewatch,...regularWatched];
     }else{
       const directUnwatched=sortWithCollections(groups[k].filter(m=>!m.watched&&m.streaming?.[k]?.direct),cdMap);
       const vpnUnwatched=sortWithCollections(groups[k].filter(m=>!m.watched&&!m.streaming?.[k]?.direct&&m.streaming?.[k]?.vpn),cdMap);
       const implicitUnwatched=k==='other'?sortWithCollections(groups[k].filter(m=>!m.watched&&hasNoStreaming(m)),cdMap):[];
-      groups[k]=[...directUnwatched,...vpnUnwatched,...implicitUnwatched,...watched];
+      groups[k]=[...directUnwatched,...vpnUnwatched,...implicitUnwatched,...rewatch,...regularWatched];
     }
   }
   let html='',rowIdx=0;
@@ -2220,7 +2273,8 @@ function render(){
       if(searchQuery){
         g.innerHTML=base.length?`<div class="list-rows">${base.map((m,i)=>buildListRow(m,i)).join('')}</div>`:emptyFilter;
       }else if(currentGrouping==='flat'){
-        g.innerHTML=base.length?`<div class="list-rows">${buildListItems(groupIntoRenderItems(sortWithCollections(base)))}</div>`:emptyAll;
+        const _cdm=collectionDateMap();const _flatSorted=[...sortWithCollections(base.filter(m=>!m.watched),_cdm),...sortWithCollections(base.filter(m=>m.watched&&m.rewatch),_cdm),...sortWithCollections(base.filter(m=>m.watched&&!m.rewatch),_cdm)];
+        g.innerHTML=base.length?`<div class="list-rows">${buildListItems(groupIntoRenderItems(_flatSorted))}</div>`:emptyAll;
       }else{
         g.innerHTML=base.length?buildListGrouped(base):emptyAll;
       }
@@ -2245,7 +2299,8 @@ function render(){
       g.innerHTML=base.length?base.map((m,i)=>buildCard(m,i)).join(''):emptyFilter;
     }else if(currentGrouping==='flat'){
       g.className='grid';
-      g.innerHTML=base.length?renderItems(groupIntoRenderItems(sortWithCollections(base))):emptyAll;
+      const _cdm2=collectionDateMap();const _gridSorted=[...sortWithCollections(base.filter(m=>!m.watched),_cdm2),...sortWithCollections(base.filter(m=>m.watched&&m.rewatch),_cdm2),...sortWithCollections(base.filter(m=>m.watched&&!m.rewatch),_cdm2)];
+      g.innerHTML=base.length?renderItems(groupIntoRenderItems(_gridSorted)):emptyAll;
     }else{
       g.className='movie-container';
       const grouped=buildGrouped(base);
@@ -2381,7 +2436,8 @@ const SORT_LABELS={
   'year-desc':'Year \u2193',
   'year-asc':'Year \u2191',
   'title-asc':'A\u2013Z',
-  'runtime-desc':'Runtime',
+  'runtime-desc':'Runtime \u2193',
+  'runtime-asc':'Runtime \u2191',
   'rating-desc':'Rating'
 };
 
@@ -2494,15 +2550,16 @@ function buildGrouped(allMovies){
   // Others — direct unwatched (oldest first) → VPN-only unwatched (oldest first) → watched (oldest first)
   // Collection sorting respects the global earliest-added anchor across all movies
   for(const k of GROUP_ORDER){
-    const watched=sortWithCollections(groups[k].filter(m=>m.watched),cdMap);
+    const rewatch=sortWithCollections(groups[k].filter(m=>m.watched&&m.rewatch),cdMap);
+    const regularWatched=sortWithCollections(groups[k].filter(m=>m.watched&&!m.rewatch),cdMap);
     if(k==='cinema'){
       const unwatched=sortWithCollections(groups[k].filter(m=>!m.watched),cdMap);
-      groups[k]=[...unwatched,...watched];
+      groups[k]=[...unwatched,...rewatch,...regularWatched];
     }else{
       const directUnwatched=sortWithCollections(groups[k].filter(m=>!m.watched&&m.streaming?.[k]?.direct),cdMap);
       const vpnUnwatched=sortWithCollections(groups[k].filter(m=>!m.watched&&!m.streaming?.[k]?.direct&&m.streaming?.[k]?.vpn),cdMap);
       const implicitUnwatched=k==='other'?sortWithCollections(groups[k].filter(m=>!m.watched&&hasNoStreaming(m)),cdMap):[];
-      groups[k]=[...directUnwatched,...vpnUnwatched,...implicitUnwatched,...watched];
+      groups[k]=[...directUnwatched,...vpnUnwatched,...implicitUnwatched,...rewatch,...regularWatched];
     }
   }
 
@@ -2540,8 +2597,8 @@ function _postFilter(arr){
   let r=arr;
   // Hide all watched films globally when the eye toggle is active.
   // The Watched and Graveyard filter views are exempt — they explicitly surface those films.
-  if(hideWatched&&currentFilter!=='watched'&&currentFilter!=='graveyard'){
-    r=r.filter(m=>!m.watched);
+  if(hideWatched&&currentFilter!=='watched'&&currentFilter!=='graveyard'&&currentFilter!=='rewatch'){
+    r=r.filter(m=>!m.watched||m.rewatch);
   }
   if(currentWatchWith){
     const w=currentWatchWith.toLowerCase();
@@ -2589,6 +2646,7 @@ function _getFilteredCore(){
   if(currentFilter==='all')result=movies.filter(m=>!m.watchingSoon&&!m.graveyard&&!isArchivedWatched(m)&&!isDetachedMovie(m));
   else if(currentFilter==='soon')result=movies.filter(m=>m.watchingSoon&&!m.graveyard); // detached movies CAN appear in watching soon
   else if(currentFilter==='watched')result=movies.filter(m=>m.watched&&!m.graveyard&&!isDetachedMovie(m));
+  else if(currentFilter==='rewatch'){result=movies.filter(m=>m.watched&&m.rewatch&&!m.graveyard&&!isDetachedMovie(m));return sortWithCollections(result,cdMap);}
   else if(currentFilter==='unwatched')result=movies.filter(m=>!m.watched&&!m.graveyard&&!isDetachedMovie(m));
   else if(currentFilter==='graveyard'){result=movies.filter(m=>m.graveyard&&!isDetachedMovie(m));return sortWithCollections(result,cdMap);}
   else if(currentFilter==='vpn')result=movies.filter(m=>!m.graveyard&&!isDetachedMovie(m)&&SERVICES.some(s=>m.streaming?.[s]?.vpn));
@@ -2624,7 +2682,7 @@ function buildCard(m,i){
   const stale=getStaleClass(m);
   const graveyardCls=m.graveyard?' card-graveyard':'';
   const ph=m.poster?`<img class="card-poster" src="${esc(m.poster)}" alt="${esc(m.title)}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="card-poster-placeholder" style="display:none">&#127917;<span>No poster</span></div>`:`<div class="card-poster-placeholder">&#127917;<span>No poster</span></div>`;
-  const ov=m.graveyard?`<div class="card-graveyard-overlay"><span class="graveyard-stamp">💀 Never</span></div>`:m.watched?`<div class="card-watched-overlay"><span class="watched-stamp">Watched</span></div>`:'';
+  const ov=m.graveyard?`<div class="card-graveyard-overlay"><span class="graveyard-stamp">💀 Never</span></div>`:m.watched&&m.rewatch?`<div class="card-rewatch-overlay"><span class="rewatch-stamp">↻ Rewatch</span></div>`:m.watched?`<div class="card-watched-overlay"><span class="watched-stamp">Watched</span></div>`:'';
   return`<div class="card${stale}${graveyardCls}" data-id="${m.id}" onclick="openDetail('${m.id}')" style="animation-delay:${i*0.03}s">${ph}${ov}<div class="card-body"><div class="card-title">${esc(m.title)}</div><div class="card-meta" data-year="${esc(m.year||'')}" data-genre="${esc(m.genre||'')}" data-runtime="${esc(formatRuntime(m.runtime)||'')}">${[m.year,m.genre,formatRuntime(m.runtime)].filter(Boolean).join(' &middot; ')}</div><div class="card-services">${buildBadges(m,true)}</div></div></div>`;
 }
 
@@ -2707,7 +2765,7 @@ function openDetail(id){
       <div class="detail-title">${esc(m.title)}</div>
       <div class="detail-meta">${[m.year,m.genre,m.director,formatRuntime(m.runtime)].filter(Boolean).join(' &middot; ')}${m.rating?'<br>&#9733; '+esc(m.rating):''}</div>
       ${m.notes?`<div id="detailNotesWrap" class="detail-notes-wrap clamped"><div id="detailNotes" class="detail-notes">${esc(m.notes)}</div><button class="detail-notes-expander" onclick="toggleDetailNotes()">...</button></div>`:''}
-      ${(()=>{const b=(m.graveyard?`<span class="service-badge" style="background:rgba(80,60,80,0.25);color:#9a8a9a;border:1px solid rgba(120,100,120,0.4)">&#128128; Graveyard</span>`:'');return b?`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;">${b}</div>`:'';})()} 
+      ${(()=>{const b=(m.graveyard?`<span class="service-badge" style="background:rgba(80,60,80,0.25);color:#9a8a9a;border:1px solid rgba(120,100,120,0.4)">&#128128; Graveyard</span>`:'')+( m.rewatch?`<span class="service-badge" style="background:rgba(45,212,191,0.12);color:#2dd4bf;border:1px solid rgba(45,212,191,0.3)">↻ Rewatch</span>`:'');return b?`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;">${b}</div>`:'';})()} 
       <div style="margin-top:8px;">
         ${m.watched
           ?`<span id="detailDateWatched" onclick="editDateWatched('${m.id}')" title="Click to edit" style="cursor:pointer;font-size:0.68rem;color:var(--text-muted);letter-spacing:0.05em;border-bottom:1px dashed var(--border-hi);padding-bottom:1px;transition:color 0.15s;" onmouseover="this.style.color='var(--text-dim)'" onmouseout="this.style.color='var(--text-muted)'">${formatDateWatched(m.dateWatched)}</span>`
@@ -2722,6 +2780,7 @@ function openDetail(id){
         <a class="btn-justwatch" href="${jw}" target="_blank" rel="noopener" style="text-decoration:none"><span class="jw-dot"></span>JW</a>
         <a class="btn-letterboxd" href="${lb}" target="_blank" rel="noopener" style="text-decoration:none"><span class="lb-dot"></span>LB</a>
         <button class="btn btn-ghost btn-sm" onclick="toggleGraveyard('${m.id}')" title="${m.graveyard?'Remove from graveyard':'Move to graveyard — never watching this'}" style="${m.graveyard?'color:#c084fc;border-color:rgba(124,58,237,0.4);':'color:var(--text-muted);'}">${m.graveyard?'💀 Unbury':'💀'}</button>
+        ${m.watched&&!m.graveyard?`<button class="btn btn-ghost btn-sm" onclick="toggleRewatch('${m.id}')" title="${m.rewatch?'Remove rewatch flag':'Flag for rewatch'}" style="${m.rewatch?'color:#2dd4bf;border-color:rgba(45,212,191,0.4);':'color:var(--text-muted);'}">↻${m.rewatch?' Rewatch':''}</button>`:''}
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;">
         <button class="btn btn-ghost" onclick="openEditFromDetail('${m.id}')">Edit</button>
@@ -2761,8 +2820,8 @@ function toggleWatched(id){
   const m=movies.find(x=>x.id===id);
   if(m){
     m.watched=!m.watched;
-    if(m.watched){m.watchingSoon=false;m.dateWatched=new Date().toISOString();}
-    else{m.dateWatched=undefined;}
+    if(m.watched){m.watchingSoon=false;m.dateWatched=new Date().toISOString();m.rewatch=false;}
+    else{m.dateWatched=undefined;m.rewatch=false;}
     save();closeDetail();render();
   }
 }
@@ -2776,6 +2835,14 @@ function toggleGraveyard(id){
     // Moving to graveyard clears watched and watchingSoon flags
     if(m.graveyard){m.watched=false;m.watchingSoon=false;}
     save();closeDetail();render();
+  }
+}
+
+function toggleRewatch(id){
+  const m=movies.find(x=>x.id===id);
+  if(m&&m.watched){
+    m.rewatch=!m.rewatch;
+    save();render();openDetail(id);
   }
 }
 
@@ -3367,7 +3434,7 @@ function save(){
 function esc(s){if(!s)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
 document.addEventListener('keydown',e=>{
-  if(e.key==='Escape'){if(window.selectionMode)exitSelectMode();closeSortMenu();closePillMenu();closeAddModal();closeDetail();return;}
+  if(e.key==='Escape'){const so=document.getElementById('shortcutsOverlay');if(so&&so.classList.contains('open')){closeShortcutsPanel();return;}if(window.selectionMode)exitSelectMode();closeSortMenu();closePillMenu();closeAddModal();closeDetail();return;}
   if(e.key==='Enter'&&!e.shiftKey){
     const modalOpen=document.getElementById('addModal').classList.contains('open');
     if(modalOpen){
@@ -3462,6 +3529,11 @@ document.addEventListener('keydown',e=>{
         if(lb)lb.click();
         return;
       }
+      if(key==='E'){
+        e.preventDefault();
+        if(currentDetailId) openEditFromDetail(currentDetailId);
+        return;
+      }
       if(e.key==='Enter'){
         const m=currentDetailId?movies.find(x=>x.id===currentDetailId):null;
         if(m&&!m.graveyard){e.preventDefault();toggleWatched(currentDetailId);}
@@ -3471,6 +3543,19 @@ document.addEventListener('keydown',e=>{
   }
 
   const inField=document.activeElement.tagName==='INPUT'||document.activeElement.tagName==='TEXTAREA';
+  const noModal=!document.getElementById('addModal').classList.contains('open')&&!document.getElementById('detailModal').classList.contains('open');
+  if(!inField&&!e.metaKey&&!e.ctrlKey&&!e.altKey&&noModal){
+    const key=e.key.toUpperCase();
+    if(key==='A'){e.preventDefault();if(currentCategory)openAddModalWithCategory(currentCategory);else openAddModal();return;}
+    if(key==='R'){e.preventDefault();openSurpriseModal();return;}
+    if(key==='H'){e.preventDefault();toggleHideWatched();return;}
+    if(e.key==='?'){e.preventDefault();openShortcutsPanel();return;}
+  }
+  if(!inField&&(e.metaKey||e.ctrlKey)&&!e.altKey&&!e.shiftKey&&noModal){
+    if(e.key==='1'){e.preventDefault();setView('grid');return;}
+    if(e.key==='2'){e.preventDefault();setView('compact');return;}
+    if(e.key==='3'){e.preventDefault();setView('list');return;}
+  }
   if(e.altKey&&e.code==='KeyT'&&!inField&&!document.getElementById('addModal').classList.contains('open')){
     e.preventDefault();
     if(currentCategory) openAddModalWithCategory(currentCategory);
@@ -3602,6 +3687,10 @@ init();
     <span style="display:flex;align-items:center;gap:5px;font-size:0.58rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-muted);"><span style="width:8px;height:8px;border-radius:2px;border:1.5px solid rgba(180,30,60,0.85);display:inline-block;flex-shrink:0;"></span>180d</span>
     <span style="display:flex;align-items:center;gap:5px;font-size:0.58rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-muted);"><span style="width:8px;height:8px;border-radius:2px;border:1.5px solid rgba(124,58,237,0.85);display:inline-block;flex-shrink:0;"></span>1yr</span>
   </span>
+  <button class="shortcuts-btn" onclick="openShortcutsPanel()">
+    <svg width="13" height="13" viewBox="0 0 13 13" fill="none" style="flex-shrink:0;opacity:0.8"><rect x="0.75" y="2.25" width="11.5" height="8.5" rx="1.8" stroke="currentColor" stroke-width="1.1"/><rect x="2" y="4.3" width="1.6" height="1.6" rx="0.45" fill="currentColor"/><rect x="4.7" y="4.3" width="1.6" height="1.6" rx="0.45" fill="currentColor"/><rect x="7.4" y="4.3" width="1.6" height="1.6" rx="0.45" fill="currentColor"/><rect x="10.1" y="4.3" width="1.6" height="1.6" rx="0.45" fill="currentColor"/><rect x="2" y="6.9" width="1.6" height="1.6" rx="0.45" fill="currentColor"/><rect x="4.7" y="6.9" width="3.5" height="1.6" rx="0.45" fill="currentColor"/><rect x="10.1" y="6.9" width="1.6" height="1.6" rx="0.45" fill="currentColor"/></svg>
+    Shortcuts
+  </button>
 </footer>
 
 <script>
@@ -3821,6 +3910,15 @@ function initSheetDrag(modalId, closeFn) {
         </label>
       </div>
 
+      <div class="form-section-label" style="margin-top:8px;">Max Runtime</div>
+      <div class="surprise-runtime-chips" id="surpriseRuntimeChips">
+        <button class="surprise-runtime-chip active" data-maxruntime="0" onclick="selectRuntimeChip(this)">Any</button>
+        <button class="surprise-runtime-chip" data-maxruntime="90" onclick="selectRuntimeChip(this)">≤ 1h 30m</button>
+        <button class="surprise-runtime-chip" data-maxruntime="105" onclick="selectRuntimeChip(this)">≤ 1h 45m</button>
+        <button class="surprise-runtime-chip" data-maxruntime="120" onclick="selectRuntimeChip(this)">≤ 2h</button>
+        <button class="surprise-runtime-chip" data-maxruntime="150" onclick="selectRuntimeChip(this)">≤ 2h 30m</button>
+      </div>
+
       <div class="surprise-pool-count" id="surprisePoolCount"></div>
 
       <!-- Result appears here once a film is picked -->
@@ -3838,7 +3936,7 @@ function initSheetDrag(modalId, closeFn) {
 <script>
 // ── Surprise Me ────────────────────────────────────────────────────────────
 
-let _surpriseLastId = null;
+let _surpriseSeenIds = new Set();
 
 function openSurpriseModal(){
   // Reset state
@@ -3847,8 +3945,7 @@ function openSurpriseModal(){
   ra.classList.remove('revealed');
   document.getElementById('surpriseActionRow').innerHTML =
     `<button class="btn btn-primary" style="flex:1;justify-content:center;" onclick="runSurprise()">🎲 Surprise Me</button>`;
-  _surpriseLastId = null;
-  // Update pool count immediately so the user sees how many films match
+  _surpriseSeenIds = new Set();
   updateSurprisePoolCount();
   document.getElementById('surpriseModal').classList.add('open');
   lockScroll();
@@ -3856,7 +3953,7 @@ function openSurpriseModal(){
 
 function closeSurpriseModal(){
   document.getElementById('surpriseModal').classList.remove('open');
-  _surpriseLastId = null;
+  _surpriseSeenIds = new Set();
   unlockScroll();
 }
 
@@ -3870,6 +3967,7 @@ function toggleSurpriseChip(btn){
 }
 
 function onSurpriseOptionChange(){
+  _surpriseSeenIds = new Set(); // pool may have changed; reset suggestion history
   updateSurprisePoolCount();
   // Clear any existing result since filters changed
   const ra = document.getElementById('surpriseResultArea');
@@ -3886,12 +3984,26 @@ function updateSurprisePoolCount(){
   if(!el) return;
   const n = getSurprisePool().length;
   if(n === 0){
-    el.textContent = 'No unwatched films match these filters.';
+    const maxRuntime = getSurpriseMaxRuntime();
+    el.textContent = maxRuntime > 0
+      ? 'No films match — try a longer runtime limit or different filters.'
+      : 'No unwatched films match these filters.';
     el.classList.add('empty');
   } else {
     el.textContent = `${n} unwatched film${n !== 1 ? 's' : ''} in the pool`;
     el.classList.remove('empty');
   }
+}
+
+function selectRuntimeChip(btn){
+  document.querySelectorAll('.surprise-runtime-chip').forEach(c => c.classList.remove('active'));
+  btn.classList.add('active');
+  onSurpriseOptionChange();
+}
+
+function getSurpriseMaxRuntime(){
+  const active = document.querySelector('.surprise-runtime-chip.active');
+  return active ? parseInt(active.dataset.maxruntime) || 0 : 0;
 }
 
 // Returns the pool of films eligible to be picked, respecting all filters
@@ -3945,6 +4057,13 @@ function getSurprisePool(){
     return true;
   });
 
+  // Runtime filter — when a limit is set, films with no runtime data are excluded
+  // to avoid accidentally picking something that could be much longer than wanted.
+  const maxRuntime = getSurpriseMaxRuntime();
+  if(maxRuntime > 0){
+    pool = pool.filter(m => m.runtime > 0 && m.runtime <= maxRuntime);
+  }
+
   return pool;
 }
 
@@ -3982,13 +4101,16 @@ function runSurprise(){
     return;
   }
 
-  // Avoid immediately repeating the last pick when the pool is large enough
-  let candidates = pool;
-  if(_surpriseLastId && pool.length > 1){
-    candidates = pool.filter(m => m.id !== _surpriseLastId);
+  // Exclude every film already suggested this session.
+  // If the entire pool has been exhausted, reset and start fresh.
+  let candidates = pool.filter(m => !_surpriseSeenIds.has(m.id));
+  if(!candidates.length){
+    _surpriseSeenIds = new Set();
+    candidates = pool;
   }
+
   const m = candidates[Math.floor(Math.random() * candidates.length)];
-  _surpriseLastId = m.id;
+  _surpriseSeenIds.add(m.id);
 
   showSurprisePick(m);
 }
@@ -4603,6 +4725,7 @@ function _removeCategoriseRow(id){
   <button class="sort-menu-item" data-sort="year-asc"       onclick="setSort('year-asc')">Year<span class="sort-menu-detail">oldest first</span></button>
   <button class="sort-menu-item" data-sort="title-asc"      onclick="setSort('title-asc')">Title<span class="sort-menu-detail">A&ndash;Z</span></button>
   <button class="sort-menu-item" data-sort="runtime-desc"   onclick="setSort('runtime-desc')">Runtime<span class="sort-menu-detail">longest first</span></button>
+  <button class="sort-menu-item" data-sort="runtime-asc"    onclick="setSort('runtime-asc')">Runtime<span class="sort-menu-detail">shortest first</span></button>
   <button class="sort-menu-item" data-sort="rating-desc"    onclick="setSort('rating-desc')">Rating<span class="sort-menu-detail">highest first</span></button>
 </div>
 
@@ -4934,6 +5057,69 @@ document.addEventListener('click', function(e){
   if(!window.selectionMode) enterSelectMode();
   toggleSelect(card.dataset.id);
 }, true);
+</script>
+
+<!-- ── Keyboard shortcuts panel ───────────────────────────────────────── -->
+<div class="shortcuts-overlay" id="shortcutsOverlay" onclick="if(event.target===this)closeShortcutsPanel()">
+  <div class="shortcuts-panel">
+    <div class="shortcuts-panel-header">
+      <svg width="15" height="15" viewBox="0 0 15 15" fill="none" style="color:var(--gold);flex-shrink:0"><rect x="0.75" y="2.75" width="13.5" height="9.5" rx="2" stroke="currentColor" stroke-width="1.1"/><rect x="2.2" y="5" width="1.8" height="1.8" rx="0.5" fill="currentColor"/><rect x="5.1" y="5" width="1.8" height="1.8" rx="0.5" fill="currentColor"/><rect x="8" y="5" width="1.8" height="1.8" rx="0.5" fill="currentColor"/><rect x="10.9" y="5" width="1.8" height="1.8" rx="0.5" fill="currentColor"/><rect x="2.2" y="7.9" width="1.8" height="1.8" rx="0.5" fill="currentColor"/><rect x="5.1" y="7.9" width="4.6" height="1.8" rx="0.5" fill="currentColor"/><rect x="10.9" y="7.9" width="1.8" height="1.8" rx="0.5" fill="currentColor"/></svg>
+      <span class="shortcuts-panel-title">Keyboard shortcuts</span>
+      <button class="shortcuts-panel-close" onclick="closeShortcutsPanel()">×</button>
+    </div>
+    <div class="shortcuts-panel-body">
+      <div class="shortcut-col">
+        <div class="shortcut-section">
+          <div class="shortcut-section-label">Global</div>
+          <div class="shortcut-row"><span class="shortcut-desc">Add a film</span><span class="shortcut-keys"><span class="kbd">A</span></span></div>
+          <div class="shortcut-row"><span class="shortcut-desc">Surprise Me</span><span class="shortcut-keys"><span class="kbd">R</span></span></div>
+          <div class="shortcut-row"><span class="shortcut-desc">Toggle hide watched</span><span class="shortcut-keys"><span class="kbd">H</span></span></div>
+          <div class="shortcut-row"><span class="shortcut-desc">This panel</span><span class="shortcut-keys"><span class="kbd">?</span></span></div>
+          <div class="shortcut-row"><span class="shortcut-desc">Focus search</span><span class="shortcut-keys"><span class="kbd">⌘</span><span class="kbd-sep">+</span><span class="kbd">K</span></span></div>
+          <div class="shortcut-row"><span class="shortcut-desc">Grid view</span><span class="shortcut-keys"><span class="kbd">⌘</span><span class="kbd-sep">+</span><span class="kbd">1</span></span></div>
+          <div class="shortcut-row"><span class="shortcut-desc">Compact view</span><span class="shortcut-keys"><span class="kbd">⌘</span><span class="kbd-sep">+</span><span class="kbd">2</span></span></div>
+          <div class="shortcut-row"><span class="shortcut-desc">List view</span><span class="shortcut-keys"><span class="kbd">⌘</span><span class="kbd-sep">+</span><span class="kbd">3</span></span></div>
+          <div class="shortcut-row"><span class="shortcut-desc">Undo delete</span><span class="shortcut-keys"><span class="kbd">⌘</span><span class="kbd-sep">+</span><span class="kbd">Z</span></span></div>
+          <div class="shortcut-row"><span class="shortcut-desc">Redo delete</span><span class="shortcut-keys"><span class="kbd">⌘</span><span class="kbd-sep">+</span><span class="kbd">⇧</span><span class="kbd-sep">+</span><span class="kbd">Z</span></span></div>
+          <div class="shortcut-row"><span class="shortcut-desc">Close / dismiss</span><span class="shortcut-keys"><span class="kbd">Esc</span></span></div>
+        </div>
+      </div>
+      <div class="shortcut-col">
+        <div class="shortcut-section">
+          <div class="shortcut-section-label">Add modal</div>
+          <div class="shortcut-row"><span class="shortcut-desc">Save film</span><span class="shortcut-keys"><span class="kbd">↵</span></span></div>
+          <div class="shortcut-row"><span class="shortcut-desc">Toggle service</span><span class="shortcut-keys"><span class="kbd">N</span><span class="kbd-sep">/</span><span class="kbd">D</span><span class="kbd-sep">/</span><span class="kbd">P</span><span class="kbd-sep">/</span><span class="kbd">C</span><span class="kbd-sep">/</span><span class="kbd">O</span></span></div>
+          <div class="shortcut-row"><span class="shortcut-desc">Coming soon</span><span class="shortcut-keys"><span class="kbd">⇧</span><span class="kbd-sep">+</span><span class="kbd">C</span></span></div>
+          <div class="shortcut-row"><span class="shortcut-desc">Toggle VPN</span><span class="shortcut-keys"><span class="kbd">⇧</span><span class="kbd-sep">+</span><span class="shortcut-desc" style="font-size:0.64rem;color:var(--text-muted)">service key</span></span></div>
+          <div class="shortcut-row"><span class="shortcut-desc">Focus VPN input</span><span class="shortcut-keys"><span class="kbd">/</span></span></div>
+          <div class="shortcut-row"><span class="shortcut-desc">Watching soon</span><span class="shortcut-keys"><span class="kbd">W</span></span></div>
+          <div class="shortcut-row"><span class="shortcut-desc">Mark watched</span><span class="shortcut-keys"><span class="kbd">⇧</span><span class="kbd-sep">+</span><span class="kbd">W</span></span></div>
+          <div class="shortcut-row"><span class="shortcut-desc">JustWatch / Letterboxd</span><span class="shortcut-keys"><span class="kbd">J</span><span class="kbd-sep">/</span><span class="kbd">L</span></span></div>
+        </div>
+        <div class="shortcut-section">
+          <div class="shortcut-section-label">Detail modal</div>
+          <div class="shortcut-row"><span class="shortcut-desc">Edit film</span><span class="shortcut-keys"><span class="kbd">E</span></span></div>
+          <div class="shortcut-row"><span class="shortcut-desc">Toggle watched</span><span class="shortcut-keys"><span class="kbd">↵</span></span></div>
+          <div class="shortcut-row"><span class="shortcut-desc">JustWatch / Letterboxd</span><span class="shortcut-keys"><span class="kbd">J</span><span class="kbd-sep">/</span><span class="kbd">L</span></span></div>
+          <div class="shortcut-row"><span class="shortcut-desc">Close</span><span class="shortcut-keys"><span class="kbd">Esc</span></span></div>
+        </div>
+      </div>
+    </div>
+    <div class="shortcuts-panel-footer">⌘ = Ctrl on Windows &nbsp;·&nbsp; Shortcuts only fire when no text field is focused</div>
+  </div>
+</div>
+
+<script>
+function openShortcutsPanel(){
+  document.getElementById('shortcutsOverlay').classList.add('open');
+  lockScroll();
+}
+function closeShortcutsPanel(){
+  const el=document.getElementById('shortcutsOverlay');
+  if(!el.classList.contains('open'))return;
+  el.classList.remove('open');
+  unlockScroll();
+}
 </script>
 
 </body>
