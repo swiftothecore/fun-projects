@@ -1,0 +1,1859 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA4MCA4MCI+PHJlY3Qgd2lkdGg9IjgwIiBoZWlnaHQ9IjgwIiByeD0iOCIgZmlsbD0iI2Y0ZjFlYSIvPjxyZWN0IHg9IjE1IiB5PSIzNCIgd2lkdGg9IjE0IiBoZWlnaHQ9IjI4IiByeD0iMyIgZmlsbD0iIzVhYWE3YSIvPjxyZWN0IHg9IjMzIiB5PSIxOCIgd2lkdGg9IjE0IiBoZWlnaHQ9IjQ0IiByeD0iMyIgZmlsbD0iIzVhYWE3YSIvPjxyZWN0IHg9IjUxIiB5PSIyNiIgd2lkdGg9IjE0IiBoZWlnaHQ9IjM2IiByeD0iMyIgZmlsbD0iIzVhYWE3YSIvPjwvc3ZnPg==">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Music Videos</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link id="gfonts" href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@700&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&family=DM+Mono:wght@400&display=swap" rel="stylesheet">
+  <script>
+    // Runs synchronously before any paint — prevents flash of setup screen,
+    // wrong colour scheme, and font-swap reflow.
+    (function () {
+      if (localStorage.getItem('ytmv_api_key')) {
+        document.documentElement.classList.add('ytmv-authed');
+      }
+      var theme = localStorage.getItem('ytmv_theme');
+      if (theme) document.documentElement.setAttribute('data-theme', theme);
+
+      // Font caching: if we have a warm cache, inject the @font-face CSS
+      // synchronously so fonts are available before the first paint.
+      // The version stamp lets us bust the cache if fonts ever change.
+      var FONT_VER = '1';
+      var fonts    = localStorage.getItem('ytmv_fonts');
+      var fontVer  = localStorage.getItem('ytmv_fonts_ver');
+      if (fonts && fontVer === FONT_VER) {
+        try {
+          var link = document.getElementById('gfonts');
+          if (link) link.remove(); // no need to hit the network
+          var s = document.createElement('style');
+          s.textContent = fonts;
+          document.head.appendChild(s);
+        } catch (e) {
+          // Bad cache entry — clear it so it re-fetches this session
+          try { localStorage.removeItem('ytmv_fonts'); localStorage.removeItem('ytmv_fonts_ver'); } catch (_) {}
+        }
+      }
+    }());
+  </script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* ── LIGHT MODE (default) ─────────────────────────── */
+    :root {
+      --bg:           #f4f1ea;
+      --bg2:          #ede9df;
+      --surface:      #ffffff;
+      --surface2:     #f8f5ef;
+      --surface-h:    #f0ede5;
+      --border:       #ddd8cc;
+      --border2:      #c8c2b2;
+      --accent:       #2a5c3f;
+      --accent-bg:    rgba(42, 92, 63, 0.08);
+      --accent-bdr:   rgba(42, 92, 63, 0.25);
+      --hot:          #b83018;
+      --hot-bg:       rgba(184, 48, 24, 0.08);
+      --ok:           #1e6040;
+      --ok-bg:        rgba(30, 96, 64, 0.08);
+      --text:         #1c1a16;
+      --text2:        #6a6050;
+      --text3:        #a09880;
+      --sh-sm:        0 1px 2px rgba(0,0,0,.06), 0 1px 4px rgba(0,0,0,.04);
+      --sh:           0 2px 8px rgba(0,0,0,.08), 0 1px 3px rgba(0,0,0,.05);
+      --sh-hover:     0 6px 20px rgba(0,0,0,.10), 0 2px 6px rgba(0,0,0,.06);
+      --sh-modal:     0 20px 60px rgba(0,0,0,.14), 0 4px 16px rgba(0,0,0,.08);
+      --backdrop:     rgba(80, 70, 50, 0.45);
+      --r:            8px;
+      --r-sm:         6px;
+      --r-xs:         4px;
+      --t:            0.17s ease;
+    }
+
+    /* ── DARK MODE ────────────────────────────────────── */
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        --bg:         #17150f;
+        --bg2:        #1c1a12;
+        --surface:    #231f17;
+        --surface2:   #2a261c;
+        --surface-h:  #302b22;
+        --border:     #302b20;
+        --border2:    #3d3728;
+        --accent:     #5aaa7a;
+        --accent-bg:  rgba(90, 170, 122, 0.12);
+        --accent-bdr: rgba(90, 170, 122, 0.30);
+        --hot:        #e07050;
+        --hot-bg:     rgba(224, 112, 80, 0.12);
+        --ok:         #4aaa80;
+        --ok-bg:      rgba(74, 170, 128, 0.12);
+        --text:       #f0ebe0;
+        --text2:      #a09070;
+        --text3:      #6a5a48;
+        --sh-sm:      0 1px 2px rgba(0,0,0,.25), 0 1px 4px rgba(0,0,0,.15);
+        --sh:         0 2px 8px rgba(0,0,0,.30), 0 1px 3px rgba(0,0,0,.20);
+        --sh-hover:   0 6px 20px rgba(0,0,0,.40), 0 2px 6px rgba(0,0,0,.25);
+        --sh-modal:   0 20px 60px rgba(0,0,0,.50), 0 4px 16px rgba(0,0,0,.30);
+        --backdrop:   rgba(0, 0, 0, 0.65);
+      }
+    }
+    [data-theme="dark"] {
+      --bg:         #17150f;
+      --bg2:        #1c1a12;
+      --surface:    #231f17;
+      --surface2:   #2a261c;
+      --surface-h:  #302b22;
+      --border:     #302b20;
+      --border2:    #3d3728;
+      --accent:     #5aaa7a;
+      --accent-bg:  rgba(90, 170, 122, 0.12);
+      --accent-bdr: rgba(90, 170, 122, 0.30);
+      --hot:        #e07050;
+      --hot-bg:     rgba(224, 112, 80, 0.12);
+      --ok:         #4aaa80;
+      --ok-bg:      rgba(74, 170, 128, 0.12);
+      --text:       #f0ebe0;
+      --text2:      #a09070;
+      --text3:      #6a5a48;
+      --sh-sm:      0 1px 2px rgba(0,0,0,.25), 0 1px 4px rgba(0,0,0,.15);
+      --sh:         0 2px 8px rgba(0,0,0,.30), 0 1px 3px rgba(0,0,0,.20);
+      --sh-hover:   0 6px 20px rgba(0,0,0,.40), 0 2px 6px rgba(0,0,0,.25);
+      --sh-modal:   0 20px 60px rgba(0,0,0,.50), 0 4px 16px rgba(0,0,0,.30);
+      --backdrop:   rgba(0, 0, 0, 0.65);
+    }
+    [data-theme="light"] {
+      --bg:         #f4f1ea;
+      --bg2:        #ede9df;
+      --surface:    #ffffff;
+      --surface2:   #f8f5ef;
+      --surface-h:  #f0ede5;
+      --border:     #ddd8cc;
+      --border2:    #c8c2b2;
+      --accent:     #2a5c3f;
+      --accent-bg:  rgba(42, 92, 63, 0.08);
+      --accent-bdr: rgba(42, 92, 63, 0.25);
+      --hot:        #b83018;
+      --hot-bg:     rgba(184, 48, 24, 0.08);
+      --ok:         #1e6040;
+      --ok-bg:      rgba(30, 96, 64, 0.08);
+      --text:       #1c1a16;
+      --text2:      #6a6050;
+      --text3:      #a09880;
+      --sh-sm:      0 1px 2px rgba(0,0,0,.06), 0 1px 4px rgba(0,0,0,.04);
+      --sh:         0 2px 8px rgba(0,0,0,.08), 0 1px 3px rgba(0,0,0,.05);
+      --sh-hover:   0 6px 20px rgba(0,0,0,.10), 0 2px 6px rgba(0,0,0,.06);
+      --sh-modal:   0 20px 60px rgba(0,0,0,.14), 0 4px 16px rgba(0,0,0,.08);
+      --backdrop:   rgba(80, 70, 50, 0.45);
+    }
+
+    html, body {
+      min-height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', system-ui, sans-serif;
+      font-size: 14px;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      transition: background var(--t), color var(--t);
+    }
+
+    .wordmark {
+      font-family: 'Libre Baskerville', Georgia, serif;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+      color: var(--text);
+    }
+    .wordmark span { color: var(--accent); }
+
+    /* ── SETUP SCREEN ─────────────────────────────────── */
+    #setup {
+      position: fixed; inset: 0; background: var(--bg);
+      z-index: 1000; display: flex; align-items: center;
+      justify-content: center; padding: 24px;
+    }
+    #setup.hidden { display: none; }
+
+    .setup-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 16px; padding: 40px;
+      max-width: 480px; width: 100%;
+      box-shadow: var(--sh-modal);
+    }
+    .setup-card .wordmark { font-size: 26px; margin-bottom: 10px; }
+
+    .setup-desc { color: var(--text2); font-size: 14px; line-height: 1.65; margin-bottom: 24px; }
+
+    .setup-steps {
+      display: flex; flex-direction: column; gap: 10px;
+      padding: 16px; background: var(--bg2);
+      border: 1px solid var(--border); border-radius: var(--r);
+      margin-bottom: 24px;
+    }
+    .step { display: flex; gap: 12px; align-items: flex-start; font-size: 13px; color: var(--text2); }
+    .step-n {
+      background: var(--accent-bg); color: var(--accent);
+      border-radius: 50%; min-width: 20px; height: 20px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 600; margin-top: 1px; flex-shrink: 0;
+    }
+    .step a { color: var(--accent); text-decoration: none; }
+    .step a:hover { text-decoration: underline; }
+
+    .form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+    .form-label { font-size: 11px; font-weight: 600; color: var(--text2); letter-spacing: 0.06em; text-transform: uppercase; }
+    .form-input {
+      background: var(--bg2); border: 1px solid var(--border2);
+      border-radius: var(--r-sm); color: var(--text);
+      font-family: 'DM Mono', monospace; font-size: 13px;
+      padding: 10px 14px; outline: none; width: 100%;
+      transition: border-color var(--t), background var(--t);
+    }
+    .form-input:focus { border-color: var(--accent); background: var(--surface); }
+    .form-input::placeholder { color: var(--text3); }
+
+    /* ── BUTTONS ──────────────────────────────────────── */
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      gap: 7px; padding: 9px 16px; border-radius: var(--r-sm);
+      font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600;
+      border: none; cursor: pointer; transition: all var(--t);
+      white-space: nowrap; text-decoration: none; user-select: none;
+    }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary:hover:not(:disabled) { filter: brightness(1.1); transform: translateY(-1px); box-shadow: var(--sh-sm); }
+    .btn-primary:active:not(:disabled) { transform: translateY(0); filter: none; box-shadow: none; }
+
+    .btn-ghost {
+      background: transparent; color: var(--text2);
+      border: 1px solid var(--border);
+    }
+    .btn-ghost:hover:not(:disabled) { background: var(--surface-h); color: var(--text); border-color: var(--border2); }
+
+    .btn-danger { background: transparent; color: var(--hot); border: 1px solid rgba(184,48,24,0.25); }
+    .btn-danger:hover:not(:disabled) { background: var(--hot-bg); }
+    [data-theme="dark"] .btn-danger { border-color: rgba(224,112,80,0.25); }
+
+    .btn-icon {
+      padding: 7px; background: transparent; color: var(--text2);
+      border: 1px solid transparent; border-radius: var(--r-sm);
+    }
+    .btn-icon:hover:not(:disabled) { background: var(--surface-h); color: var(--text); border-color: var(--border); }
+
+    .btn-full { width: 100%; }
+    .btn-sm { padding: 7px 12px; font-size: 12px; }
+
+    /* ── HEADER ───────────────────────────────────────── */
+    #header {
+      position: fixed; top: 0; left: 0; right: 0; height: 54px;
+      background: color-mix(in srgb, var(--bg) 90%, transparent);
+      backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; padding: 0 20px; gap: 10px;
+      z-index: 100;
+    }
+    .header-wordmark { font-size: 18px; }
+    .header-spacer { flex: 1; }
+    .header-actions { display: flex; gap: 6px; align-items: center; }
+
+    /* ── CONTROLS ─────────────────────────────────────── */
+    #controls {
+      position: sticky; top: 54px;
+      background: color-mix(in srgb, var(--bg) 92%, transparent);
+      backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+      z-index: 90; padding: 10px 20px;
+      display: flex; flex-direction: column; gap: 7px;
+    }
+    .ctrl-row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+
+    /* Artist filter chips — individual pill badges */
+    .chip {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 4px 11px; border-radius: 100px; font-size: 12px; font-weight: 500;
+      cursor: pointer; transition: all var(--t); border: 1px solid var(--border);
+      background: var(--surface); color: var(--text2); white-space: nowrap;
+      user-select: none; box-shadow: var(--sh-sm);
+    }
+    .chip:hover { border-color: var(--border2); color: var(--text); }
+    .chip.active { background: var(--accent-bg); border-color: var(--accent-bdr); color: var(--accent); box-shadow: none; }
+    .chip-count { font-size: 10px; color: var(--text3); font-family: 'DM Mono', monospace; }
+
+    .sep { width: 1px; height: 16px; background: var(--border); flex-shrink: 0; }
+
+    /* Watch filter — connected segmented control (visually distinct from chips) */
+    .seg-ctrl {
+      display: inline-flex;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--r-sm);
+      padding: 2px;
+    }
+    .seg {
+      padding: 3px 11px; border-radius: 4px;
+      font-size: 12px; font-weight: 500;
+      border: none; cursor: pointer;
+      background: transparent; color: var(--text2);
+      transition: all var(--t);
+      font-family: 'DM Sans', sans-serif;
+      white-space: nowrap; user-select: none;
+    }
+    .seg:hover:not(.active) { color: var(--text); }
+    .seg.active {
+      background: var(--surface);
+      color: var(--text);
+      box-shadow: var(--sh-sm);
+    }
+
+    /* Sort button — plain text, no pill shape */
+    .sort-btn {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 3px 6px; border-radius: var(--r-xs);
+      font-size: 12px; font-weight: 500;
+      cursor: pointer; transition: color var(--t);
+      background: transparent; color: var(--text3);
+      border: none; user-select: none;
+      font-family: 'DM Sans', sans-serif;
+    }
+    .sort-btn:hover { color: var(--text2); }
+
+    .vid-count { margin-left: auto; font-size: 11px; color: var(--text3); font-family: 'DM Mono', monospace; }
+
+    /* ── SELECTION ────────────────────────────────────── */
+
+    /* Selection indicator — rounded square (distinct from the circular watch button) */
+    .sel-box {
+      position: absolute; top: 7px; left: 7px;
+      width: 22px; height: 22px; border-radius: 5px;
+      border: 2px solid rgba(255,255,255,0.75);
+      background: rgba(0,0,0,0.32);
+      backdrop-filter: blur(4px);
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; transition: opacity var(--t), background var(--t), border-color var(--t);
+      z-index: 3; pointer-events: none; color: #fff;
+    }
+    .sel-box svg { opacity: 0; transition: opacity var(--t); }
+
+    /* Show empty boxes on all cards when in selection mode */
+    html.ytmv-selecting .v-card .sel-box { opacity: 1; }
+
+    /* Selected card: filled box + accent border */
+    .v-card.selected .sel-box {
+      background: var(--accent); border-color: transparent; opacity: 1;
+    }
+    .v-card.selected .sel-box svg { opacity: 1; }
+
+    .v-card.selected {
+      border-color: var(--accent-bdr);
+      box-shadow: 0 0 0 2px var(--accent-bg), var(--sh-sm);
+    }
+    .v-card.selected:hover {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px var(--accent-bg), var(--sh-hover);
+    }
+
+    /* ── SELECTION ACTION BAR ─────────────────────────── */
+    #selection-bar {
+      position: fixed; bottom: 0; left: 0; right: 0; z-index: 200;
+      height: 58px;
+      background: color-mix(in srgb, var(--bg) 92%, transparent);
+      backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      border-top: 1px solid var(--border);
+      display: flex; align-items: center; padding: 0 20px; gap: 12px;
+      transform: translateY(100%);
+      transition: transform 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    #selection-bar.visible { transform: translateY(0); }
+
+    #sel-count {
+      font-size: 13px; font-weight: 500; color: var(--text2);
+    }
+    #sel-actions { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+
+    /* ── MAIN & GRID ──────────────────────────────────── */
+    #main { padding-top: 54px; min-height: 100vh; }
+    #grid-wrap { padding: 20px; }
+
+    .video-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 14px;
+    }
+
+    /* ── VIDEO CARD ───────────────────────────────────── */
+    .v-card {
+      background: var(--surface); border-radius: var(--r);
+      border: 1px solid var(--border); box-shadow: var(--sh-sm);
+      overflow: hidden; display: flex; flex-direction: column;
+      cursor: pointer; user-select: none;
+      transition: transform var(--t), border-color var(--t), box-shadow var(--t);
+    }
+    .v-card:hover {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px var(--accent);
+    }
+    .v-card.watched .thumb-img { filter: grayscale(60%) brightness(0.75); }
+
+    .thumb-wrap { position: relative; aspect-ratio: 16/9; background: var(--bg2); overflow: hidden; }
+    .thumb-img { width: 100%; height: 100%; object-fit: cover; display: block; transition: filter var(--t); }
+
+    .thumb-overlay {
+      position: absolute; inset: 0;
+      background: linear-gradient(to top, rgba(0,0,0,0.3) 0%, transparent 55%);
+      opacity: 0; transition: opacity var(--t);
+    }
+    .v-card:hover .thumb-overlay { opacity: 1; }
+
+    /* NEW badge — top left */
+    .badge-new {
+      position: absolute; top: 8px; left: 8px;
+      font-size: 9px; font-weight: 700; padding: 2px 7px;
+      border-radius: 100px; letter-spacing: 0.07em; text-transform: uppercase;
+      font-family: 'DM Sans', sans-serif;
+      background: var(--hot); color: #fff;
+    }
+
+    /* Seen pill — text badge at bottom-right of thumbnail */
+    .seen-pill {
+      position: absolute; bottom: 7px; right: 7px;
+      font-size: 9px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+      padding: 3px 9px; border-radius: 100px;
+      border: none; cursor: pointer; z-index: 2;
+      font-family: 'DM Sans', sans-serif;
+      transition: opacity var(--t), background var(--t), color var(--t), filter var(--t);
+    }
+    /* Unwatched: hidden, appears on card hover */
+    .v-card:not(.watched) .seen-pill {
+      background: rgba(0,0,0,0.42);
+      color: rgba(255,255,255,0.78);
+      opacity: 0;
+    }
+    .v-card:not(.watched):hover .seen-pill { opacity: 1; }
+    .v-card:not(.watched) .seen-pill:hover { background: rgba(0,0,0,0.62); color: #fff; }
+    /* Watched: always visible green pill */
+    .v-card.watched .seen-pill {
+      background: var(--ok);
+      color: #fff;
+      opacity: 1;
+    }
+    .v-card.watched .seen-pill:hover { filter: brightness(0.82); }
+
+    .card-body { padding: 11px 13px 12px; display: flex; flex-direction: column; gap: 5px; flex: 1; }
+    .card-meta { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+    .card-artist { font-size: 10px; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: 0.06em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .card-date { font-size: 10px; color: var(--text3); font-family: 'DM Mono', monospace; white-space: nowrap; }
+    .card-title { font-size: 13px; font-weight: 500; color: var(--text); line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .v-card.watched .card-title { color: var(--text2); }
+
+    /* ── STATE BOXES ──────────────────────────────────── */
+    .state-box { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 44vh; text-align: center; gap: 14px; padding: 40px 24px; }
+    .state-icon { width: 58px; height: 58px; background: var(--accent-bg); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; border: 1px solid var(--accent-bdr); }
+    .state-title { font-family: 'Libre Baskerville', serif; font-size: 20px; font-weight: 700; }
+    .state-desc { color: var(--text2); max-width: 300px; line-height: 1.65; font-size: 14px; }
+
+    .spinner { width: 28px; height: 28px; border: 2px solid var(--border2); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.75s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-txt { font-size: 12px; color: var(--text2); font-family: 'DM Mono', monospace; }
+
+    /* ── MODAL ────────────────────────────────────────── */
+    .modal-bg {
+      position: fixed; inset: 0; background: var(--backdrop);
+      backdrop-filter: blur(3px); z-index: 500;
+      display: flex; align-items: center; justify-content: center;
+      padding: 24px; opacity: 0; pointer-events: none;
+      transition: opacity 0.2s;
+    }
+    .modal-bg.open { opacity: 1; pointer-events: all; }
+
+    .modal {
+      background: var(--surface); border: 1px solid var(--border2);
+      border-radius: 16px; padding: 26px;
+      max-width: 500px; width: 100%; max-height: 82vh; overflow-y: auto;
+      box-shadow: var(--sh-modal);
+      transform: translateY(10px) scale(0.97); transition: transform 0.2s;
+    }
+    .modal-bg.open .modal { transform: translateY(0) scale(1); }
+
+    .modal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
+    .modal-title { font-family: 'Libre Baskerville', serif; font-size: 18px; font-weight: 700; }
+    .modal-close { background: none; border: none; color: var(--text2); cursor: pointer; font-size: 22px; line-height: 1; padding: 2px; border-radius: var(--r-xs); transition: color var(--t); display: flex; }
+    .modal-close:hover { color: var(--text); }
+
+    .kb-hint { font-size: 11px; color: var(--text3); font-family: 'DM Mono', monospace; margin-top: 2px; }
+
+    /* ── CHANNEL RESULTS ──────────────────────────────── */
+    .ch-results { display: flex; flex-direction: column; gap: 7px; margin-top: 14px; }
+
+    .ch-result {
+      display: flex; gap: 11px; align-items: center;
+      padding: 11px 12px; border: 1px solid var(--border);
+      border-radius: var(--r-sm); cursor: pointer; transition: all var(--t);
+      position: relative; background: var(--surface2);
+    }
+    .ch-result:hover:not(.added) { border-color: var(--accent); background: var(--accent-bg); }
+    .ch-result.enter-ready { border-color: var(--accent-bdr); }
+    .ch-result.added { opacity: 0.45; cursor: default; }
+
+    .ch-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; background: var(--bg2); flex-shrink: 0; }
+    .ch-info { flex: 1; min-width: 0; }
+    .ch-name { font-weight: 600; font-size: 14px; color: var(--text); margin-bottom: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .ch-desc { font-size: 12px; color: var(--text2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    .enter-badge {
+      position: absolute; top: 8px; right: 10px;
+      font-size: 10px; font-family: 'DM Mono', monospace;
+      color: var(--accent); background: var(--accent-bg);
+      border: 1px solid var(--accent-bdr);
+      padding: 2px 7px; border-radius: 100px;
+      pointer-events: none;
+    }
+
+    /* ── FETCH PROGRESS ───────────────────────────────── */
+    .fetch-box { text-align: center; padding: 8px 0; }
+    .fetch-box .spinner { margin: 0 auto 14px; }
+    .fetch-msg { font-size: 13px; color: var(--text2); font-family: 'DM Mono', monospace; margin-bottom: 14px; }
+    .prog-track { background: var(--bg2); border-radius: 100px; height: 3px; overflow: hidden; }
+    .prog-bar { height: 100%; background: var(--accent); border-radius: 100px; animation: pulse 1.4s ease infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+
+    /* ── SETTINGS PANEL ───────────────────────────────── */
+    #settings-bg {
+      position: fixed; inset: 0; background: var(--backdrop);
+      z-index: 299; opacity: 0; pointer-events: none; transition: opacity 0.25s;
+    }
+    #settings-bg.open { opacity: 1; pointer-events: all; }
+
+    #settings-panel {
+      position: fixed; top: 0; right: 0;
+      width: 320px; height: 100%;
+      background: var(--surface); border-left: 1px solid var(--border2);
+      box-shadow: var(--sh-modal);
+      z-index: 300; transform: translateX(100%);
+      transition: transform 0.25s cubic-bezier(0.4,0,0.2,1);
+      overflow-y: auto; padding: 22px 18px;
+      display: flex; flex-direction: column; gap: 22px;
+    }
+    #settings-panel.open { transform: translateX(0); }
+
+    .s-head { display: flex; align-items: center; justify-content: space-between; }
+    .s-head .wordmark { font-size: 17px; }
+    .s-label { font-size: 11px; font-weight: 700; color: var(--text2); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+
+    .artist-item { display: flex; align-items: center; gap: 8px; padding: 9px 10px; background: var(--surface2); border: 1px solid var(--border); border-radius: var(--r-sm); }
+    .artist-item-name { flex: 1; font-size: 13px; font-weight: 500; color: var(--text); }
+    .artist-item-count { font-size: 11px; color: var(--text3); font-family: 'DM Mono', monospace; }
+    .settings-artist-list { display: flex; flex-direction: column; gap: 6px; }
+
+    .kb-ref { font-size: 11px; color: var(--text2); line-height: 1.7; }
+    .kb-ref code { font-family: 'DM Mono', monospace; font-size: 11px; background: var(--bg2); border: 1px solid var(--border); border-radius: 3px; padding: 1px 5px; color: var(--text); }
+
+    /* ── TOAST ────────────────────────────────────────── */
+    #toasts {
+      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+      z-index: 2000; display: flex; flex-direction: column;
+      gap: 7px; align-items: center; pointer-events: none;
+    }
+    .toast {
+      background: var(--surface); border: 1px solid var(--border2);
+      color: var(--text); padding: 9px 20px; border-radius: 100px;
+      font-size: 13px; font-weight: 500; box-shadow: var(--sh-modal);
+      opacity: 0; transform: translateY(6px); transition: all 0.18s;
+      max-width: 380px; text-align: center;
+    }
+    .toast.show { opacity: 1; transform: translateY(0); }
+    .toast.ok  { border-color: var(--ok-bg); color: var(--ok); }
+    .toast.err { border-color: var(--hot-bg); color: var(--hot); }
+
+    /* ── MISC ─────────────────────────────────────────── */
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+    .hidden { display: none !important; }
+
+    /* Authenticated users: hide setup before JS runs to prevent flash */
+    html.ytmv-authed #setup { display: none !important; }
+
+    @media (max-width: 580px) {
+      .video-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+      #settings-panel { width: 100%; }
+      #grid-wrap { padding: 14px; }
+    }
+    @media (max-width: 380px) {
+      .video-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+#_sb_wrap { font-family: system-ui, sans-serif; font-size: 0.82rem; display: none; position: relative; z-index: 9999; background: #141414; border-bottom: 1px solid #232323; }
+#_sb_main_row { display: flex; align-items: center; gap: 12px; padding: 10px 20px; }
+#_sb_msg { flex: 1; color: #777; }
+#_sb_msg strong { color: #aaa; font-weight: 500; }
+#_sb_connect_btn { background: transparent; border: 1px solid #2e2e2e; border-radius: 100px; color: #999; padding: 5px 14px; font-size: 0.78rem; font-family: system-ui, sans-serif; cursor: pointer; white-space: nowrap; transition: border-color 0.15s, color 0.15s; }
+#_sb_connect_btn:hover { border-color: #555; color: #ddd; }
+#_sb_dismiss_btn { background: transparent; border: none; color: #444; font-size: 1rem; line-height: 1; cursor: pointer; padding: 4px 6px; transition: color 0.15s; flex-shrink: 0; }
+#_sb_dismiss_btn:hover { color: #888; }
+#_sb_form_row { display: none; align-items: center; gap: 8px; padding: 8px 20px 12px; flex-wrap: wrap; border-top: 1px solid #1c1c1c; }
+#_sb_form_row input { background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 6px; color: #ccc; padding: 6px 10px; font-size: 0.78rem; font-family: system-ui, sans-serif; outline: none; transition: border-color 0.15s; }
+#_sb_form_row input:focus { border-color: #3a3a3a; }
+#_sb_form_row input::placeholder { color: #3a3a3a; }
+#_sb_url_in { width: 210px; } #_sb_key_in { width: 230px; } #_sb_email_in { width: 165px; } #_sb_pass_in { width: 130px; }
+#_sb_paste_row { display:none; width:100%; flex-basis:100%; order:-1; padding-bottom:4px; }
+#_sb_paste_area { width:100%; min-height:72px; resize:vertical; background:#111; border:1px dashed #2e2e2e; border-radius:6px; color:#aaa; padding:8px 10px; font-size:0.74rem; font-family:monospace; outline:none; box-sizing:border-box; transition:border-color 0.15s; }
+#_sb_paste_area:focus { border-color:#3d3d3d; }
+#_sb_paste_area::placeholder { color:#2d2d2d; }
+#_sb_paste_toggle { background:transparent; border:1px dashed #2a2a2a; border-radius:6px; color:#555; padding:5px 10px; font-size:0.74rem; font-family:system-ui,sans-serif; cursor:pointer; white-space:nowrap; transition:border-color 0.15s,color 0.15s; }
+#_sb_paste_toggle:hover { border-color:#555; color:#bbb; }
+#_sb_copy_cfg { display:none; background:transparent; border:1px solid #2a5a3a; border-radius:6px; color:#4a8a5a; padding:5px 10px; font-size:0.74rem; font-family:system-ui,sans-serif; cursor:pointer; white-space:nowrap; transition:border-color 0.15s,color 0.15s; }
+#_sb_copy_cfg:hover { border-color:#5a9a6a; color:#7abf8a; }
+#_sb_save_btn { background: #1e1e1e; border: 1px solid #2e2e2e; border-radius: 6px; color: #bbb; padding: 6px 14px; font-size: 0.78rem; font-family: system-ui, sans-serif; cursor: pointer; white-space: nowrap; transition: background 0.15s, border-color 0.15s; }
+#_sb_save_btn:hover { background: #252525; border-color: #444; }
+#_sb_status { font-size: 0.75rem; color: #555; }
+#_sb_status.ok { color: #5a9e7a; } #_sb_status.err { color: #c06060; }
+</style>
+
+<div id="_sb_wrap">
+  <div id="_sb_main_row">
+    <span id="_sb_msg"><strong>Sync your shelf across devices</strong> &mdash; connect Supabase to save externally and access anywhere</span>
+    <button id="_sb_connect_btn">Set up sync &rarr;</button>
+    <button id="_sb_dismiss_btn" title="Dismiss">&times;</button>
+  </div>
+  <div id="_sb_form_row">
+    <div id="_sb_paste_row"><textarea id="_sb_paste_area" placeholder="Paste anything here — .env snippet, JSON, or plain text containing your project URL, anon key, email and password. Fields fill automatically."></textarea></div>
+    <input id="_sb_url_in"   placeholder="Project URL  (https://xxx.supabase.co)">
+    <input id="_sb_key_in"   placeholder="Anon public key">
+    <input id="_sb_email_in" placeholder="Email">
+    <input id="_sb_pass_in"  type="password" placeholder="Password">
+    <button id="_sb_paste_toggle" title="Paste a config snippet to fill all fields at once">Paste config</button>
+    <button id="_sb_save_btn">Save &amp; Connect</button>
+    <button id="_sb_copy_cfg" title="Copy credentials as a portable snippet to use on another device">Copy config</button>
+    <span id="_sb_status"></span>
+  </div>
+</div>
+
+<script>
+(async function () {
+  if (typeof supabase === 'undefined') {
+    console.warn('[Sync] Supabase library not loaded — check CDN / network / content blockers.');
+    return;
+  }
+
+  const K = { url:'_sb_url', key:'_sb_key', email:'_sb_email', pass:'_sb_pass', dismissed:'_sb_dismissed' };
+  let _sb = null, _user = null, _pendingSync = false;
+
+  function _lsGet(k) { try { return localStorage.getItem(k); } catch(e) { return null; } }
+
+  const _sbMem = {};
+  const _sbStore = {
+    getItem:    k => { try { return localStorage.getItem(k) ?? _sbMem[k] ?? null; } catch(e) { return _sbMem[k] ?? null; } },
+    setItem:    (k, v) => { _sbMem[k] = v; try { localStorage.setItem(k, v); } catch(e) {} },
+    removeItem: k => { delete _sbMem[k]; try { localStorage.removeItem(k); } catch(e) {} }
+  };
+  function _makeClient(url, key) {
+    return supabase.createClient(url, key, { auth: { storage: _sbStore, persistSession: true, autoRefreshToken: true } });
+  }
+
+  function _btnStatus(color, tip) {
+    const btn = document.getElementById('_sb_cloud_btn') || document.getElementById('cloud-save-btn');
+    if (!btn) return;
+    btn.title = tip || '';
+    let dot = btn.querySelector('._sb_dot');
+    if (!dot) {
+      dot = document.createElement('span');
+      dot.className = '_sb_dot';
+      dot.style.cssText = 'width:7px;height:7px;border-radius:50%;flex-shrink:0;display:inline-block;margin-left:2px;transition:background 0.3s';
+      btn.appendChild(dot);
+    }
+    dot.style.background = color;
+    dot.style.boxShadow = `0 0 5px ${color}aa`;
+  }
+
+  const wrap    = document.getElementById('_sb_wrap');
+  const formRow = document.getElementById('_sb_form_row');
+  const status  = document.getElementById('_sb_status');
+  const showBanner = () => { wrap.style.display = 'block'; };
+  const hideBanner = () => { wrap.style.display = 'none';  };
+  const setStatus  = (msg, cls) => { status.textContent = msg; status.className = cls || ''; };
+
+  document.getElementById('_sb_dismiss_btn').onclick = () => {
+    try { localStorage.setItem(K.dismissed, '1'); } catch(e) {}
+    hideBanner();
+  };
+  document.getElementById('_sb_connect_btn').onclick = () => {
+    formRow.style.display = 'flex';
+    document.getElementById('_sb_url_in').value   = _lsGet(K.url)   || '';
+    document.getElementById('_sb_key_in').value   = _lsGet(K.key)   || '';
+    document.getElementById('_sb_email_in').value = _lsGet(K.email) || '';
+    document.getElementById('_sb_pass_in').value  = _lsGet(K.pass)  || '';
+    if (_lsGet(K.url) && _lsGet(K.key)) document.getElementById('_sb_copy_cfg').style.display = 'inline-flex';
+  };
+
+  document.getElementById('_sb_save_btn').onclick = async () => {
+    const url   = document.getElementById('_sb_url_in').value.trim();
+    const key   = document.getElementById('_sb_key_in').value.trim();
+    const email = document.getElementById('_sb_email_in').value.trim();
+    const pass  = document.getElementById('_sb_pass_in').value;
+    if (!url || !key || !email || !pass) { setStatus('Please fill all fields.', 'err'); return; }
+    setStatus('Connecting...', '');
+    try {
+      const client = _makeClient(url, key);
+      const { data, error } = await client.auth.signInWithPassword({ email, password: pass });
+      if (error) { setStatus('Error: ' + error.message, 'err'); return; }
+      try { localStorage.setItem(K.url, url); localStorage.setItem(K.key, key);
+            localStorage.setItem(K.email, email); localStorage.setItem(K.pass, pass);
+            localStorage.removeItem(K.dismissed); } catch(e) {}
+      _sb = client; _user = data.user;
+      setStatus('Connected!', 'ok'); _btnStatus('#5a9e7a', 'Connected');
+      const { data: remoteRow } = await client.from(window._SB_TABLE || '__').select('data').eq('user_id', data.user.id).maybeSingle();
+      if (remoteRow && window._sbOnLoad) {
+        window._sbPaused = true;
+        try { window._sbOnLoad(remoteRow.data); } finally { window._sbPaused = false; }
+      } else { await _syncNow(); }
+      setTimeout(hideBanner, 1500);
+    } catch (e) { setStatus('Error: ' + e.message, 'err'); }
+  };
+
+  // ── Smart paste / copy config ────────────────────────────────────────────
+  function _parseConfig(text) {
+    const r = {};
+    // 1. Try JSON
+    try {
+      const j = JSON.parse(text.trim());
+      const pick = (ps) => { for (const k of Object.keys(j)) { if (ps.some(p => k.toLowerCase().includes(p))) return String(j[k]); } return ''; };
+      r.url = pick(['url']); r.key = pick(['key','anon']); r.email = pick(['email','mail']); r.pass = pick(['pass','pwd','password']);
+      if (r.url || r.key) return r;
+    } catch(e) {}
+    // 2. Try key=value pairs (.env style, handles NEXT_PUBLIC_ / VITE_ / REACT_APP_ prefixes)
+    const kv = {};
+    text.replace(/^([A-Za-z_][A-Za-z0-9_]*)\s*[=:]\s*(.+)$/gm, (_, k, v) => {
+      kv[k.toLowerCase().replace(/^(next_public_|vite_|react_app_)/,'')] = v.trim().replace(/^['"]|['"]$/g,'');
+    });
+    if (Object.keys(kv).length) {
+      const pick = (ps) => { for (const k of Object.keys(kv)) { if (ps.some(p => k.includes(p))) return kv[k]; } return ''; };
+      const u = pick(['supabase_url','project_url']) || pick(['url']);
+      const k = pick(['anon_key','anon','key']);
+      const e = pick(['email','mail','user']);
+      const p = pick(['password','pass','pwd']);
+      if (u || k) { r.url=u; r.key=k; r.email=e; r.pass=p; return r; }
+    }
+    // 3. Magic detection by pattern
+    const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+    const um = text.match(/https:\/\/[a-z0-9]{8,}\.supabase\.co/i);
+    // Matches JWT-style keys (old format: eyJ...) and new sb_publishable_/sb_secret_ style keys
+    const jm = text.match(/eyJ[A-Za-z0-9_\-]{30,}\.[A-Za-z0-9_\-]{30,}\.[A-Za-z0-9_\-]{10,}/) ||
+               text.match(/sb_[a-z]+_[A-Za-z0-9_\-]{10,}/i);
+    const em = text.match(/[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/);
+    if (um) r.url = um[0]; if (jm) r.key = jm[0]; if (em) r.email = em[0];
+    // Labelled password line
+    const pm = text.match(/(?:pass(?:word)?|pwd|sb[_\-]pass)\s*[=:]\s*(.+)/i);
+    if (pm) r.pass = pm[1].trim().replace(/^['"]|['"]$/g,'');
+    // Leftover strategy: if there's exactly one line we couldn\'t identify, it must be the password
+    if (!r.pass) {
+      const leftover = lines.filter(l => l !== r.url && l !== r.key && l !== r.email);
+      if (leftover.length === 1) r.pass = leftover[0];
+    }
+    return r;
+  }
+
+  function _applyConfig(cfg) {
+    if (cfg.url)   document.getElementById('_sb_url_in').value   = cfg.url;
+    if (cfg.key)   document.getElementById('_sb_key_in').value   = cfg.key;
+    if (cfg.email) document.getElementById('_sb_email_in').value = cfg.email;
+    if (cfg.pass)  document.getElementById('_sb_pass_in').value  = cfg.pass;
+    const n = [cfg.url,cfg.key,cfg.email,cfg.pass].filter(Boolean).length;
+    setStatus(n === 4 ? 'All fields filled — save to connect.' : n + '/4 fields detected — fill the rest manually.', n === 4 ? 'ok' : '');
+  }
+
+  const pasteRow    = document.getElementById('_sb_paste_row');
+  const pasteArea   = document.getElementById('_sb_paste_area');
+  const pasteToggle = document.getElementById('_sb_paste_toggle');
+  const copyCfgBtn  = document.getElementById('_sb_copy_cfg');
+
+  pasteToggle.onclick = () => {
+    const open = pasteRow.style.display === 'block';
+    pasteRow.style.display = open ? 'none' : 'block';
+    pasteToggle.textContent = open ? 'Paste config' : 'Hide paste';
+    if (!open) pasteArea.focus();
+  };
+
+  function _tryApplyPaste() {
+    const cfg = _parseConfig(pasteArea.value);
+    if (cfg.url || cfg.key || cfg.email) {
+      _applyConfig(cfg);
+      // Auto-collapse paste area after successful fill
+      setTimeout(() => { pasteRow.style.display='none'; pasteToggle.textContent='Paste config'; pasteArea.value=''; }, 400);
+    }
+  }
+
+  pasteArea.addEventListener('paste', () => setTimeout(_tryApplyPaste, 30));
+  pasteArea.addEventListener('input', () => { if (pasteArea.value.trim().length > 30) _tryApplyPaste(); });
+
+  copyCfgBtn.onclick = () => {
+    const url = _lsGet(K.url)||'', key = _lsGet(K.key)||'', email = _lsGet(K.email)||'', pass = _lsGet(K.pass)||'';
+    const snippet = `SUPABASE_URL=${url}\nSUPABASE_ANON_KEY=${key}\nSUPABASE_EMAIL=${email}\nSUPABASE_PASS=${pass}`;
+    navigator.clipboard.writeText(snippet)
+      .then(() => { copyCfgBtn.textContent = 'Copied ✓'; setTimeout(() => { copyCfgBtn.textContent = 'Copy config'; }, 2200); })
+      .catch(() => { const t = prompt('Copy this config and paste it on your other device:', snippet); });
+  };
+  // ─────────────────────────────────────────────────────────────────────────
+
+  async function _tryConnect() {
+    const url = _lsGet(K.url), key = _lsGet(K.key), email = _lsGet(K.email), pass = _lsGet(K.pass);
+    if (!url || !key || !email || !pass) return false;
+    try {
+      const client = _makeClient(url, key);
+      const { data, error } = await client.auth.signInWithPassword({ email, password: pass });
+      if (error) return false;
+      _sb = client; _user = data.user; return true;
+    } catch { return false; }
+  }
+
+  function _setPending(on) {
+    _pendingSync = on;
+    try { on ? localStorage.setItem('_sb_pending','1') : localStorage.removeItem('_sb_pending'); } catch(e) {}
+  }
+
+  async function _upsert(table, payload) {
+    if (!_sb || !_user) { _setPending(true); return false; }
+    try {
+      _btnStatus('#d97706', 'Syncing...');
+      const row = { user_id: _user.id, data: payload, updated_at: new Date().toISOString() };
+      const { error } = await _sb.from(table).upsert(row, { onConflict: 'user_id' });
+      if (error) {
+        console.warn('[Sync] Upsert failed:', error.message);
+        _btnStatus('#c0392b', 'Sync failed: ' + error.message);
+        _setPending(true);
+        setTimeout(async () => { if (_pendingSync && _sb && _user) { _pendingSync = false; await _syncNow(); } }, 2000);
+        return false;
+      }
+      _setPending(false);
+      _btnStatus('#5a9e7a', 'Saved to cloud \u2713'); return true;
+    } catch(e) {
+      console.warn('[Sync] Upsert error:', e.message);
+      _btnStatus('#c0392b', 'Sync error: ' + e.message);
+      _setPending(true);
+      setTimeout(async () => { if (_pendingSync && _sb && _user) { _pendingSync = false; await _syncNow(); } }, 2000);
+      return false;
+    }
+  }
+
+  async function _syncNow() {
+    if (!window._SB_TABLE) return;
+    const payload = window._sbGetData ? window._sbGetData()
+                  : window._SB_LS_KEY ? JSON.parse(_lsGet(window._SB_LS_KEY) || 'null')
+                  : null;
+    if (payload != null) await _upsert(window._SB_TABLE, payload);
+  }
+
+  window._sbSyncNow = _syncNow;
+  window._sbForceSync = async () => {
+    console.log('[Sync] Force sync...');
+    if (!_sb || !_user) { const ok = await _tryConnect(); if (!ok) { console.error('[Sync] Cannot connect'); return; } }
+    await _syncNow(); console.log('[Sync] Done');
+  };
+  window._sbOpenPanel = function() {
+    try { localStorage.removeItem('_sb_dismissed'); } catch(e) {}
+    wrap.style.display = 'block'; formRow.style.display = 'flex';
+    document.getElementById('_sb_url_in').value   = _lsGet(K.url)   || '';
+    document.getElementById('_sb_key_in').value   = _lsGet(K.key)   || '';
+    document.getElementById('_sb_email_in').value = _lsGet(K.email) || '';
+    document.getElementById('_sb_pass_in').value  = _lsGet(K.pass)  || '';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+  window._sbPaused = false;
+
+  const connected = await _tryConnect();
+  if (connected) {
+    hideBanner();
+    _btnStatus('#d97706', 'Loading...');
+    const persistedPending = _lsGet('_sb_pending') === '1';
+    const _snapBefore = window._sbGetData ? JSON.stringify(window._sbGetData()) : null;
+    const { data: row } = await _sb.from(window._SB_TABLE || '__').select('data').eq('user_id', _user.id).maybeSingle();
+    const _snapAfter = window._sbGetData ? JSON.stringify(window._sbGetData()) : null;
+    const changedDuringFetch = _snapBefore !== null && _snapBefore !== _snapAfter;
+    if (_pendingSync || persistedPending || changedDuringFetch) {
+      _pendingSync = false; await _syncNow();
+    } else {
+      if (row && window._sbOnLoad) {
+        window._sbPaused = true;
+        try { window._sbOnLoad(row.data); } finally { window._sbPaused = false; }
+        _btnStatus('#5a9e7a', 'Loaded from cloud');
+      } else { _btnStatus('#5a9e7a', 'Connected'); }
+    }
+  } else {
+    _btnStatus('#4a4440', 'Not connected — tap to set up');
+    if (!_lsGet(K.dismissed)) showBanner();
+  }
+
+  setInterval(async () => {
+    if (!_pendingSync) return;
+    if (!_sb || !_user) { const ok = await _tryConnect(); if (!ok) return; }
+    _pendingSync = false; _syncNow();
+  }, 5000);
+
+  document.addEventListener('visibilitychange', () => {
+    if (!_sb || !_user) return;
+    if (document.visibilityState === 'hidden') _syncNow();
+    else if (_pendingSync) { _pendingSync = false; _syncNow(); }
+  });
+})();
+</script>
+
+<!-- ── SETUP ──────────────────────────────────────────────── -->
+<div id="setup">
+  <div class="setup-card">
+    <div class="wordmark">Music<span>.</span>Videos</div>
+    <p class="setup-desc" style="margin-top:8px;">
+      Track official music videos from your favourite artists in one chronological feed. You'll need a free YouTube Data API key to get started.
+    </p>
+    <div class="setup-steps">
+      <div class="step">
+        <div class="step-n">1</div>
+        <div>Open <a href="https://console.cloud.google.com/" target="_blank" rel="noopener">Google Cloud Console</a> and create or select a project.</div>
+      </div>
+      <div class="step">
+        <div class="step-n">2</div>
+        <div>Go to <strong>APIs &amp; Services &rarr; Library</strong> and enable the <strong>YouTube Data API v3</strong>.</div>
+      </div>
+      <div class="step">
+        <div class="step-n">3</div>
+        <div>Go to <strong>APIs &amp; Services &rarr; Credentials</strong>, create an <strong>API Key</strong>, and paste it below.</div>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">YouTube API Key</label>
+      <input class="form-input" type="text" id="setup-key" placeholder="AIzaSy..." autocomplete="off" spellcheck="false">
+    </div>
+    <button class="btn btn-primary btn-full" id="setup-save">Save and Continue</button>
+  </div>
+</div>
+
+<!-- ── HEADER ─────────────────────────────────────────────── -->
+<header id="header">
+  <div class="wordmark header-wordmark">Music<span>.</span>Videos</div>
+  <div class="header-spacer"></div>
+  <div class="header-actions">
+    <button class="btn btn-ghost btn-sm" id="refresh-btn">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+      Refresh All
+    </button>
+    <button class="btn btn-primary btn-sm" id="add-artist-btn" title="Add Artist (A)">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Add Artist
+    </button>
+    <button class="btn btn-icon" id="theme-btn" title="Toggle light/dark mode">
+      <svg id="theme-ico-sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+      <svg id="theme-ico-moon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="hidden"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+    </button>
+    <button class="btn btn-ghost btn-sm" onclick="window._sbOpenPanel&&window._sbOpenPanel()" id="cloud-save-btn" title="Cloud Sync">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M19.35 10.04A7.49 7.49 0 0 0 12 4C9.11 4 6.6 5.64 5.35 8.04A5.994 5.994 0 0 0 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96z"/></svg>
+      Sync
+    </button>
+    <button class="btn btn-icon" id="settings-btn" title="Settings">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    </button>
+  </div>
+</header>
+
+<!-- ── CONTROLS ────────────────────────────────────────────── -->
+<div id="controls">
+  <!-- Row 1: individual artist filter chips -->
+  <div class="ctrl-row" id="artist-chips"></div>
+  <!-- Row 2: connected segmented control + sort -->
+  <div class="ctrl-row">
+    <div class="seg-ctrl">
+      <button class="seg active" id="fw-all"      onclick="setWatchFilter('all')">All</button>
+      <button class="seg"        id="fw-unwatched" onclick="setWatchFilter('unwatched')">Unwatched</button>
+      <button class="seg"        id="fw-watched"   onclick="setWatchFilter('watched')">Watched</button>
+    </div>
+    <div class="sep"></div>
+    <button class="sort-btn" id="sort-btn" onclick="toggleSort()">
+      <svg id="sort-ico" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>
+      <span id="sort-lbl">Newest First</span>
+    </button>
+    <span class="vid-count" id="vid-count"></span>
+  </div>
+</div>
+
+<!-- ── MAIN ───────────────────────────────────────────────── -->
+<div id="main">
+  <div id="grid-wrap">
+    <div id="empty-state" class="state-box hidden">
+      <div class="state-icon">🎬</div>
+      <div class="state-title">No artists yet</div>
+      <div class="state-desc">Add your favourite artists and their official music videos will appear here in chronological order.</div>
+      <button class="btn btn-primary" onclick="openAddModal()">Add Your First Artist</button>
+    </div>
+    <div id="filter-empty" class="state-box hidden">
+      <div class="state-icon">🔍</div>
+      <div class="state-title">Nothing here</div>
+      <div class="state-desc">No videos match the current filter. Try a different watch status or artist.</div>
+    </div>
+    <div id="loading-state" class="state-box hidden">
+      <div class="spinner"></div>
+      <div class="loading-txt" id="loading-txt">Loading...</div>
+    </div>
+    <div class="video-grid" id="video-grid"></div>
+  </div>
+</div>
+
+<!-- ── ADD ARTIST MODAL ────────────────────────────────────── -->
+<div class="modal-bg" id="add-modal">
+  <div class="modal">
+    <div class="modal-head">
+      <div>
+        <div class="modal-title">Add Artist</div>
+        <div class="kb-hint" id="modal-hint"></div>
+      </div>
+      <button class="modal-close" onclick="closeModal()">&times;</button>
+    </div>
+    <div id="modal-form">
+      <div class="form-group">
+        <label class="form-label">Artist Name</label>
+        <input class="form-input" type="text" id="artist-input" placeholder="e.g. Olivia Rodrigo" autocomplete="off">
+      </div>
+      <button class="btn btn-primary btn-full" id="search-btn" onclick="doChannelSearch()">
+        Search YouTube Channels
+      </button>
+      <div id="ch-results" class="ch-results"></div>
+    </div>
+    <div id="modal-progress" class="hidden fetch-box">
+      <div class="spinner"></div>
+      <div class="fetch-msg" id="fetch-msg">Fetching videos...</div>
+      <div class="prog-track"><div class="prog-bar" style="width:100%;"></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── SETTINGS PANEL ──────────────────────────────────────── -->
+<div id="settings-bg" onclick="closeSettings()"></div>
+<div id="settings-panel">
+  <div class="s-head">
+    <div class="wordmark s-head-wm" style="font-size:16px;">Settings</div>
+    <button class="modal-close" onclick="closeSettings()">&times;</button>
+  </div>
+  <div>
+    <div class="s-label">API Key</div>
+    <div class="form-group" style="margin-bottom:8px;">
+      <input class="form-input" type="password" id="s-key" placeholder="AIzaSy...">
+    </div>
+    <button class="btn btn-ghost btn-sm" onclick="updateKey()">Update Key</button>
+  </div>
+  <div>
+    <div class="s-label">Artists</div>
+    <div class="settings-artist-list" id="s-artists"></div>
+    <button class="btn btn-ghost btn-sm" style="margin-top:10px;" onclick="openAddModal(); closeSettings();">+ Add Artist</button>
+  </div>
+  <div>
+    <div class="s-label">Keyboard Shortcuts</div>
+    <div class="kb-ref">
+      <code>A</code> &nbsp;Open Add Artist<br>
+      <code>⌥ T</code> &nbsp;Open Add Artist<br>
+      <code>↵</code> &nbsp;Search in modal<br>
+      <code>↵ ↵</code> &nbsp;Accept first result<br>
+      <code>Esc</code> &nbsp;Close modal / panel
+    </div>
+  </div>
+  <div style="margin-top:auto; padding-top:20px; border-top:1px solid var(--border);">
+    <div class="s-label">Danger Zone</div>
+    <button class="btn btn-danger btn-sm" onclick="clearData()">Clear All Data</button>
+  </div>
+</div>
+
+<!-- ── SELECTION ACTION BAR ────────────────────────────── -->
+<div id="selection-bar">
+  <button class="btn btn-icon" onclick="clearSelection()" title="Clear selection" style="flex-shrink:0;">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+  </button>
+  <span id="sel-count"></span>
+  <div id="sel-actions">
+    <button class="btn btn-ghost btn-sm" onclick="selMarkWatched()">Mark Watched</button>
+    <button class="btn btn-ghost btn-sm" onclick="selMarkUnwatched()">Mark Unwatched</button>
+    <button class="btn btn-danger btn-sm" onclick="selDelete()">Delete</button>
+  </div>
+</div>
+
+<!-- ── TOASTS ──────────────────────────────────────────────── -->
+<div id="toasts"></div>
+
+<script>
+const K = {
+  KEY:        'ytmv_api_key',
+  ARTISTS:    'ytmv_artists',
+  VIDEOS:     'ytmv_videos',
+  LAST_FETCH: 'ytmv_last_fetch',
+  LAST_VISIT: 'ytmv_last_visit',
+  THEME:      'ytmv_theme',
+};
+
+let apiKey    = localStorage.getItem(K.KEY)        || '';
+let artists   = JSON.parse(localStorage.getItem(K.ARTISTS)    || '[]');
+let videos    = JSON.parse(localStorage.getItem(K.VIDEOS)     || '{}');
+let lastFetch = JSON.parse(localStorage.getItem(K.LAST_FETCH) || '{}');
+
+const prevVisit = localStorage.getItem(K.LAST_VISIT) || null;
+localStorage.setItem(K.LAST_VISIT, new Date().toISOString());
+
+let activeArtist   = null;
+let watchFilter    = 'all';
+let sortOrder      = 'newest';
+let _searchResults = [];
+let searchComplete = false;
+
+// Selection state
+let selectedIds     = new Set();
+let lastSelectedIdx = -1;
+
+// ── THEME ──────────────────────────────────────────────────
+function initTheme() {
+  const saved = localStorage.getItem(K.THEME);
+  if (saved) document.documentElement.setAttribute('data-theme', saved);
+  updateThemeBtn();
+}
+function isDarkActive() {
+  const attr = document.documentElement.getAttribute('data-theme');
+  if (attr === 'dark')  return true;
+  if (attr === 'light') return false;
+  return window.matchMedia('(prefers-color-scheme: dark)').matches;
+}
+function toggleTheme() {
+  const next = isDarkActive() ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem(K.THEME, next);
+  updateThemeBtn();
+}
+function updateThemeBtn() {
+  const dark = isDarkActive();
+  document.getElementById('theme-ico-sun').classList.toggle('hidden', dark);
+  document.getElementById('theme-ico-moon').classList.toggle('hidden', !dark);
+}
+
+// ── PERSIST ────────────────────────────────────────────────
+function triggerSync() {
+  if (window._sbSyncNow && !window._sbPaused) window._sbSyncNow();
+}
+const saveArtists   = () => { localStorage.setItem(K.ARTISTS,    JSON.stringify(artists));   triggerSync(); };
+const saveVideos    = () => { localStorage.setItem(K.VIDEOS,     JSON.stringify(videos));    triggerSync(); };
+const saveLastFetch = () => { localStorage.setItem(K.LAST_FETCH, JSON.stringify(lastFetch)); triggerSync(); };
+
+// ── MUSIC VIDEO FILTER ─────────────────────────────────────
+function isMusicVideo(title) {
+  const t = title.toLowerCase();
+  const exclude = [
+    '(official lyric video)', '(lyric video)',
+    '(official audio)',        '(audio)',
+    '(official visualizer)',   '(visualizer)',
+    '(official live video)',   '(live video)',
+    '(behind the scenes)',     '(making of)',
+  ];
+  if (exclude.some(p => t.includes(p))) return false;
+  return ['(official video)', '(official music video)', '(official hd video)'].some(p => t.includes(p));
+}
+
+// ── YOUTUBE API ────────────────────────────────────────────
+const YT = 'https://www.googleapis.com/youtube/v3';
+
+async function ytFetch(endpoint, params) {
+  const url = new URL(`${YT}/${endpoint}`);
+  url.searchParams.set('key', apiKey);
+  for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
+  const res  = await fetch(url.toString());
+  const data = await res.json();
+  if (!res.ok) throw new Error(data?.error?.message || `HTTP ${res.status}`);
+  return data;
+}
+
+async function searchChannels(query) {
+  const data = await ytFetch('search', { part:'snippet', q:query, type:'channel', maxResults:5 });
+  return (data.items || []).map(item => ({
+    channelId:   item.id.channelId,
+    name:        item.snippet.channelTitle,
+    description: (item.snippet.description || '').slice(0, 90),
+    thumbnail:   item.snippet.thumbnails?.medium?.url || item.snippet.thumbnails?.default?.url || '',
+  }));
+}
+
+async function getUploadsPlaylistId(channelId) {
+  const data = await ytFetch('channels', { part:'contentDetails', id:channelId });
+  return data.items?.[0]?.contentDetails?.relatedPlaylists?.uploads || null;
+}
+
+async function fetchPlaylist(playlistId, artistId, artistName, onProgress) {
+  // Full paginated fetch — used only when first adding an artist.
+  // Paginates the entire uploads playlist and filters by title.
+  const found = {};
+  let pageToken = null;
+  let page = 0;
+
+  do {
+    page++;
+    if (onProgress) onProgress(page, Object.keys(found).length);
+    const params = { part:'snippet', playlistId, maxResults:50 };
+    if (pageToken) params.pageToken = pageToken;
+    const data  = await ytFetch('playlistItems', params);
+
+    for (const item of (data.items || [])) {
+      const id    = item.snippet?.resourceId?.videoId;
+      const title = item.snippet?.title;
+      if (!id || !title || title === 'Private video' || title === 'Deleted video') continue;
+      if (!isMusicVideo(title)) continue;
+      const pub    = item.snippet?.publishedAt || new Date().toISOString();
+      const thumbs = item.snippet?.thumbnails || {};
+      const thumb  = thumbs.maxres?.url || thumbs.high?.url || thumbs.medium?.url
+                   || thumbs.default?.url || `https://img.youtube.com/vi/${id}/hqdefault.jpg`;
+      found[id] = { videoId:id, artistId, artistName, title, publishedAt:pub, thumbnail:thumb, watched:false, discoveredAt:new Date().toISOString() };
+    }
+
+    pageToken = data.nextPageToken;
+  } while (pageToken);
+
+  return found;
+}
+
+async function fetchPlaylistSince(playlistId, artistId, artistName, cutoffDate) {
+  // Incremental fetch for refresh — stops as soon as publishedAt <= cutoffDate.
+  // The uploads playlist is newest-first, so this exits after just a page or
+  // two for typical daily/weekly refreshes, regardless of how many non-music
+  // videos the artist has posted (lyric videos, shorts, live streams, etc.).
+  const found = {};
+  let pageToken = null;
+
+  do {
+    const params = { part:'snippet', playlistId, maxResults:50 };
+    if (pageToken) params.pageToken = pageToken;
+    const data  = await ytFetch('playlistItems', params);
+    let   done  = false;
+
+    for (const item of (data.items || [])) {
+      const id    = item.snippet?.resourceId?.videoId;
+      const title = item.snippet?.title;
+      const pub   = item.snippet?.publishedAt;
+      if (!id || !title || title === 'Private video' || title === 'Deleted video') continue;
+
+      // Stop the moment we reach content older than our newest stored video
+      if (cutoffDate && new Date(pub) <= cutoffDate) { done = true; break; }
+
+      if (!isMusicVideo(title)) continue;
+      const thumbs = item.snippet?.thumbnails || {};
+      const thumb  = thumbs.maxres?.url || thumbs.high?.url || thumbs.medium?.url
+                   || thumbs.default?.url || `https://img.youtube.com/vi/${id}/hqdefault.jpg`;
+      found[id] = { videoId:id, artistId, artistName, title, publishedAt:pub || new Date().toISOString(), thumbnail:thumb, watched:false, discoveredAt:new Date().toISOString() };
+    }
+
+    if (done) break;
+    pageToken = data.nextPageToken;
+  } while (pageToken);
+
+  return found;
+}
+
+// ── ARTIST MANAGEMENT ──────────────────────────────────────
+async function addArtist(channel) {
+  if (artists.find(a => a.channelId === channel.channelId)) {
+    showToast('This artist is already in your list.', 'err');
+    closeModal(); return;
+  }
+  document.getElementById('modal-form').classList.add('hidden');
+  document.getElementById('modal-progress').classList.remove('hidden');
+  try {
+    setFetchMsg(`Finding ${channel.name}'s uploads...`);
+    const uploadsId = await getUploadsPlaylistId(channel.channelId);
+    if (!uploadsId) throw new Error("Couldn't find this channel's uploads playlist.");
+    const artistId = 'a_' + Date.now();
+    const newVids  = await fetchPlaylist(
+      uploadsId, artistId, channel.name,
+      (page, n) => setFetchMsg(`Scanning page ${page}... ${n} music video${n !== 1 ? 's' : ''} found`)
+    );
+    artists.push({ id:artistId, name:channel.name, channelId:channel.channelId, uploadsPlaylistId:uploadsId, addedAt:new Date().toISOString() });
+    Object.assign(videos, newVids);
+    lastFetch[artistId] = new Date().toISOString();
+    saveArtists(); saveVideos(); saveLastFetch();
+    const n = Object.keys(newVids).length;
+    showToast(`Added ${channel.name} — ${n} music video${n !== 1 ? 's' : ''} found.`, 'ok');
+    closeModal(); renderAll();
+  } catch (err) {
+    console.error(err);
+    showToast('Error: ' + err.message, 'err');
+    closeModal();
+  }
+}
+
+async function removeArtist(artistId) {
+  if (!confirm('Remove this artist and all their cached videos?')) return;
+  artists = artists.filter(a => a.id !== artistId);
+  for (const vid of Object.keys(videos)) {
+    if (videos[vid].artistId === artistId) delete videos[vid];
+  }
+  delete lastFetch[artistId];
+  saveArtists(); saveVideos(); saveLastFetch();
+  renderAll();
+  showToast('Artist removed.', 'ok');
+}
+
+async function refreshOne(artist, silent = false) {
+  // Find the publish date of the newest video we already have for this artist.
+  // The fetch stops the moment the playlist goes older than this date.
+  const artistVids = Object.values(videos).filter(v => v.artistId === artist.id);
+  let cutoff = null;
+  if (artistVids.length > 0) {
+    const newest = artistVids.reduce((a, b) =>
+      new Date(a.publishedAt) > new Date(b.publishedAt) ? a : b
+    );
+    cutoff = new Date(newest.publishedAt);
+  }
+
+  try {
+    const newVids = await fetchPlaylistSince(artist.uploadsPlaylistId, artist.id, artist.name, cutoff);
+
+    // Merge — never overwrite an existing entry so watched state is preserved
+    let added = 0;
+    for (const [id, v] of Object.entries(newVids)) {
+      if (!videos[id]) { videos[id] = v; added++; }
+    }
+
+    lastFetch[artist.id] = new Date().toISOString();
+    saveVideos(); saveLastFetch();
+
+    if (!silent) showToast(`${artist.name}: ${added} new video${added !== 1 ? 's' : ''}.`, added > 0 ? 'ok' : '');
+    return added;
+  } catch (err) {
+    if (!silent) showToast(`Error refreshing ${artist.name}: ${err.message}`, 'err');
+    return 0;
+  }
+}
+
+async function refreshAll() {
+  if (!artists.length) { showToast('No artists to refresh.'); return; }
+  const btn = document.getElementById('refresh-btn');
+  btn.disabled = true; btn.textContent = 'Refreshing...';
+  let total = 0;
+  for (const a of artists) total += await refreshOne(a, true);
+  btn.disabled = false;
+  btn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg> Refresh All`;
+  renderAll();
+  showToast(
+    total > 0 ? `${total} new video${total !== 1 ? 's' : ''} across all artists.` : 'All up to date.',
+    total > 0 ? 'ok' : ''
+  );
+}
+
+// ── WATCHED ────────────────────────────────────────────────
+function toggleWatched(videoId, e) {
+  e.stopPropagation();
+  if (!videos[videoId]) return;
+
+  videos[videoId].watched = !videos[videoId].watched;
+  const watched = videos[videoId].watched;
+  saveVideos();
+
+  // If the current filter hides/shows based on watch state, a full re-render
+  // is needed. Otherwise, update only the card in place — avoids the DOM
+  // rebuild that caused the hover-lift animation to retrigger (the bounce).
+  if (watchFilter !== 'all') {
+    renderGrid();
+    return;
+  }
+
+  const card = e.currentTarget.closest('.v-card');
+  if (!card) { renderGrid(); return; }
+
+  card.classList.toggle('watched', watched);
+
+  // Update pill text (CSS handles colour/opacity)
+  const pill = card.querySelector('.seen-pill');
+  if (pill) {
+    pill.textContent = watched ? 'Seen' : 'Mark seen';
+    pill.title = watched ? 'Mark as unwatched' : 'Mark as watched';
+  }
+
+  // Keep the count label in sync
+  const n = getFiltered().length;
+  document.getElementById('vid-count').textContent = `${n} video${n !== 1 ? 's' : ''}`;
+}
+function openVideo(videoId) {
+  window.open(`https://www.youtube.com/watch?v=${videoId}`, '_blank', 'noopener');
+}
+
+// ── NEW BADGE ──────────────────────────────────────────────
+function isNew(video) {
+  if (!prevVisit) return false;
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  return new Date(video.publishedAt) > thirtyDaysAgo
+      && new Date(video.discoveredAt) > new Date(prevVisit);
+}
+
+// ── RENDER ─────────────────────────────────────────────────
+function renderAll() { renderChips(); renderGrid(); renderSettingsArtists(); }
+
+function renderChips() {
+  const row = document.getElementById('artist-chips');
+  let html  = `<div class="chip ${activeArtist === null ? 'active' : ''}" onclick="setArtist(null)">All Artists</div>`;
+  for (const a of artists) {
+    const n = Object.values(videos).filter(v => v.artistId === a.id).length;
+    html += `<div class="chip ${activeArtist === a.id ? 'active' : ''}" onclick="setArtist('${a.id}')">
+      ${esc(a.name)} <span class="chip-count">${n}</span>
+    </div>`;
+  }
+  row.innerHTML = html;
+}
+
+function getFiltered() {
+  let vids = Object.values(videos);
+  if (activeArtist !== null) vids = vids.filter(v => v.artistId === activeArtist);
+  if (watchFilter === 'unwatched') vids = vids.filter(v => !v.watched);
+  if (watchFilter === 'watched')   vids = vids.filter(v =>  v.watched);
+  vids.sort((a, b) => {
+    const d = new Date(b.publishedAt) - new Date(a.publishedAt);
+    return sortOrder === 'newest' ? d : -d;
+  });
+  return vids;
+}
+
+function fmtDate(iso) {
+  return new Date(iso).toLocaleDateString('en-AU', { day:'numeric', month:'short', year:'numeric' });
+}
+
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function renderGrid() {
+  const grid   = document.getElementById('video-grid');
+  const empty  = document.getElementById('empty-state');
+  const fempty = document.getElementById('filter-empty');
+  const vids   = getFiltered();
+
+  document.getElementById('vid-count').textContent = `${vids.length} video${vids.length !== 1 ? 's' : ''}`;
+
+  if (!artists.length) {
+    empty.classList.remove('hidden'); fempty.classList.add('hidden'); grid.innerHTML = ''; return;
+  }
+  empty.classList.add('hidden');
+  if (!vids.length) {
+    fempty.classList.remove('hidden'); grid.innerHTML = ''; return;
+  }
+  fempty.classList.add('hidden');
+
+  // Checkmark SVGs
+  const selCheck = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
+  const fb       = id => `https://img.youtube.com/vi/${id}/hqdefault.jpg`;
+
+  grid.innerHTML = vids.map(v => {
+    const w   = v.watched;
+    const nw  = isNew(v);
+    const sel = selectedIds.has(v.videoId);
+    return `<div class="v-card${w ? ' watched' : ''}${sel ? ' selected' : ''}" data-videoid="${esc(v.videoId)}" onclick="handleCardClick('${esc(v.videoId)}',event)">
+      <div class="thumb-wrap">
+        <img class="thumb-img" src="${esc(v.thumbnail)}" onerror="this.src='${fb(v.videoId)}'" loading="lazy" alt="${esc(v.title)}">
+        <div class="thumb-overlay"></div>
+        ${nw ? '<div class="badge-new">New</div>' : ''}
+        <div class="sel-box">${selCheck}</div>
+        <button class="seen-pill" onclick="toggleWatched('${esc(v.videoId)}',event)" title="${w ? 'Mark as unwatched' : 'Mark as watched'}">${w ? 'Seen' : 'Mark seen'}</button>
+      </div>
+      <div class="card-body">
+        <div class="card-meta">
+          <span class="card-artist">${esc(v.artistName)}</span>
+          <span class="card-date">${fmtDate(v.publishedAt)}</span>
+        </div>
+        <div class="card-title">${esc(v.title)}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderSettingsArtists() {
+  const el = document.getElementById('s-artists');
+  if (!artists.length) {
+    el.innerHTML = '<p style="color:var(--text3);font-size:13px;">No artists added yet.</p>'; return;
+  }
+  const trash = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>`;
+  el.innerHTML = artists.map(a => {
+    const n = Object.values(videos).filter(v => v.artistId === a.id).length;
+    return `<div class="artist-item">
+      <div class="artist-item-name">${esc(a.name)}</div>
+      <div class="artist-item-count">${n}</div>
+      <button class="btn btn-icon" onclick="removeArtist('${a.id}')" title="Remove" style="padding:4px;color:var(--hot);">${trash}</button>
+    </div>`;
+  }).join('');
+}
+
+// ── FILTERS ────────────────────────────────────────────────
+function setArtist(id) { clearSelection(); activeArtist = id; renderChips(); renderGrid(); }
+
+function setWatchFilter(val) {
+  clearSelection();
+  watchFilter = val;
+  ['all','unwatched','watched'].forEach(v => {
+    document.getElementById('fw-' + v).classList.toggle('active', v === val);
+  });
+  renderGrid();
+}
+
+function toggleSort() {
+  clearSelection();
+  sortOrder = sortOrder === 'newest' ? 'oldest' : 'newest';
+  document.getElementById('sort-lbl').textContent = sortOrder === 'newest' ? 'Newest First' : 'Oldest First';
+  const ico = document.getElementById('sort-ico');
+  ico.innerHTML = sortOrder === 'newest'
+    ? '<line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/>'
+    : '<line x1="12" y1="5" x2="12" y2="19"/><polyline points="5 12 12 5 19 12"/>';
+  renderGrid();
+}
+
+// ── SELECTION ──────────────────────────────────────────────
+function handleCardClick(videoId, e) {
+  if (e.metaKey || e.ctrlKey) {
+    e.preventDefault();
+    toggleSelect(videoId);
+    return;
+  }
+  if (e.shiftKey) {
+    e.preventDefault();
+    rangeSelect(videoId);
+    return;
+  }
+  // Normal click in selection mode: toggle this card's selection
+  if (selectedIds.size > 0) {
+    toggleSelect(videoId);
+    return;
+  }
+  openVideo(videoId);
+}
+
+function toggleSelect(videoId) {
+  const vids = getFiltered();
+  if (selectedIds.has(videoId)) {
+    selectedIds.delete(videoId);
+  } else {
+    selectedIds.add(videoId);
+    lastSelectedIdx = vids.findIndex(v => v.videoId === videoId);
+  }
+  updateSelectionUI();
+}
+
+function rangeSelect(videoId) {
+  const vids = getFiltered();
+  const idx  = vids.findIndex(v => v.videoId === videoId);
+  if (idx === -1) return;
+
+  if (lastSelectedIdx === -1 || selectedIds.size === 0) {
+    selectedIds.add(videoId);
+    lastSelectedIdx = idx;
+  } else {
+    const from = Math.min(lastSelectedIdx, idx);
+    const to   = Math.max(lastSelectedIdx, idx);
+    for (let i = from; i <= to; i++) selectedIds.add(vids[i].videoId);
+    lastSelectedIdx = idx;
+  }
+  updateSelectionUI();
+}
+
+function clearSelection() {
+  selectedIds.clear();
+  lastSelectedIdx = -1;
+  document.documentElement.classList.remove('ytmv-selecting');
+  document.querySelectorAll('.v-card.selected').forEach(c => c.classList.remove('selected'));
+  document.getElementById('selection-bar').classList.remove('visible');
+  document.getElementById('sel-count').textContent = '';
+}
+
+function updateSelectionUI() {
+  const n = selectedIds.size;
+  document.documentElement.classList.toggle('ytmv-selecting', n > 0);
+  document.querySelectorAll('.v-card[data-videoid]').forEach(card => {
+    card.classList.toggle('selected', selectedIds.has(card.dataset.videoid));
+  });
+  const bar = document.getElementById('selection-bar');
+  bar.classList.toggle('visible', n > 0);
+  document.getElementById('sel-count').textContent =
+    n > 0 ? `${n} video${n !== 1 ? 's' : ''} selected` : '';
+}
+
+function selMarkWatched() {
+  selectedIds.forEach(id => { if (videos[id]) videos[id].watched = true; });
+  saveVideos(); clearSelection(); renderGrid();
+}
+
+function selMarkUnwatched() {
+  selectedIds.forEach(id => { if (videos[id]) videos[id].watched = false; });
+  saveVideos(); clearSelection(); renderGrid();
+}
+
+function selDelete() {
+  const n = selectedIds.size;
+  if (!confirm(`Remove ${n} video${n !== 1 ? 's' : ''} from your tracker?\n\nThis only affects your local list — nothing is changed on YouTube.`)) return;
+  selectedIds.forEach(id => { delete videos[id]; });
+  saveVideos(); clearSelection(); renderGrid();
+}
+
+// ── ADD ARTIST MODAL ───────────────────────────────────────
+function openAddModal() {
+  searchComplete = false;
+  document.getElementById('modal-form').classList.remove('hidden');
+  document.getElementById('modal-progress').classList.add('hidden');
+  document.getElementById('artist-input').value = '';
+  document.getElementById('ch-results').innerHTML = '';
+  document.getElementById('modal-hint').textContent = '';
+  document.getElementById('add-modal').classList.add('open');
+  setTimeout(() => document.getElementById('artist-input').focus(), 120);
+}
+
+function closeModal() {
+  document.getElementById('add-modal').classList.remove('open');
+  searchComplete = false;
+}
+
+function getFirstAvailableIdx() {
+  return _searchResults.findIndex(r => !artists.find(a => a.channelId === r.channelId));
+}
+
+function renderChannelResults() {
+  const container  = document.getElementById('ch-results');
+  if (!_searchResults.length) {
+    container.innerHTML = '<p style="color:var(--text2);font-size:13px;text-align:center;padding:14px;">No channels found. Try a different name.</p>';
+    return;
+  }
+  const firstAvail = searchComplete ? getFirstAvailableIdx() : -1;
+  container.innerHTML = _searchResults.map((r, i) => {
+    const alreadyAdded = !!artists.find(a => a.channelId === r.channelId);
+    const isFirst      = i === firstAvail;
+    return `<div class="ch-result${alreadyAdded ? ' added' : ''}${isFirst ? ' enter-ready' : ''}" ${alreadyAdded ? '' : `onclick="pickChannel(${i})"`}>
+      <img class="ch-avatar" src="${esc(r.thumbnail)}" onerror="this.style.visibility='hidden'" alt="">
+      <div class="ch-info">
+        <div class="ch-name">${esc(r.name)}</div>
+        <div class="ch-desc">${esc(r.description)}</div>
+      </div>
+      ${alreadyAdded ? '<div class="enter-badge" style="color:var(--text3);background:var(--bg2);border-color:var(--border);">Already added</div>' : ''}
+      ${isFirst      ? '<div class="enter-badge">&#8629; enter</div>' : ''}
+    </div>`;
+  }).join('');
+
+  document.getElementById('modal-hint').textContent =
+    searchComplete && firstAvail !== -1
+      ? 'Press Enter to accept the first result, or click another'
+      : '';
+}
+
+async function doChannelSearch() {
+  const q = document.getElementById('artist-input').value.trim();
+  if (!q) return;
+  searchComplete = false;
+  const btn = document.getElementById('search-btn');
+  btn.disabled = true; btn.textContent = 'Searching...';
+  document.getElementById('ch-results').innerHTML = '';
+  document.getElementById('modal-hint').textContent = '';
+  try {
+    _searchResults = await searchChannels(q);
+    searchComplete = _searchResults.length > 0;
+    renderChannelResults();
+  } catch (err) {
+    document.getElementById('ch-results').innerHTML =
+      `<p style="color:var(--hot);font-size:13px;text-align:center;padding:14px;">Error: ${esc(err.message)}</p>`;
+    searchComplete = false;
+  }
+  btn.disabled = false; btn.textContent = 'Search YouTube Channels';
+}
+
+function pickChannel(i) { const ch = _searchResults[i]; if (ch) addArtist(ch); }
+function setFetchMsg(msg) { document.getElementById('fetch-msg').textContent = msg; }
+
+// ── SETTINGS ───────────────────────────────────────────────
+function openSettings() {
+  document.getElementById('settings-panel').classList.add('open');
+  document.getElementById('settings-bg').classList.add('open');
+  document.getElementById('s-key').value = apiKey;
+  renderSettingsArtists();
+}
+function closeSettings() {
+  document.getElementById('settings-panel').classList.remove('open');
+  document.getElementById('settings-bg').classList.remove('open');
+}
+function updateKey() {
+  const k = document.getElementById('s-key').value.trim();
+  if (!k) { showToast('Please enter a key.', 'err'); return; }
+  apiKey = k;
+  localStorage.setItem(K.KEY, apiKey);
+  showToast('API key updated.', 'ok');
+}
+function clearData() {
+  if (!confirm('This will delete all artists, videos, and your API key. This cannot be undone.')) return;
+  Object.values(K).forEach(k => localStorage.removeItem(k));
+  location.reload();
+}
+
+// ── TOAST ──────────────────────────────────────────────────
+function showToast(msg, type = '') {
+  const c     = document.getElementById('toasts');
+  const toast = document.createElement('div');
+  toast.className = 'toast ' + type;
+  toast.textContent = msg;
+  c.appendChild(toast);
+  requestAnimationFrame(() => requestAnimationFrame(() => toast.classList.add('show')));
+  setTimeout(() => { toast.classList.remove('show'); setTimeout(() => toast.remove(), 250); }, 3500);
+}
+
+// ── KEYBOARD SHORTCUTS ─────────────────────────────────────
+function isEditing() {
+  const el = document.activeElement;
+  const tag = el?.tagName?.toLowerCase();
+  return tag === 'input' || tag === 'textarea' || tag === 'select' || el?.isContentEditable;
+}
+function modalOpen()    { return document.getElementById('add-modal').classList.contains('open'); }
+function settingsOpen() { return document.getElementById('settings-panel').classList.contains('open'); }
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    if (modalOpen())          { closeModal();    return; }
+    if (settingsOpen())       { closeSettings(); return; }
+    if (selectedIds.size > 0) { clearSelection(); return; }
+  }
+  if (isEditing() || modalOpen() || settingsOpen()) return;
+  if (!e.altKey && !e.ctrlKey && !e.metaKey && e.code === 'KeyA') {
+    e.preventDefault(); openAddModal(); return;
+  }
+  if (e.altKey && e.code === 'KeyT') {
+    e.preventDefault(); openAddModal(); return;
+  }
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+  const input = document.getElementById('artist-input');
+
+  // Prevent the browser from selecting page text on shift-click within the grid
+  document.getElementById('grid-wrap').addEventListener('mousedown', e => {
+    if (e.shiftKey) e.preventDefault();
+  });
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      if (searchComplete && _searchResults.length > 0) {
+        const firstAvail = getFirstAvailableIdx();
+        if (firstAvail !== -1) pickChannel(firstAvail);
+      } else {
+        doChannelSearch();
+      }
+    }
+  });
+  input.addEventListener('input', () => {
+    if (searchComplete) { searchComplete = false; renderChannelResults(); }
+  });
+});
+
+// ── SETUP ──────────────────────────────────────────────────
+function initSetup() {
+  const saveBtn = document.getElementById('setup-save');
+  const keyInp  = document.getElementById('setup-key');
+  saveBtn.addEventListener('click', () => {
+    const k = keyInp.value.trim();
+    if (!k) { showToast('Please enter your API key.', 'err'); return; }
+    apiKey = k;
+    localStorage.setItem(K.KEY, apiKey);
+    document.documentElement.classList.add('ytmv-authed');
+    document.getElementById('setup').classList.add('hidden');
+    renderAll();
+  });
+  keyInp.addEventListener('keydown', e => { if (e.key === 'Enter') saveBtn.click(); });
+}
+
+// ── WIRE UP ────────────────────────────────────────────────
+document.getElementById('add-artist-btn').addEventListener('click', openAddModal);
+document.getElementById('refresh-btn').addEventListener('click', refreshAll);
+document.getElementById('settings-btn').addEventListener('click', openSettings);
+document.getElementById('theme-btn').addEventListener('click', toggleTheme);
+document.getElementById('add-modal').addEventListener('click', e => {
+  if (e.target === e.currentTarget) closeModal();
+});
+
+// ── FONT CACHING ───────────────────────────────────────────
+// ArrayBuffer → base64 without hitting the JS call-stack arg limit
+function bufToBase64(buf) {
+  const bytes = new Uint8Array(buf);
+  let out = '';
+  const CHUNK = 8192;
+  for (let i = 0; i < bytes.length; i += CHUNK) {
+    out += String.fromCharCode(...bytes.subarray(i, i + CHUNK));
+  }
+  return btoa(out);
+}
+
+async function cacheFontsIfNeeded() {
+  const FONT_VER = '1';
+  if (localStorage.getItem('ytmv_fonts_ver') === FONT_VER) return; // already cached
+
+  try {
+    // Use the live link href if still in DOM; fall back to the hardcoded URL
+    const cssUrl = document.getElementById('gfonts')?.href
+      || 'https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@700&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&family=DM+Mono:wght@400&display=swap';
+
+    const cssRes = await fetch(cssUrl);
+    if (!cssRes.ok) return;
+    let css = await cssRes.text();
+
+    // Replace every gstatic font URL with an inline base64 data URI
+    const urlRe   = /url\((https:\/\/fonts\.gstatic\.com\/[^)]+)\)/g;
+    const matches = [...css.matchAll(urlRe)];
+
+    await Promise.all(matches.map(async ([, url]) => {
+      try {
+        const res = await fetch(url);
+        if (!res.ok) return;
+        const ext = url.includes('.woff2') ? 'woff2' : 'woff';
+        const b64 = bufToBase64(await res.arrayBuffer());
+        css = css.replace(url, `data:font/${ext};base64,${b64}`);
+      } catch (_) {}
+    }));
+
+    localStorage.setItem('ytmv_fonts', css);
+    localStorage.setItem('ytmv_fonts_ver', FONT_VER);
+  } catch (_) {
+    // Silently fail — Google Fonts network delivery continues as normal
+  }
+}
+
+// ── INIT ───────────────────────────────────────────────────
+function init() {
+  initTheme(); initSetup();
+  if (!apiKey) { document.getElementById('setup').classList.remove('hidden'); return; }
+  document.getElementById('setup').classList.add('hidden');
+  renderAll();
+}
+
+init();
+// Cache fonts in the background after the page is interactive.
+// On the next load the head script injects them synchronously — no flash.
+cacheFontsIfNeeded();
+
+// ── SUPABASE SYNC HOOKS ───────────────────────────────────
+window._SB_TABLE = 'music_videos';
+
+window._sbGetData = function() {
+  return { artists, videos, lastFetch };
+};
+
+window._sbOnLoad = function(data) {
+  try {
+    if (!data || typeof data !== 'object') return;
+    if (Array.isArray(data.artists)) {
+      artists = data.artists;
+      localStorage.setItem(K.ARTISTS, JSON.stringify(artists));
+    }
+    if (data.videos && typeof data.videos === 'object') {
+      videos = data.videos;
+      localStorage.setItem(K.VIDEOS, JSON.stringify(videos));
+    }
+    if (data.lastFetch && typeof data.lastFetch === 'object') {
+      lastFetch = data.lastFetch;
+      localStorage.setItem(K.LAST_FETCH, JSON.stringify(lastFetch));
+    }
+    renderAll();
+  } catch(e) { console.warn('[MusicVideos] Supabase load error:', e); }
+};
+</script>
+</body>
+</html>
