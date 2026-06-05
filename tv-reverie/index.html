@@ -487,6 +487,17 @@
       .category-empty-state{padding:40px 16px;}
     }
 
+    /* ── Compact card mode ── */
+    body.compact-cards .card { width:132px; }
+    body.compact-cards .card-body { padding:8px 9px 10px; }
+    body.compact-cards .card-title { font-size:0.8rem; }
+    body.compact-cards .card-meta { font-size:0.62rem; min-height:2em; }
+    body.compact-cards .service-badge { font-size:0.55rem; padding:2px 5px; }
+    body.compact-cards .watching-stamp,
+    body.compact-cards .finished-stamp,
+    body.compact-cards .graveyard-stamp { font-size:0.52rem; padding:3px 5px; }
+    body.compact-cards .grid { gap:14px; }
+
     /* ── MOBILE  (≤ 640 px) ── */
     @media(max-width:640px){
       /* Prevent iOS Safari from zooming on input focus (triggered when font-size < 16px).
@@ -700,6 +711,27 @@
       /* ── Page footer ── */
       footer{padding-left:16px!important;padding-right:16px!important;}
     }
+  .shortcuts-btn { background:none; border:1px solid var(--border); border-radius:var(--radius); padding:5px 11px; display:flex; align-items:center; gap:6px; color:var(--text-muted); font-size:0.58rem; letter-spacing:0.12em; text-transform:uppercase; cursor:pointer; transition:border-color 0.2s,color 0.2s; flex-shrink:0; font-family:'DM Sans',sans-serif; }
+  .shortcuts-btn:hover { border-color:var(--border-hi); color:var(--text-dim); }
+  .shortcuts-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.72); backdrop-filter:blur(4px); z-index:300; display:flex; align-items:center; justify-content:center; opacity:0; pointer-events:none; transition:opacity 0.2s; }
+  .shortcuts-overlay.open { opacity:1; pointer-events:all; }
+  .shortcuts-panel { background:var(--surface); border:1px solid var(--border-hi); border-radius:12px; width:min(600px,92vw); max-height:82vh; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 24px 60px rgba(0,0,0,0.7); transform:translateY(14px); transition:transform 0.26s cubic-bezier(0.22,1,0.36,1); }
+  .shortcuts-overlay.open .shortcuts-panel { transform:translateY(0); }
+  .shortcuts-panel-header { display:flex; align-items:center; gap:11px; padding:18px 22px 16px; border-bottom:1px solid var(--border); flex-shrink:0; }
+  .shortcuts-panel-title { font-size:0.75rem; letter-spacing:0.14em; text-transform:uppercase; color:var(--gold); font-weight:500; flex:1; }
+  .shortcuts-panel-close { background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:1.15rem; line-height:1; padding:2px 4px; transition:color 0.15s; }
+  .shortcuts-panel-close:hover { color:var(--text); }
+  .shortcuts-panel-body { overflow-y:auto; padding:20px 22px 16px; display:grid; grid-template-columns:1fr 1fr; gap:0 32px; }
+  .shortcut-section { margin-bottom:22px; }
+  .shortcut-section:last-child { margin-bottom:4px; }
+  .shortcut-section-label { font-size:0.54rem; letter-spacing:0.18em; text-transform:uppercase; color:var(--gold-dim); font-weight:500; margin-bottom:10px; padding-bottom:7px; border-bottom:1px solid var(--border); }
+  .shortcut-row { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:3px 0; min-height:25px; }
+  .shortcut-desc { font-size:0.72rem; color:var(--text-muted); }
+  .shortcut-keys { display:flex; align-items:center; gap:2px; flex-shrink:0; }
+  .kbd { display:inline-flex; align-items:center; justify-content:center; min-width:20px; height:18px; padding:0 6px; background:rgba(96,165,250,0.07); border:1px solid rgba(96,165,250,0.22); border-radius:4px; font-size:0.62rem; font-weight:500; color:var(--gold-dim); letter-spacing:0.02em; white-space:nowrap; font-family:'DM Sans',sans-serif; }
+  .kbd-sep { font-size:0.54rem; color:var(--text-muted); margin:0 1px; }
+  .shortcuts-panel-footer { padding:10px 22px; border-top:1px solid var(--border); font-size:0.57rem; color:var(--text-muted); opacity:0.55; flex-shrink:0; }
+  @media(max-width:640px){ .shortcuts-panel-body { grid-template-columns:1fr; } }
   </style>
 </head>
 <body>
@@ -1116,6 +1148,9 @@
     <button id="viewGrid" class="view-toggle-btn active" onclick="setView('grid')" title="Grid view">
       <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="1" width="5" height="5" rx="1" fill="currentColor"/><rect x="8" y="1" width="5" height="5" rx="1" fill="currentColor"/><rect x="1" y="8" width="5" height="5" rx="1" fill="currentColor"/><rect x="8" y="8" width="5" height="5" rx="1" fill="currentColor"/></svg>
     </button>
+    <button id="viewCompact" class="view-toggle-btn" onclick="setView('compact')" title="Compact grid">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="1" width="3" height="3" rx="0.6" fill="currentColor"/><rect x="5.5" y="1" width="3" height="3" rx="0.6" fill="currentColor"/><rect x="10" y="1" width="3" height="3" rx="0.6" fill="currentColor"/><rect x="1" y="5.5" width="3" height="3" rx="0.6" fill="currentColor"/><rect x="5.5" y="5.5" width="3" height="3" rx="0.6" fill="currentColor"/><rect x="10" y="5.5" width="3" height="3" rx="0.6" fill="currentColor"/><rect x="1" y="10" width="3" height="3" rx="0.6" fill="currentColor"/><rect x="5.5" y="10" width="3" height="3" rx="0.6" fill="currentColor"/><rect x="10" y="10" width="3" height="3" rx="0.6" fill="currentColor"/></svg>
+    </button>
     <button id="viewList" class="view-toggle-btn" onclick="setView('list')" title="List view">
       <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="2" width="12" height="2" rx="1" fill="currentColor"/><rect x="1" y="6" width="12" height="2" rx="1" fill="currentColor"/><rect x="1" y="10" width="12" height="2" rx="1" fill="currentColor"/></svg>
     </button>
@@ -1358,7 +1393,9 @@ window.addEventListener('resize',()=>{
 function setView(v){currentView=v;localStorage.setItem('tvshows_view',v);applyViewToggleUI();render();}
 function applyViewToggleUI(){
   document.getElementById('viewGrid')?.classList.toggle('active',currentView==='grid');
+  document.getElementById('viewCompact')?.classList.toggle('active',currentView==='compact');
   document.getElementById('viewList')?.classList.toggle('active',currentView==='list');
+  document.body.classList.toggle('compact-cards',currentView==='compact');
 }
 
 function updateBanner(){document.getElementById('apiBanner').classList.toggle('hidden',!!tmdbKey);}
@@ -2061,8 +2098,16 @@ function clearSearchBar(){
 function onSearchBarKeyDown(e){
   if(e.key==='Escape'){
     e.preventDefault();
-    if(document.getElementById('searchBar').value){ clearSearchBar(); }
-    else{ document.getElementById('searchBarWrap').classList.remove('expanded'); document.getElementById('searchBar').blur(); }
+    const i=document.getElementById('searchBar');
+    const w=document.getElementById('searchBarWrap');
+    const hadQuery=!!i.value;
+    i.value='';
+    searchQuery='';
+    w.classList.remove('expanded','has-query');
+    if(hadQuery)render();
+    const sy=window.scrollY;
+    i.blur();
+    window.scrollTo(0,sy);
   }
 }
 function onSearchBarBlur(){
@@ -2083,6 +2128,17 @@ document.addEventListener('keydown',e=>{
     document.getElementById('searchBar').focus();
     document.getElementById('searchBar').select();
     return;
+  }
+  // / focuses the search bar (when not in a text field and no modal open)
+  if(e.key==='/'&&!e.metaKey&&!e.ctrlKey&&!e.altKey){
+    const inField=document.activeElement.tagName==='INPUT'||document.activeElement.tagName==='TEXTAREA';
+    const noModal=!document.getElementById('addModal').classList.contains('open')&&!document.getElementById('detailModal').classList.contains('open');
+    if(!inField&&noModal){
+      e.preventDefault();
+      const w=document.getElementById('searchBarWrap');
+      if(w){w.classList.add('expanded');const sb=document.getElementById('searchBar');sb.focus();sb.select();}
+      return;
+    }
   }
   if(e.key==='Escape'){
     if(searchQuery||document.getElementById('searchBarWrap').classList.contains('expanded')){
@@ -2712,7 +2768,11 @@ function esc(s){if(!s)return'';return String(s).replace(/&/g,'&amp;').replace(/<
   },{passive:false});
 })();
 document.addEventListener('keydown',e=>{
-  if(e.key==='Escape'){closePillMenu();closeAddModal();closeDetail();return;}
+  if(e.key==='Escape'){
+    const so=document.getElementById('shortcutsOverlay');
+    if(so&&so.classList.contains('open')){closeShortcutsPanel();return;}
+    closePillMenu();closeAddModal();closeDetail();return;
+  }
   if(e.key==='Enter'&&!e.shiftKey){
     const modalOpen=document.getElementById('addModal').classList.contains('open');
     if(modalOpen){
@@ -2763,11 +2823,12 @@ document.addEventListener('keydown',e=>{
       return;
     }
   }
-  // ── Global: A opens Add Show ──
-  if(!inField&&!e.metaKey&&!e.ctrlKey&&!e.altKey&&e.key.toUpperCase()==='A'){
-    if(!document.getElementById('addModal').classList.contains('open')&&!document.getElementById('detailModal').classList.contains('open')){
-      e.preventDefault();openAddModal();return;
-    }
+  // ── Global: no-modifier shortcuts (no modal) ──
+  if(!inField&&!e.metaKey&&!e.ctrlKey&&!e.altKey){
+    const noModal=!document.getElementById('addModal').classList.contains('open')&&!document.getElementById('detailModal').classList.contains('open');
+    if(e.key.toUpperCase()==='A'&&noModal){e.preventDefault();openAddModal();return;}
+    if(e.key==='?'&&noModal){e.preventDefault();openShortcutsPanel();return;}
+    if(e.key==='/'&&noModal){e.preventDefault();const w=document.getElementById('searchBarWrap');if(w){w.classList.add('expanded');const sb=document.getElementById('searchBar');sb.focus();sb.select();}return;}
   }
   // ── Global: Option+T opens Add Show, pre-filling category if on one ──
   if(e.altKey&&e.code==='KeyT'&&!inField&&!document.getElementById('addModal').classList.contains('open')){
@@ -2775,6 +2836,12 @@ document.addEventListener('keydown',e=>{
     if(currentCategory) openAddModalWithCategory(currentCategory);
     else openAddModal();
     return;
+  }
+  // ── Global: ⌘+1/2/3 switch views ──
+  if((e.metaKey||e.ctrlKey)&&!inField){
+    if(e.key==='1'){e.preventDefault();setView('grid');return;}
+    if(e.key==='2'){e.preventDefault();setView('compact');return;}
+    if(e.key==='3'){e.preventDefault();setView('list');return;}
   }
   if(e.key==='z'&&(e.metaKey||e.ctrlKey)&&!e.shiftKey&&!inField){
     e.preventDefault();
@@ -2816,6 +2883,10 @@ init();
     <span style="display:flex;align-items:center;gap:5px;font-size:0.58rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-muted);"><span style="width:8px;height:8px;border-radius:2px;border:1.5px solid rgba(180,30,60,0.85);display:inline-block;flex-shrink:0;"></span>180d</span>
     <span style="display:flex;align-items:center;gap:5px;font-size:0.58rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-muted);"><span style="width:8px;height:8px;border-radius:2px;border:1.5px solid rgba(124,58,237,0.85);display:inline-block;flex-shrink:0;"></span>1yr</span>
   </span>
+  <button class="shortcuts-btn" onclick="openShortcutsPanel()" style="margin-left:auto;">
+    <svg width="13" height="13" viewBox="0 0 13 13" fill="none" style="flex-shrink:0;opacity:0.8"><rect x="0.75" y="2.25" width="11.5" height="8.5" rx="1.8" stroke="currentColor" stroke-width="1.1"/><rect x="2" y="4.3" width="1.6" height="1.6" rx="0.45" fill="currentColor"/><rect x="4.7" y="4.3" width="1.6" height="1.6" rx="0.45" fill="currentColor"/><rect x="7.4" y="4.3" width="1.6" height="1.6" rx="0.45" fill="currentColor"/><rect x="10.1" y="4.3" width="1.6" height="1.6" rx="0.45" fill="currentColor"/><rect x="2" y="6.9" width="1.6" height="1.6" rx="0.45" fill="currentColor"/><rect x="4.7" y="6.9" width="3.5" height="1.6" rx="0.45" fill="currentColor"/><rect x="10.1" y="6.9" width="1.6" height="1.6" rx="0.45" fill="currentColor"/></svg>
+    Shortcuts
+  </button>
 </footer>
 
 <script>
@@ -2988,6 +3059,62 @@ function initSheetDrag(modalId, closeFn) {
     </div>
   </div>
 </div>
+
+<!-- Shortcuts overlay -->
+<div class="shortcuts-overlay" id="shortcutsOverlay" onclick="if(event.target===this)closeShortcutsPanel()">
+  <div class="shortcuts-panel">
+    <div class="shortcuts-panel-header">
+      <svg width="15" height="15" viewBox="0 0 13 13" fill="none" style="opacity:0.5;flex-shrink:0"><rect x="0.75" y="2.25" width="11.5" height="8.5" rx="1.8" stroke="currentColor" stroke-width="1.1"/><rect x="2" y="4.3" width="1.6" height="1.6" rx="0.45" fill="currentColor"/><rect x="4.7" y="4.3" width="1.6" height="1.6" rx="0.45" fill="currentColor"/><rect x="7.4" y="4.3" width="1.6" height="1.6" rx="0.45" fill="currentColor"/><rect x="10.1" y="4.3" width="1.6" height="1.6" rx="0.45" fill="currentColor"/><rect x="2" y="6.9" width="1.6" height="1.6" rx="0.45" fill="currentColor"/><rect x="4.7" y="6.9" width="3.5" height="1.6" rx="0.45" fill="currentColor"/><rect x="10.1" y="6.9" width="1.6" height="1.6" rx="0.45" fill="currentColor"/></svg>
+      <span class="shortcuts-panel-title">Keyboard shortcuts</span>
+      <button class="shortcuts-panel-close" onclick="closeShortcutsPanel()">×</button>
+    </div>
+    <div class="shortcuts-panel-body">
+      <div>
+        <div class="shortcut-section">
+          <div class="shortcut-section-label">Global</div>
+          <div class="shortcut-row"><span class="shortcut-desc">Add a show</span><span class="shortcut-keys"><span class="kbd">A</span></span></div>
+          <div class="shortcut-row"><span class="shortcut-desc">This panel</span><span class="shortcut-keys"><span class="kbd">?</span></span></div>
+          <div class="shortcut-row"><span class="shortcut-desc">Focus search</span><span class="shortcut-keys"><span class="kbd">/</span><span class="kbd-sep">/</span><span class="kbd">⌘</span><span class="kbd-sep">+</span><span class="kbd">K</span></span></div>
+          <div class="shortcut-row"><span class="shortcut-desc">Clear &amp; dismiss search</span><span class="shortcut-keys"><span class="kbd">Esc</span></span></div>
+          <div class="shortcut-row"><span class="shortcut-desc">Grid view</span><span class="shortcut-keys"><span class="kbd">⌘</span><span class="kbd-sep">+</span><span class="kbd">1</span></span></div>
+          <div class="shortcut-row"><span class="shortcut-desc">Compact view</span><span class="shortcut-keys"><span class="kbd">⌘</span><span class="kbd-sep">+</span><span class="kbd">2</span></span></div>
+          <div class="shortcut-row"><span class="shortcut-desc">List view</span><span class="shortcut-keys"><span class="kbd">⌘</span><span class="kbd-sep">+</span><span class="kbd">3</span></span></div>
+          <div class="shortcut-row"><span class="shortcut-desc">Undo delete</span><span class="shortcut-keys"><span class="kbd">⌘</span><span class="kbd-sep">+</span><span class="kbd">Z</span></span></div>
+          <div class="shortcut-row"><span class="shortcut-desc">Redo delete</span><span class="shortcut-keys"><span class="kbd">⌘</span><span class="kbd-sep">+</span><span class="kbd">⇧</span><span class="kbd-sep">+</span><span class="kbd">Z</span></span></div>
+          <div class="shortcut-row"><span class="shortcut-desc">Close / dismiss</span><span class="shortcut-keys"><span class="kbd">Esc</span></span></div>
+        </div>
+      </div>
+      <div>
+        <div class="shortcut-section">
+          <div class="shortcut-section-label">Add modal</div>
+          <div class="shortcut-row"><span class="shortcut-desc">Save show</span><span class="shortcut-keys"><span class="kbd">↵</span></span></div>
+          <div class="shortcut-row"><span class="shortcut-desc">Toggle service</span><span class="shortcut-keys"><span class="kbd">N</span><span class="kbd-sep">/</span><span class="kbd">D</span><span class="kbd-sep">/</span><span class="kbd">P</span><span class="kbd-sep">/</span><span class="kbd">H</span><span class="kbd-sep">/</span><span class="kbd">A</span><span class="kbd-sep">/</span><span class="kbd">O</span></span></div>
+          <div class="shortcut-row"><span class="shortcut-desc">JustWatch</span><span class="shortcut-keys"><span class="kbd">J</span></span></div>
+        </div>
+        <div class="shortcut-section">
+          <div class="shortcut-section-label">Detail modal</div>
+          <div class="shortcut-row"><span class="shortcut-desc">Toggle status</span><span class="shortcut-keys"><span class="kbd">↵</span></span></div>
+          <div class="shortcut-row"><span class="shortcut-desc">JustWatch</span><span class="shortcut-keys"><span class="kbd">J</span></span></div>
+          <div class="shortcut-row"><span class="shortcut-desc">Close</span><span class="shortcut-keys"><span class="kbd">Esc</span></span></div>
+        </div>
+      </div>
+    </div>
+    <div class="shortcuts-panel-footer">⌘ = Ctrl on Windows &nbsp;·&nbsp; Shortcuts only fire when no text field is focused</div>
+  </div>
+</div>
+
+<script>
+function openShortcutsPanel(){
+  document.getElementById('shortcutsOverlay').classList.add('open');
+  lockScroll();
+}
+function closeShortcutsPanel(){
+  const el=document.getElementById('shortcutsOverlay');
+  if(!el.classList.contains('open'))return;
+  el.classList.remove('open');
+  unlockScroll();
+}
+</script>
 
 </body>
 </html>

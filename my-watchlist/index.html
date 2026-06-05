@@ -1429,7 +1429,7 @@
     <button class="filter-btn" onclick="setFilter('vpn',this)"><span class="dot" style="background:#7c3aed"></span>VPN only</button>
     <button class="filter-btn" onclick="setFilter('unwatched',this)">Unwatched</button>
     <button class="filter-btn" onclick="setFilter('watched',this)">Watched</button>
-    <button class="filter-btn" onclick="setFilter('rewatch',this)">↻ Rewatch</button>
+    <button class="filter-btn" onclick="setFilter('rewatch',this)">Rewatch</button>
     <button class="filter-btn" id="filterGraveyard" onclick="setFilter('graveyard',this)">💀 Graveyard</button>
     <button class="filter-btn" id="filterCategories" onclick="setFilter('categories',this)">&#128196; Categories</button>
   </div>
@@ -2159,7 +2159,7 @@ function buildListRow(m,i){
   const staleClass=getStaleClass(m);
   const statusTag=m.graveyard
     ?`<span class="list-status graveyard">💀 Never</span>`
-    :m.watched&&m.rewatch?`<span class="list-status rewatch">↻ Rewatch</span>`
+    :m.watched&&m.rewatch?`<span class="list-status rewatch">Rewatch</span>`
     :m.watched?`<span class="list-status watched">✓ Watched</span>`:'';
   const exemptTag=(currentFilter==='categories'&&m.detachExempt&&categorySettings[m.category]?.detached)?`<span class="list-status" style="background:rgba(96,165,250,0.08);color:#60a5fa;border:1px solid rgba(96,165,250,0.22);">👁 Visible</span>`:'';
   const dateLabel=m.watched?formatDateWatched(m.dateWatched):formatDateAdded(m.dateAdded);
@@ -2435,6 +2435,8 @@ function collectionDateMap(){
 const SORT_LABELS={
   'dateAdded-desc':'Newest',
   'dateAdded-asc':'Oldest',
+  'dateWatched-desc':'Newest',
+  'dateWatched-asc':'Oldest',
   'year-desc':'Year \u2193',
   'year-asc':'Year \u2191',
   'title-asc':'A\u2013Z',
@@ -2449,6 +2451,8 @@ function _movieSortValue(m,field){
   switch(field){
     case 'dateAdded':
       return m.dateAdded?new Date(m.dateAdded).getTime():0;
+    case 'dateWatched':
+      return m.dateWatched?new Date(m.dateWatched).getTime():0;
     case 'year':
       return parseInt(m.year)||0;
     case 'title':
@@ -2684,7 +2688,7 @@ function buildCard(m,i){
   const stale=getStaleClass(m);
   const graveyardCls=m.graveyard?' card-graveyard':'';
   const ph=m.poster?`<img class="card-poster" src="${esc(m.poster)}" alt="${esc(m.title)}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="card-poster-placeholder" style="display:none">&#127917;<span>No poster</span></div>`:`<div class="card-poster-placeholder">&#127917;<span>No poster</span></div>`;
-  const ov=m.graveyard?`<div class="card-graveyard-overlay"><span class="graveyard-stamp">💀 Never</span></div>`:m.watched&&m.rewatch?`<div class="card-rewatch-overlay"><span class="rewatch-stamp">↻ Rewatch</span></div>`:m.watched?`<div class="card-watched-overlay"><span class="watched-stamp">Watched</span></div>`:'';
+  const ov=m.graveyard?`<div class="card-graveyard-overlay"><span class="graveyard-stamp">💀 Never</span></div>`:m.watched&&m.rewatch?`<div class="card-rewatch-overlay"><span class="rewatch-stamp">Rewatch</span></div>`:m.watched?`<div class="card-watched-overlay"><span class="watched-stamp">Watched</span></div>`:'';
   const exemptPip=(currentFilter==='categories'&&m.detachExempt&&categorySettings[m.category]?.detached)?`<div class="detach-exempt-pip">Visible</div>`:'';
   return`<div class="card${stale}${graveyardCls}" data-id="${m.id}" onclick="openDetail('${m.id}')" style="animation-delay:${i*0.03}s">${ph}${ov}${exemptPip}<div class="card-body"><div class="card-title">${esc(m.title)}</div><div class="card-meta" data-year="${esc(m.year||'')}" data-genre="${esc(m.genre||'')}" data-runtime="${esc(formatRuntime(m.runtime)||'')}">${[m.year,m.genre,formatRuntime(m.runtime)].filter(Boolean).join(' &middot; ')}</div><div class="card-services">${buildBadges(m,true)}</div></div></div>`;
 }
@@ -2745,6 +2749,12 @@ function setFilter(f,btn){
   }
   document.getElementById('categoryBar').classList.toggle('visible',currentFilter==='categories');
   document.getElementById('categoryOptions').classList.toggle('visible',currentFilter==='categories'&&!!currentCategory);
+  // If we've left the watched tab, drop dateWatched sort back to the default
+  if(currentFilter!=='watched'&&currentSort.startsWith('dateWatched')){
+    currentSort='dateAdded-asc';
+    localStorage.setItem('watchlist_sort',currentSort);
+    updateSortBtnLabel();
+  }
   render();
 }
 
@@ -2768,7 +2778,7 @@ function openDetail(id){
       <div class="detail-title">${esc(m.title)}</div>
       <div class="detail-meta">${[m.year,m.genre,m.director,formatRuntime(m.runtime)].filter(Boolean).join(' &middot; ')}${m.rating?'<br>&#9733; '+esc(m.rating):''}</div>
       ${m.notes?`<div id="detailNotesWrap" class="detail-notes-wrap clamped"><div id="detailNotes" class="detail-notes">${esc(m.notes)}</div><button class="detail-notes-expander" onclick="toggleDetailNotes()">...</button></div>`:''}
-      ${(()=>{const b=(m.graveyard?`<span class="service-badge" style="background:rgba(80,60,80,0.25);color:#9a8a9a;border:1px solid rgba(120,100,120,0.4)">&#128128; Graveyard</span>`:'')+( m.rewatch?`<span class="service-badge" style="background:rgba(45,212,191,0.12);color:#2dd4bf;border:1px solid rgba(45,212,191,0.3)">↻ Rewatch</span>`:'');return b?`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;">${b}</div>`:'';})()} 
+      ${(()=>{const b=(m.graveyard?`<span class="service-badge" style="background:rgba(80,60,80,0.25);color:#9a8a9a;border:1px solid rgba(120,100,120,0.4)">&#128128; Graveyard</span>`:'')+( m.rewatch?`<span class="service-badge" style="background:rgba(45,212,191,0.12);color:#2dd4bf;border:1px solid rgba(45,212,191,0.3)">Rewatch</span>`:'');return b?`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;">${b}</div>`:'';})()} 
       <div style="margin-top:8px;">
         ${m.watched
           ?`<span id="detailDateWatched" onclick="editDateWatched('${m.id}')" title="Click to edit" style="cursor:pointer;font-size:0.68rem;color:var(--text-muted);letter-spacing:0.05em;border-bottom:1px dashed var(--border-hi);padding-bottom:1px;transition:color 0.15s;" onmouseover="this.style.color='var(--text-dim)'" onmouseout="this.style.color='var(--text-muted)'">${formatDateWatched(m.dateWatched)}</span>`
@@ -2784,7 +2794,7 @@ function openDetail(id){
         <a class="btn-justwatch" href="${jw}" target="_blank" rel="noopener" style="text-decoration:none"><span class="jw-dot"></span>JW</a>
         <a class="btn-letterboxd" href="${lb}" target="_blank" rel="noopener" style="text-decoration:none"><span class="lb-dot"></span>LB</a>
         <button class="btn btn-ghost btn-sm" onclick="toggleGraveyard('${m.id}')" title="${m.graveyard?'Remove from graveyard':'Move to graveyard — never watching this'}" style="${m.graveyard?'color:#c084fc;border-color:rgba(124,58,237,0.4);':'color:var(--text-muted);'}">${m.graveyard?'💀 Unbury':'💀'}</button>
-        ${m.watched&&!m.graveyard?`<button class="btn btn-ghost btn-sm" onclick="toggleRewatch('${m.id}')" title="${m.rewatch?'Remove rewatch flag':'Flag for rewatch'}" style="${m.rewatch?'color:#2dd4bf;border-color:rgba(45,212,191,0.4);':'color:var(--text-muted);'}">↻${m.rewatch?' Rewatch':''}</button>`:''}
+        ${m.watched&&!m.graveyard?`<button class="btn btn-ghost btn-sm" onclick="toggleRewatch('${m.id}')" title="${m.rewatch?'Remove rewatch flag':'Flag for rewatch'}" style="${m.rewatch?'color:#2dd4bf;border-color:rgba(45,212,191,0.4);':'color:var(--text-muted);'}">Rewatch</button>`:''}
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;">
         <button class="btn btn-ghost" onclick="openEditFromDetail('${m.id}')">Edit</button>
@@ -3082,6 +3092,8 @@ function toggleSortMenu(){
   const btn=document.getElementById('sortBtn');
   if(!menu||!btn)return;
   if(menu.classList.contains('open')){closeSortMenu();return;}
+  // Show the date-watched options only on the watched tab
+  document.getElementById('watchedSortSection').style.display=currentFilter==='watched'?'block':'none';
   // Position the menu directly below the button, aligned to its right edge
   const rect=btn.getBoundingClientRect();
   menu.style.top=(rect.bottom+window.scrollY+6)+'px';
@@ -3157,13 +3169,18 @@ function clearSearchBar(){
 function onSearchBarKeyDown(e){
   if(e.key==='Escape'){
     e.preventDefault();
-    if(document.getElementById('searchBar').value){
-      clearSearchBar();
-    } else {
-      const w=document.getElementById('searchBarWrap');
-      w.classList.remove('expanded');
-      document.getElementById('searchBar').blur();
-    }
+    const i=document.getElementById('searchBar');
+    const w=document.getElementById('searchBarWrap');
+    // Escape always clears and fully dismisses in one go
+    const hadQuery=!!i.value;
+    i.value='';
+    if(window.selectionMode)exitSelectMode(false);
+    searchQuery='';
+    w.classList.remove('expanded','has-query');
+    if(hadQuery)render();
+    const sy=window.scrollY;
+    i.blur();
+    window.scrollTo(0,sy);
   }
 }
 function onSearchBarBlur(){
@@ -3562,6 +3579,7 @@ document.addEventListener('keydown',e=>{
     if(key==='R'){e.preventDefault();openSurpriseModal();return;}
     if(key==='H'){e.preventDefault();toggleHideWatched();return;}
     if(e.key==='?'){e.preventDefault();openShortcutsPanel();return;}
+    if(e.key==='/'){e.preventDefault();const w=document.getElementById('searchBarWrap');if(w){w.classList.add('expanded');const sb=document.getElementById('searchBar');sb.focus();sb.select();}return;}
   }
   if(!inField&&(e.metaKey||e.ctrlKey)&&!e.altKey&&!e.shiftKey&&noModal){
     if(e.key==='1'){e.preventDefault();setView('grid');return;}
@@ -4739,6 +4757,10 @@ function _removeCategoriseRow(id){
   <button class="sort-menu-item" data-sort="runtime-desc"   onclick="setSort('runtime-desc')">Runtime<span class="sort-menu-detail">longest first</span></button>
   <button class="sort-menu-item" data-sort="runtime-asc"    onclick="setSort('runtime-asc')">Runtime<span class="sort-menu-detail">shortest first</span></button>
   <button class="sort-menu-item" data-sort="rating-desc"    onclick="setSort('rating-desc')">Rating<span class="sort-menu-detail">highest first</span></button>
+  <div id="watchedSortSection" style="display:none;border-top:1px solid var(--border);margin-top:4px;padding-top:4px;">
+    <button class="sort-menu-item" data-sort="dateWatched-desc" onclick="setSort('dateWatched-desc')">Date watched<span class="sort-menu-detail">newest first</span></button>
+    <button class="sort-menu-item" data-sort="dateWatched-asc"  onclick="setSort('dateWatched-asc')">Date watched<span class="sort-menu-detail">oldest first</span></button>
+  </div>
 </div>
 
 <!-- ── BULK ACTION BAR ──────────────────────────────────────────────────── -->
@@ -5087,7 +5109,8 @@ document.addEventListener('click', function(e){
           <div class="shortcut-row"><span class="shortcut-desc">Surprise Me</span><span class="shortcut-keys"><span class="kbd">R</span></span></div>
           <div class="shortcut-row"><span class="shortcut-desc">Toggle hide watched</span><span class="shortcut-keys"><span class="kbd">H</span></span></div>
           <div class="shortcut-row"><span class="shortcut-desc">This panel</span><span class="shortcut-keys"><span class="kbd">?</span></span></div>
-          <div class="shortcut-row"><span class="shortcut-desc">Focus search</span><span class="shortcut-keys"><span class="kbd">⌘</span><span class="kbd-sep">+</span><span class="kbd">K</span></span></div>
+          <div class="shortcut-row"><span class="shortcut-desc">Focus search</span><span class="shortcut-keys"><span class="kbd">/</span><span class="kbd-sep">/</span><span class="kbd">⌘</span><span class="kbd-sep">+</span><span class="kbd">K</span></span></div>
+          <div class="shortcut-row"><span class="shortcut-desc">Clear &amp; dismiss search</span><span class="shortcut-keys"><span class="kbd">Esc</span></span></div>
           <div class="shortcut-row"><span class="shortcut-desc">Grid view</span><span class="shortcut-keys"><span class="kbd">⌘</span><span class="kbd-sep">+</span><span class="kbd">1</span></span></div>
           <div class="shortcut-row"><span class="shortcut-desc">Compact view</span><span class="shortcut-keys"><span class="kbd">⌘</span><span class="kbd-sep">+</span><span class="kbd">2</span></span></div>
           <div class="shortcut-row"><span class="shortcut-desc">List view</span><span class="shortcut-keys"><span class="kbd">⌘</span><span class="kbd-sep">+</span><span class="kbd">3</span></span></div>
