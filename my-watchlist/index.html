@@ -2755,6 +2755,12 @@ function setFilter(f,btn){
     localStorage.setItem('watchlist_sort',currentSort);
     updateSortBtnLabel();
   }
+  // When entering the watched tab, default to date watched newest first
+  if(currentFilter==='watched'&&!currentSort.startsWith('dateWatched')){
+    currentSort='dateWatched-desc';
+    localStorage.setItem('watchlist_sort',currentSort);
+    updateSortBtnLabel();
+  }
   render();
 }
 
