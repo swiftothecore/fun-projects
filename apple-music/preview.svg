@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_1" xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 1000 400">
+  <!-- Generator: Adobe Illustrator 30.5.1, SVG Export Plug-In . SVG Version: 2.1.4 Build 3)  -->
+  <defs>
+    <style>
+      .st0 {
+        fill: #070707;
+      }
+
+      .st1 {
+        fill: #3a3a3a;
+        font-family: HelveticaNeue, 'Helvetica Neue';
+        font-size: 13px;
+        letter-spacing: 0em;
+      }
+
+      .st1, .st2, .st3, .st4, .st5 {
+        isolation: isolate;
+      }
+
+      .st2 {
+        fill: #fff;
+      }
+
+      .st2, .st5 {
+        font-family: Arial-Black, 'Arial Black';
+        font-size: 80px;
+        font-weight: 800;
+        letter-spacing: 0em;
+      }
+
+      .st6, .st4, .st5 {
+        fill: #ff4e6b;
+      }
+
+      .st3 {
+        fill: #2a2a2a;
+        font-size: 11px;
+        letter-spacing: .2em;
+      }
+
+      .st3, .st4 {
+        font-family: HelveticaNeue-Medium, 'Helvetica Neue';
+        font-weight: 500;
+      }
+
+      .st7 {
+        fill: #0d0403;
+        stroke: #ff4e6b;
+        stroke-opacity: .3;
+        stroke-width: .8px;
+      }
+
+      .st4 {
+        font-size: 10.5px;
+        letter-spacing: 0em;
+      }
+
+      .st8 {
+        fill: #282828;
+      }
+    </style>
+  </defs>
+  <rect class="st0" width="1000" height="400"/>
+  <path class="st7" d="M63,32h148c7.2,0,13,5.8,13,13h0c0,7.2-5.8,13-13,13H63c-7.2,0-13-5.8-13-13h0c0-7.2,5.8-13,13-13Z"/>
+  <circle class="st6" cx="67" cy="44.7" r="3.5"/>
+  <text class="st4" transform="translate(79 48.5)"><tspan x="0" y="0">APPLE MUSIC</tspan></text>
+  <text class="st2" transform="translate(50 155)"><tspan x="0" y="0">APPLE</tspan></text>
+  <text class="st5" transform="translate(50 248)"><tspan x="0" y="0">MUSIC</tspan></text>
+  <rect class="st8" x="50" y="272" width="80" height=".8"/>
+  <text class="st1" transform="translate(50 296)"><tspan x="0" y="0">Studio-quality. Every time.</tspan></text>
+  <text class="st3" transform="translate(50 358)"><tspan x="0" y="0">NINE REASONS</tspan></text>
+  <rect class="st6" x="370" y="181" width="22" height="38" rx="3" ry="3"/>
+  <rect class="st6" x="412" y="140" width="22" height="120" rx="3" ry="3"/>
+  <rect class="st6" x="454" y="172" width="22" height="56" rx="3" ry="3"/>
+  <rect class="st6" x="496" y="107" width="22" height="186" rx="3" ry="3"/>
+  <rect class="st6" x="538" y="165" width="22" height="70" rx="3" ry="3"/>
+  <rect class="st6" x="580" y="80" width="22" height="240" rx="3" ry="3"/>
+  <rect class="st6" x="622" y="155" width="22" height="90" rx="3" ry="3"/>
+  <rect class="st6" x="664" y="93" width="22" height="214" rx="3" ry="3"/>
+  <rect class="st6" x="706" y="170" width="22" height="60" rx="3" ry="3"/>
+  <rect class="st6" x="748" y="100" width="22" height="200" rx="3" ry="3"/>
+  <rect class="st6" x="790" y="175" width="22" height="50" rx="3" ry="3"/>
+  <rect class="st6" x="832" y="120" width="22" height="160" rx="3" ry="3"/>
+  <rect class="st6" x="874" y="179" width="22" height="42" rx="3" ry="3"/>
+  <rect class="st6" x="916" y="160" width="22" height="80" rx="3" ry="3"/>
+</svg>
