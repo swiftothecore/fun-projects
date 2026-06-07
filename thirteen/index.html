@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Thirteen — Fridays That Sum to 13</title>
+  <script>
+    /* Diamond gem favicon — matches the header ornament.
+       Dark-mode variant swaps parchment for the site's dark background
+       and brightens the sage so it stays visible.
+       encodeURIComponent handles all the characters that would break
+       a raw data URI string, so no manual URL-encoding is needed. */
+    !function(){
+      var svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">'
+              + '<style>'
+              + '.b{fill:#f4eedc}'
+              + '.f{fill:#5a6e3e}'
+              + '@media(prefers-color-scheme:dark){'
+              + '.b{fill:#160e06}'
+              + '.f{fill:#7a9a58}'
+              + '}'
+              + '</style>'
+              + '<rect width="100" height="100" class="b"/>'
+              + '<polygon points="50,12 88,50 50,88 12,50" class="f"/>'
+              + '<polygon points="50,27 73,50 50,73 27,50" class="b"/>'
+              + '<circle cx="50" cy="50" r="6" class="f"/>'
+              + '</svg>';
+      var link = document.createElement('link');
+      link.rel  = 'icon';
+      link.type = 'image/svg+xml';
+      link.href = 'data:image/svg+xml,' + encodeURIComponent(svg);
+      document.head.appendChild(link);
+    }();
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&display=swap" rel="stylesheet">
+  <style>
+/* ══════════════════════════ RESET ══════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ═════════════════════════ VARIABLES ═══════════════════════ */
+:root {
+  --bg:        #eee7d2; --card:      #f8f2e2;
+  --border:    #c8b890; --border-lt: #ddd4b8;
+  --brown:     #5a3e22; --brown-dk:  #3e2810; --brown-lt:  #8a6848;
+  --sage:      #6a7a50; --sage-dk:   #4e5c38;
+  --fri13:     #7c2233; --fri13-dk:  #561626; --fri13-lt:  #a04055;
+  --year:      #9a6318; --year-dk:   #724908; --year-lt:   #b07828;
+  --cream:     #f4eedc; --text:      #2a1e10;
+  --muted:     #8a7258; --muted-lt:  #b0a080;
+  --eq-tile:   #ede4c8;
+  --overlay-t: rgba(90,62,34,.09); --overlay-b: rgba(90,62,34,.06);
+  --grain:     rgba(90,62,34,.055); --wmark:     rgba(90,62,34,.045);
+}
+html.dark {
+  --bg:        #160e06; --card:      #1e1408;
+  --border:    #3e2c14; --border-lt: #2c1e0a;
+  --brown:     #c8a050; --brown-dk:  #967030; --brown-lt:  #d8b870;
+  --sage:      #80a45e; --sage-dk:   #608040;
+  --fri13:     #c03258; --fri13-dk:  #922040; --fri13-lt:  #d87090;
+  --year:      #b87830; --year-dk:   #8a5820; --year-lt:   #d49848;
+  --cream:     #f0e8d0; --text:      #ddd0b0;
+  --muted:     #7a6a50; --muted-lt:  #4e4030;
+  --eq-tile:   #2c1e0a;
+  --overlay-t: rgba(200,140,60,.07); --overlay-b: rgba(180,120,40,.05);
+  --grain:     rgba(200,160,80,.04); --wmark:     rgba(200,160,80,.055);
+}
+@media (prefers-color-scheme: dark) {
+  html:not(.light) {
+    --bg:#160e06; --card:#1e1408; --border:#3e2c14; --border-lt:#2c1e0a;
+    --brown:#c8a050; --brown-dk:#967030; --brown-lt:#d8b870;
+    --sage:#80a45e; --sage-dk:#608040;
+    --fri13:#c03258; --fri13-dk:#922040; --fri13-lt:#d87090;
+    --year:#b87830; --year-dk:#8a5820; --year-lt:#d49848;
+    --cream:#f0e8d0; --text:#ddd0b0; --muted:#7a6a50; --muted-lt:#4e4030;
+    --eq-tile:#2c1e0a;
+    --overlay-t:rgba(200,140,60,.07); --overlay-b:rgba(180,120,40,.05);
+    --grain:rgba(200,160,80,.04); --wmark:rgba(200,160,80,.055);
+  }
+}
+
+/* ═══════════════════════════ BASE ═══════════════════════════ */
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg); color: var(--text);
+  font-family: 'IM Fell English', Georgia, serif;
+  min-height: 100vh; overflow-x: hidden;
+  transition: background-color .4s ease, color .3s ease;
+}
+body::before {
+  content: ''; position: fixed; inset: 0;
+  background: radial-gradient(ellipse 90% 50% at 50% -5%,  var(--overlay-t) 0%, transparent 65%),
+              radial-gradient(ellipse 70% 40% at 50% 115%, var(--overlay-b) 0%, transparent 60%);
+  pointer-events: none; z-index: 0; transition: background .4s ease;
+}
+body::after {
+  content: ''; position: fixed; inset: 0;
+  background-image: radial-gradient(var(--grain) 1px, transparent 1px);
+  background-size: 22px 22px; pointer-events: none; z-index: 0;
+}
+
+/* ════════════════════════ XIII MARK ════════════════════════ */
+.xiii-mark {
+  position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%);
+  font-family: 'IM Fell English', serif; font-size: clamp(170px,31vw,370px);
+  color: transparent; -webkit-text-stroke: 1px var(--wmark);
+  letter-spacing: .1em; user-select: none; pointer-events: none;
+  z-index: 0; line-height: 1; font-style: italic;
+}
+
+/* ═══════════════════════ THEME TOGGLE ═══════════════════════
+   Uses system-ui so ☾ and ☀ render with their own font metrics
+   rather than inheriting IM Fell English's ascent values, which
+   was pushing the glyphs above the optical centre of the button.
+   ══════════════════════════════════════════════════════════ */
+.theme-toggle {
+  position: fixed; top: 1rem; right: 1.5rem; z-index: 100;
+  background: var(--card); border: 1px solid var(--border);
+  color: var(--muted); cursor: pointer;
+  width: 32px; height: 32px; border-radius: 2px;
+  font-family: system-ui, sans-serif;
+  font-size: 15px;
+  display: flex; align-items: center; justify-content: center;
+  transition: border-color .22s, color .22s, background-color .4s;
+}
+.theme-toggle:hover { border-color: var(--brown); color: var(--brown); }
+
+/* ══════════════════════ CONTENT WRAP ═══════════════════════ */
+.wrap {
+  position: relative; z-index: 1;
+  max-width: min(1440px, calc(100vw - 3rem));
+  margin: 0 auto; padding: 0 1.5rem 5.5rem;
+}
+
+/* ══════════════════════════ HEADER ══════════════════════════ */
+header { padding: 1.8rem 0 1rem; animation: fadeUp .55s ease both; }
+.hd-strip { display: flex; align-items: center; gap: .7rem; }
+.hd-rule { flex: 1; height: 1px; background: linear-gradient(90deg, transparent, var(--border)); }
+.hd-strip .hd-rule:last-child { background: linear-gradient(90deg, var(--border), transparent); }
+.hd-gem { width: 5px; height: 5px; background: var(--brown-lt); transform: rotate(45deg); flex-shrink: 0; }
+h1 {
+  font-family: 'IM Fell English', serif; font-weight: 400;
+  font-size: clamp(1.2rem,2.8vw,1.85rem); letter-spacing: .06em;
+  color: var(--text); line-height: 1; white-space: nowrap; flex-shrink: 0;
+}
+h1 em { font-style: normal; color: var(--sage); }
+.hd-sep {
+  font-family: 'IM Fell English', serif; font-style: italic;
+  font-size: .65rem; letter-spacing: .25em; color: var(--muted-lt);
+  flex-shrink: 0; white-space: nowrap;
+}
+.hd-tagline {
+  display: block; text-align: center; font-style: italic; font-size: .82rem;
+  color: var(--muted); letter-spacing: .03em; margin-top: .45rem; cursor: pointer;
+  text-decoration: underline; text-decoration-style: dotted;
+  text-decoration-color: var(--border); text-underline-offset: 4px;
+  transition: color .2s ease, text-decoration-color .2s ease; user-select: none;
+}
+.hd-tagline:hover { color: var(--brown); text-decoration-color: var(--brown); text-decoration-style: solid; }
+
+/* ════════════════════════ RULE ══════════════════════════════ */
+.rule { display: flex; align-items: center; gap: .8rem; margin: 1.2rem 0; }
+.rule::before, .rule::after {
+  content: ''; flex: 1; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--border));
+}
+.rule::after { background: linear-gradient(90deg, var(--border), transparent); }
+.rule span {
+  font-family: 'IM Fell English', serif; font-style: italic;
+  font-size: .68rem; letter-spacing: .18em; color: var(--muted); white-space: nowrap;
+}
+
+/* ════════════════════════ YEAR NAV ══════════════════════════ */
+.year-nav { display: flex; align-items: center; gap: .55rem; max-width: 920px; margin: 0 auto 2.75rem; }
+.nav-btn {
+  background: none; border: 1px solid var(--border); color: var(--muted); cursor: pointer;
+  padding: .46rem .82rem; font-family: 'IM Fell English', serif; font-size: .8rem;
+  letter-spacing: .06em; border-radius: 2px;
+  transition: border-color .22s, color .22s, background-color .22s; flex-shrink: 0; line-height: 1.3;
+}
+.nav-btn:hover { border-color: var(--brown); color: var(--brown); background: rgba(90,62,34,.06); }
+html.dark .nav-btn:hover { background: rgba(200,160,80,.06); }
+.pills { flex: 1; display: grid; gap: .4rem; }
+.pill {
+  background: none; border: 1px solid var(--border); color: var(--muted); cursor: pointer;
+  padding: .48rem .9rem .42rem; font-family: 'IM Fell English', serif;
+  font-size: clamp(.68rem,1.4vw,.82rem); letter-spacing: .04em; border-radius: 2px;
+  transition: opacity .25s, border-color .25s, color .25s, background-color .3s;
+  white-space: nowrap; display: flex; flex-direction: column; align-items: center; gap: .05rem; width: 100%;
+}
+.pill[data-dist="1"] { opacity: .82; } .pill[data-dist="2"] { opacity: .62; }
+.pill[data-dist="3"] { opacity: .44; } .pill[data-dist="4"] { opacity: .28; }
+.pill:hover:not(.active) { opacity: 1 !important; border-color: var(--brown-lt); color: var(--text); }
+.pill.active { background: var(--brown); border-color: var(--brown); color: var(--cream); opacity: 1 !important; }
+.pill-count { font-size: .5rem; letter-spacing: .06em; opacity: .55; font-style: italic; }
+.pill.active .pill-count { opacity: .7; color: var(--border); }
+
+/* ══════════════════════ RESULTS HD ═════════════════════════ */
+.res-hd { display: flex; align-items: baseline; gap: 1.25rem; margin-bottom: 1rem; flex-wrap: wrap; }
+.res-year {
+  font-family: 'IM Fell English', serif; font-weight: 400;
+  font-size: clamp(2rem,5.5vw,3.6rem); color: var(--text); letter-spacing: .04em; line-height: 1;
+}
+.res-count { font-style: italic; font-size: 1rem; display: flex; align-items: center; flex-wrap: wrap; gap: 0; }
+.res-count--sum  { color: var(--sage); }
+.res-count--13   { color: var(--fri13-lt); }
+.res-count--year { color: var(--year-lt); }
+.res-count--sep  { color: var(--muted-lt); padding: 0 .3em; }
+
+/* ══════════════════════════ FILTERS ════════════════════════
+   Shown only when the current year has more than one card type.
+   Each button toggles visibility of its card type.
+   Inactive buttons are dimmed; clicking always leaves at least
+   one filter active (clicking the last active one resets all).
+   ══════════════════════════════════════════════════════════ */
+.filters {
+  display: flex; gap: .5rem; flex-wrap: wrap; align-items: center;
+  margin-bottom: 1.5rem;
+}
+.filter-btn {
+  display: inline-flex; align-items: center; gap: .38rem;
+  font-family: 'IM Fell English', serif; font-style: italic;
+  font-size: .78rem; letter-spacing: .02em;
+  padding: .28rem .65rem .28rem .5rem;
+  border-radius: 2px; cursor: pointer; user-select: none;
+  background: none; border: 1px solid var(--border);
+  color: var(--muted-lt);
+  opacity: .48;
+  transition: opacity .2s, border-color .2s, color .2s, background-color .2s;
+}
+.filter-btn:hover { opacity: .75; }
+.filter-dot {
+  width: 7px; height: 7px; flex-shrink: 0;
+  background: var(--border); transition: background .2s;
+}
+/* Active states */
+.filter-btn.active                  { opacity: 1; }
+.filter-btn--sum.active             { color: var(--sage);    border-color: var(--sage);  }
+.filter-btn--13.active              { color: var(--fri13-lt); border-color: var(--fri13); }
+.filter-btn--year.active            { color: var(--year-lt);  border-color: var(--year);  }
+.filter-btn--sum.active   .filter-dot { background: var(--sage);  }
+.filter-btn--13.active    .filter-dot { background: var(--fri13); }
+.filter-btn--year.active  .filter-dot { background: var(--year);  }
+
+/* Empty state when filter hides all cards */
+.filter-empty {
+  grid-column: 1/-1; text-align: center; padding: 3rem 2rem;
+  font-style: italic; font-size: .9rem; color: var(--muted);
+}
+
+/* ══════════════════════ DATE GRID ═══════════════════════════ */
+.date-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(248px,1fr)); gap: 1rem; }
+
+/* ══════════════════════ DATE CARD ═══════════════════════════ */
+.card {
+  background: var(--card); border: 1px solid var(--border); border-top: none;
+  border-radius: 2px; padding: 1.15rem 1.35rem; position: relative; overflow: hidden;
+  transition: transform .3s ease, box-shadow .3s ease, opacity .3s, background-color .4s, border-color .3s;
+  animation: fadeUp .45s ease both;
+}
+.card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  background: var(--sage); transition: background .3s;
+}
+.card--fri13::before      { background: var(--fri13); }
+.card--both::before       { background: linear-gradient(to right, var(--sage)  50%, var(--fri13) 50%); }
+.card--year::before       { background: var(--year); }
+.card--year-fri13::before { background: linear-gradient(to right, var(--fri13) 50%, var(--year)  50%); }
+.card--today::before      { background: var(--brown); }
+.card--today { box-shadow: 0 0 0 2px rgba(90,62,34,.18); }
+html.dark .card--today { box-shadow: 0 0 0 2px rgba(200,160,80,.25); }
+.card:hover { transform: translateY(-2px); box-shadow: 0 6px 22px rgba(90,62,34,.1); }
+html.dark .card:hover { box-shadow: 0 6px 22px rgba(0,0,0,.4); }
+.card--today:hover { box-shadow: 0 6px 22px rgba(90,62,34,.1), 0 0 0 2px rgba(90,62,34,.18); }
+html.dark .card--today:hover { box-shadow: 0 6px 22px rgba(0,0,0,.4), 0 0 0 2px rgba(200,160,80,.25); }
+.card--past { opacity: .5; }
+.card--past:hover { opacity: .75; transform: translateY(-1px); }
+
+.c-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: .8rem; }
+.c-friday { font-size: .56rem; letter-spacing: .3em; text-transform: uppercase; }
+.c-friday--sum        { color: var(--sage); }
+.c-friday--fri13      { color: var(--fri13-lt); }
+.c-friday--both       { color: var(--sage-dk); }
+.c-friday--year       { color: var(--year-lt); }
+.c-friday--year-fri13 { color: var(--year-lt); }
+html.dark .c-friday--both { color: var(--sage); }
+.c-badge { font-size: .56rem; letter-spacing: .18em; font-style: italic; }
+.c-badge--sum        { color: var(--muted-lt); }
+.c-badge--fri13      { color: var(--fri13-lt); }
+.c-badge--both       { color: var(--muted); }
+.c-badge--year       { color: var(--year-lt); }
+.c-badge--year-fri13 { color: var(--year-lt); }
+.c-badge--today      { color: var(--brown-lt); }
+.c-date { display: flex; align-items: baseline; gap: .65rem; margin-bottom: .75rem; }
+.c-day-num { font-family: 'IM Fell English', serif; font-weight: 400; font-size: 2.65rem; color: var(--text); line-height: 1; }
+.c-month-wrap { display: flex; flex-direction: column; gap: .06rem; }
+.c-month { font-size: .8rem; letter-spacing: .1em; text-transform: uppercase; }
+.c-month--sum        { color: var(--sage); }
+.c-month--fri13      { color: var(--fri13-lt); }
+.c-month--both       { color: var(--sage); }
+.c-month--year       { color: var(--year-lt); }
+.c-month--year-fri13 { color: var(--year-lt); }
+.c-yr-sub { font-size: .7rem; color: var(--muted); font-style: italic; }
+.equation {
+  display: flex; align-items: center; gap: .28rem; flex-wrap: wrap;
+  padding-top: .7rem; border-top: 1px solid var(--border-lt);
+}
+.eq-num {
+  font-family: 'IM Fell English', serif; font-size: .94rem; color: var(--text);
+  background: var(--eq-tile); border: 1px solid var(--border);
+  border-radius: 2px; padding: .12rem .38rem; min-width: 1.65rem; text-align: center; line-height: 1.55;
+  transition: background-color .4s, border-color .3s, color .3s;
+}
+.eq-plus, .eq-eq { font-size: .82rem; color: var(--muted); font-style: italic; }
+.eq-result {
+  font-family: 'IM Fell English', serif; font-size: 1rem; color: var(--cream);
+  background: var(--sage-dk); border: 1px solid var(--sage-dk);
+  border-radius: 2px; padding: .12rem .42rem; min-width: 1.85rem; text-align: center; line-height: 1.55;
+}
+.fri13-tile {
+  font-family: 'IM Fell English', serif; font-size: 1rem; color: var(--cream);
+  background: var(--fri13); border: 1px solid var(--fri13-dk);
+  border-radius: 2px; padding: .12rem .45rem; min-width: 1.85rem; text-align: center; line-height: 1.55;
+}
+.fri13-label { font-style: italic; font-size: .78rem; color: var(--muted); }
+.eq-year-sum {
+  font-family: 'IM Fell English', serif; font-size: .94rem; color: var(--cream);
+  background: var(--year); border: 1px solid var(--year-dk);
+  border-radius: 2px; padding: .12rem .38rem; min-width: 1.65rem; text-align: center; line-height: 1.55;
+}
+.eq-result-year {
+  font-family: 'IM Fell English', serif; font-size: 1rem; color: var(--cream);
+  background: var(--year); border: 1px solid var(--year-dk);
+  border-radius: 2px; padding: .12rem .42rem; min-width: 1.85rem; text-align: center; line-height: 1.55;
+}
+.both-note, .year-note {
+  width: 100%; font-style: italic; font-size: .72rem;
+  margin-top: .18rem; padding-top: .18rem; border-top: 1px dotted var(--border-lt);
+}
+.both-note { color: var(--fri13-lt); }
+.year-note { color: var(--year-lt); }
+
+/* ════════════════════════ EMPTY STATE ══════════════════════ */
+.empty { grid-column: 1/-1; text-align: center; padding: 4.5rem 2rem; }
+.empty-glyph { font-family: 'IM Fell English', serif; font-style: italic; font-size: 5rem; color: var(--border); opacity: .5; display: block; margin-bottom: .5rem; }
+.empty p { font-style: italic; color: var(--muted); }
+
+/* ══════════════════════════ MODAL ═══════════════════════════ */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(22,14,6,.6);
+  display: flex; align-items: center; justify-content: center; z-index: 200; padding: 1.5rem;
+}
+html.dark .modal-overlay { background: rgba(6,4,2,.7); }
+.modal-overlay.hidden { display: none; }
+@keyframes modalIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+.modal-box {
+  background: var(--card); border: 1px solid var(--border); border-top: 3px solid var(--sage);
+  border-radius: 2px; padding: 1.75rem 2rem; max-width: 500px; width: 100%;
+  position: relative; animation: modalIn .22s ease; transition: background-color .4s, border-color .3s;
+}
+.modal-close {
+  position: absolute; top: .7rem; right: .85rem; background: none; border: none;
+  font-family: 'IM Fell English', serif; font-size: 1.3rem; color: var(--muted-lt);
+  cursor: pointer; line-height: 1; padding: .1rem .3rem; transition: color .2s;
+}
+.modal-close:hover { color: var(--brown); }
+.modal-title {
+  font-family: 'IM Fell English', serif; font-style: italic; font-size: 1.05rem;
+  color: var(--text); letter-spacing: .06em; text-align: center;
+  padding-bottom: .65rem; border-bottom: 1px solid var(--border-lt); margin-bottom: 1rem;
+}
+.modal-section { margin-bottom: 1.1rem; }
+.modal-section:last-child { margin-bottom: 0; }
+.modal-section-head { font-size: .68rem; letter-spacing: .2em; text-transform: uppercase; margin-bottom: .4rem; }
+.modal-section-head--sum  { color: var(--sage); }
+.modal-section-head--13   { color: var(--fri13-lt); }
+.modal-section-head--year { color: var(--year-lt); }
+.modal-body { font-style: italic; font-size: .88rem; color: var(--muted); line-height: 1.75; margin-bottom: .7rem; }
+.modal-examples { display: flex; flex-direction: column; gap: .45rem; }
+.modal-ex { display: flex; align-items: center; gap: .55rem; flex-wrap: wrap; }
+.modal-ex-date { font-style: italic; font-size: .78rem; color: var(--muted); min-width: 145px; flex-shrink: 0; }
+.modal-ex-eq { display: flex; align-items: center; gap: .22rem; flex-wrap: wrap; }
+.modal-eq-num { font-family: 'IM Fell English', serif; font-size: .8rem; color: var(--text); background: var(--eq-tile); border: 1px solid var(--border); padding: .08rem .32rem; line-height: 1.5; transition: background-color .4s, border-color .3s, color .3s; }
+.modal-eq-op { font-size: .78rem; color: var(--muted); font-style: italic; }
+.modal-eq-result-sum  { font-family: 'IM Fell English', serif; font-size: .8rem; color: var(--cream); background: var(--sage-dk); border: 1px solid var(--sage-dk); padding: .08rem .34rem; line-height: 1.5; }
+.modal-eq-result-13   { font-family: 'IM Fell English', serif; font-size: .8rem; color: var(--cream); background: var(--fri13);    border: 1px solid var(--fri13-dk); padding: .08rem .34rem; line-height: 1.5; }
+.modal-eq-year-sum    { font-family: 'IM Fell English', serif; font-size: .8rem; color: var(--cream); background: var(--year);     border: 1px solid var(--year-dk);  padding: .08rem .32rem; line-height: 1.5; }
+.modal-eq-result-year { font-family: 'IM Fell English', serif; font-size: .8rem; color: var(--cream); background: var(--year);     border: 1px solid var(--year-dk);  padding: .08rem .34rem; line-height: 1.5; }
+.modal-divider { height: 1px; background: var(--border-lt); margin: 1rem 0; }
+
+/* ══════════════════════ ANIMATIONS ══════════════════════════ */
+@keyframes fadeUp { from { opacity:0; transform:translateY(18px); } to { opacity:1; transform:translateY(0); } }
+
+/* ══════════════════════ RESPONSIVE ══════════════════════════ */
+@media (max-width: 780px) {
+  .date-grid { grid-template-columns: 1fr 1fr; gap: .72rem; }
+  .c-day-num { font-size: 1.95rem; } h1 { letter-spacing: .04em; } .hd-sep { display: none; }
+}
+@media (max-width: 480px) { .modal-box { padding: 1.4rem 1.25rem; } .modal-ex-date { min-width: auto; } }
+@media (max-width: 360px) { .date-grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+
+<div class="xiii-mark">xiii</div>
+<button class="theme-toggle" id="theme-toggle" aria-label="Toggle dark mode">☾</button>
+
+<!-- ══ MODAL ═════════════════════════════════════════════════ -->
+<div class="modal-overlay hidden" id="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+  <div class="modal-box">
+    <button class="modal-close" id="modal-close" aria-label="Close">&#x2715;</button>
+    <p class="modal-title" id="modal-title">the rules</p>
+    <div class="modal-section">
+      <p class="modal-section-head modal-section-head--sum">qualifying by digit sum</p>
+      <p class="modal-body">A Friday qualifies when the individual digits of its day number plus its month number equal thirteen, or when the day number itself added to the month number equals thirteen.</p>
+      <div class="modal-examples">
+        <div class="modal-ex"><span class="modal-ex-date">Fri 8 May 2026</span><div class="modal-ex-eq"><span class="modal-eq-num">8</span><span class="modal-eq-op">+</span><span class="modal-eq-num">5</span><span class="modal-eq-op">=</span><span class="modal-eq-result-sum">13</span></div></div>
+        <div class="modal-ex"><span class="modal-ex-date">Fri 24 July 2026</span><div class="modal-ex-eq"><span class="modal-eq-num">2</span><span class="modal-eq-op">+</span><span class="modal-eq-num">4</span><span class="modal-eq-op">+</span><span class="modal-eq-num">7</span><span class="modal-eq-op">=</span><span class="modal-eq-result-sum">13</span></div></div>
+      </div>
+    </div>
+    <div class="modal-divider"></div>
+    <div class="modal-section">
+      <p class="modal-section-head modal-section-head--13">Friday the 13th</p>
+      <p class="modal-body">Any Friday where the date itself falls on the thirteenth. Occasionally a Friday the 13th also qualifies by digit sum — when it falls in September, since 1 + 3 + 9 = 13.</p>
+    </div>
+    <div class="modal-divider"></div>
+    <div class="modal-section">
+      <p class="modal-section-head modal-section-head--year">qualifying with the year</p>
+      <p class="modal-body">A Friday also qualifies when the digit sum of the day, plus the month, plus the digit sum of the year all together equal thirteen.</p>
+      <div class="modal-examples">
+        <div class="modal-ex"><span class="modal-ex-date">Fri 2 Jan 2026</span><div class="modal-ex-eq"><span class="modal-eq-num">2</span><span class="modal-eq-op">+</span><span class="modal-eq-num">1</span><span class="modal-eq-op">+</span><span class="modal-eq-year-sum" title="2+0+2+6">10</span><span class="modal-eq-op">=</span><span class="modal-eq-result-year">13</span></div></div>
+        <div class="modal-ex"><span class="modal-ex-date">Fri 5 Mar 2021</span><div class="modal-ex-eq"><span class="modal-eq-num">5</span><span class="modal-eq-op">+</span><span class="modal-eq-num">3</span><span class="modal-eq-op">+</span><span class="modal-eq-year-sum" title="2+0+2+1">5</span><span class="modal-eq-op">=</span><span class="modal-eq-result-year">13</span></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+  <header>
+    <div class="hd-strip">
+      <div class="hd-rule"></div><div class="hd-gem"></div>
+      <h1>Thir<em>teen</em></h1>
+      <span class="hd-sep">·&thinsp; xiii &thinsp;·</span>
+      <div class="hd-gem"></div><div class="hd-rule"></div>
+    </div>
+    <p class="hd-tagline" id="tagline-btn" role="button" tabindex="0" title="Click to learn how this works">
+      Fridays whose digits sum to thirteen
+    </p>
+  </header>
+
+  <div class="rule"><span>select a year</span></div>
+  <div class="year-nav">
+    <button class="nav-btn" id="btn-prev">&#9666; Earlier</button>
+    <div class="pills" id="pills"></div>
+    <button class="nav-btn" id="btn-next">Later &#9656;</button>
+  </div>
+
+  <div class="rule" id="res-rule" style="display:none"><span>notable Fridays</span></div>
+  <div class="res-hd" id="res-hd" style="display:none">
+    <span class="res-year" id="res-year"></span>
+    <span class="res-count" id="res-count"></span>
+  </div>
+
+  <!-- Filter row — hidden until there are multiple card types in the year -->
+  <div class="filters" id="filters" style="display:none">
+    <button class="filter-btn filter-btn--sum  active" data-filter="sum"  title="click to toggle · ⌥ click to solo">
+      <span class="filter-dot"></span>qualifying
+    </button>
+    <button class="filter-btn filter-btn--13   active" data-filter="fri13" title="click to toggle · ⌥ click to solo">
+      <span class="filter-dot"></span>Friday the 13ths
+    </button>
+    <button class="filter-btn filter-btn--year active" data-filter="year" title="click to toggle · ⌥ click to solo">
+      <span class="filter-dot"></span>by year
+    </button>
+  </div>
+
+  <div class="date-grid" id="date-grid"></div>
+</div>
+
+<script>
+/* ── Theme ── */
+(function initTheme() {
+  const stored  = localStorage.getItem('thirteen-theme');
+  const sysDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const isDark  = stored === 'dark' || (!stored && sysDark);
+  document.documentElement.classList.toggle('dark',  isDark);
+  document.documentElement.classList.toggle('light', !isDark && stored === 'light');
+  document.getElementById('theme-toggle').textContent = isDark ? '☀' : '☾';
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+    if (!localStorage.getItem('thirteen-theme')) {
+      document.documentElement.classList.toggle('dark',  e.matches);
+      document.documentElement.classList.toggle('light', !e.matches);
+      document.getElementById('theme-toggle').textContent = e.matches ? '☀' : '☾';
+    }
+  });
+})();
+document.getElementById('theme-toggle').addEventListener('click', () => {
+  const nowDark = document.documentElement.classList.contains('dark');
+  document.documentElement.classList.toggle('dark',  !nowDark);
+  document.documentElement.classList.toggle('light',  nowDark);
+  localStorage.setItem('thirteen-theme', nowDark ? 'light' : 'dark');
+  document.getElementById('theme-toggle').textContent = nowDark ? '☾' : '☀';
+});
+
+/* ── Constants ── */
+const MONTHS = ['January','February','March','April','May','June',
+                'July','August','September','October','November','December'];
+
+function getPad() {
+  if (window.innerWidth < 420) return 1;
+  if (window.innerWidth < 580) return 2;
+  return 4;
+}
+
+/* ── Logic ── */
+function digitSum(n) { return String(n).split('').reduce((a,d) => a + Number(d), 0); }
+
+function qualifiesBySum(day, month) {
+  return digitSum(day) + month === 13 || day + month === 13;
+}
+function qualifiesByYear(day, month, year) {
+  const ys = digitSum(year);
+  return digitSum(day) + month + ys === 13 || day + month + ys === 13;
+}
+function equationParts(day, month) {
+  if (digitSum(day) + month === 13) return [...String(day).split('').map(Number), month];
+  return [day, month];
+}
+function yearEquationParts(day, month, year) {
+  const ys = digitSum(year);
+  if (digitSum(day) + month + ys === 13) return [...String(day).split('').map(Number), month];
+  return [day, month];
+}
+
+function getSpecialFridays(year) {
+  const out = [];
+  const d   = new Date(year, 0, 1);
+  while (d.getDay() !== 5) d.setDate(d.getDate() + 1);
+  while (d.getFullYear() === year) {
+    const day = d.getDate(), month = d.getMonth() + 1;
+    const isSum   = qualifiesBySum(day, month);
+    const isFri13 = day === 13;
+    const isYear  = !isSum && qualifiesByYear(day, month, year);
+    if (isSum || isFri13 || isYear) {
+      let type;
+      if      (isSum  &&  isFri13)            type = 'both';
+      else if (isSum  && !isFri13)             type = 'sum';
+      else if (!isSum &&  isFri13 &&  isYear)  type = 'year-fri13';
+      else if (!isSum &&  isFri13 && !isYear)  type = 'fri13';
+      else                                     type = 'year';
+      out.push({
+        day, month, monthName: MONTHS[month-1], year, type,
+        eqParts:   isSum                                   ? equationParts(day, month) : null,
+        yearParts: (type==='year'||type==='year-fri13')    ? yearEquationParts(day, month, year) : null,
+        yearSum:   (type==='year'||type==='year-fri13')    ? digitSum(year) : null,
+      });
+    }
+    d.setDate(d.getDate() + 7);
+  }
+  return out;
+}
+
+/* ── Filter state ── */
+const activeFilters = new Set(['sum', 'fri13', 'year']);
+
+/*
+ * Which card types are revealed by each filter.
+ * 'both' (sum+fri13) shows under either sum or fri13 being active.
+ * 'year-fri13' shows under either fri13 or year being active.
+ */
+const FILTER_MAP = {
+  sum:   ['sum',  'both'],
+  fri13: ['fri13','both', 'year-fri13'],
+  year:  ['year', 'year-fri13'],
+};
+
+function cardIsVisible(cardType) {
+  for (const [filter, types] of Object.entries(FILTER_MAP)) {
+    if (activeFilters.has(filter) && types.includes(cardType)) return true;
+  }
+  return false;
+}
+
+function applyFilter() {
+  let visible = 0;
+  document.querySelectorAll('#date-grid .card').forEach(card => {
+    const show = cardIsVisible(card.dataset.type);
+    card.style.display = show ? '' : 'none';
+    if (show) visible++;
+  });
+  /* Show a note if the filter hid everything */
+  const existing = document.getElementById('filter-empty');
+  if (existing) existing.remove();
+  if (visible === 0) {
+    const msg = document.createElement('p');
+    msg.id = 'filter-empty'; msg.className = 'filter-empty';
+    msg.textContent = 'no Fridays of this type in ' + sel;
+    document.getElementById('date-grid').appendChild(msg);
+  }
+}
+
+/* Wire up filter buttons.
+   Regular click: toggle this type on/off.
+   ⌥ click (Option/Alt): solo — show only this type.
+   ⌥ clicking the already-soloed button un-solos and restores all. */
+document.querySelectorAll('.filter-btn').forEach(btn => {
+  btn.addEventListener('click', e => {
+    const f = btn.dataset.filter;
+    const allBtns = document.querySelectorAll('.filter-btn');
+
+    if (e.altKey) {
+      const alreadySolo = activeFilters.size === 1 && activeFilters.has(f);
+      activeFilters.clear();
+      if (alreadySolo) {
+        /* Un-solo: restore all */
+        activeFilters.add('sum'); activeFilters.add('fri13'); activeFilters.add('year');
+        allBtns.forEach(b => b.classList.add('active'));
+      } else {
+        /* Solo this filter exclusively */
+        activeFilters.add(f);
+        allBtns.forEach(b => b.classList.toggle('active', b.dataset.filter === f));
+      }
+    } else {
+      /* Regular toggle */
+      if (activeFilters.has(f)) {
+        activeFilters.delete(f);
+        btn.classList.remove('active');
+        /* Clicking off the last active filter resets to show-all */
+        if (activeFilters.size === 0) {
+          activeFilters.add('sum'); activeFilters.add('fri13'); activeFilters.add('year');
+          allBtns.forEach(b => b.classList.add('active'));
+        }
+      } else {
+        activeFilters.add(f);
+        btn.classList.add('active');
+      }
+    }
+    applyFilter();
+  });
+});
+
+/* ── State ── */
+let sel = new Date().getFullYear();
+
+/* ── Modal ── */
+const modal = document.getElementById('modal');
+const taglineBtn = document.getElementById('tagline-btn');
+const closeBtn = document.getElementById('modal-close');
+function openModal()  { modal.classList.remove('hidden'); }
+function closeModal() { modal.classList.add('hidden'); }
+taglineBtn.addEventListener('click', openModal);
+taglineBtn.addEventListener('keydown', e => { if(e.key==='Enter'||e.key===' '){e.preventDefault();openModal();} });
+closeBtn.addEventListener('click', closeModal);
+modal.addEventListener('click', e => { if(e.target===modal) closeModal(); });
+
+/* ── Equation builder ── */
+function buildEquation(f) {
+  const T = f.type;
+  if (T === 'sum') {
+    let eq=''; f.eqParts.forEach((p,i)=>{if(i>0)eq+='<span class="eq-plus">+</span>';eq+=`<span class="eq-num">${p}</span>`;});
+    return `<div class="equation">${eq}<span class="eq-eq">=</span><span class="eq-result">13</span></div>`;
+  }
+  if (T === 'fri13')
+    return `<div class="equation"><span class="fri13-tile">13</span><span class="fri13-label">the date itself</span></div>`;
+  if (T === 'both') {
+    let eq=''; f.eqParts.forEach((p,i)=>{if(i>0)eq+='<span class="eq-plus">+</span>';eq+=`<span class="eq-num">${p}</span>`;});
+    return `<div class="equation">${eq}<span class="eq-eq">=</span><span class="eq-result">13</span><span class="both-note">& the date is thirteen</span></div>`;
+  }
+  if (T === 'year') {
+    let eq=''; f.yearParts.forEach((p,i)=>{if(i>0)eq+='<span class="eq-plus">+</span>';eq+=`<span class="eq-num">${p}</span>`;});
+    eq+=`<span class="eq-plus">+</span><span class="eq-year-sum" title="digit sum of ${f.year}">${f.yearSum}</span>`;
+    eq+=`<span class="eq-eq">=</span><span class="eq-result-year">13</span>`;
+    eq+=`<span class="year-note">incl. year ${f.year}</span>`;
+    return `<div class="equation">${eq}</div>`;
+  }
+  if (T === 'year-fri13') {
+    let eq=''; f.yearParts.forEach((p,i)=>{if(i>0)eq+='<span class="eq-plus">+</span>';eq+=`<span class="eq-num">${p}</span>`;});
+    eq+=`<span class="eq-plus">+</span><span class="eq-year-sum">${f.yearSum}</span>`;
+    eq+=`<span class="eq-eq">=</span><span class="eq-result-year">13</span>`;
+    eq+=`<span class="year-note">& the date is thirteen · year ${f.year}</span>`;
+    return `<div class="equation">${eq}</div>`;
+  }
+  return '';
+}
+
+/* ── Pills ── */
+function renderPills() {
+  const pad=getPad(), wrap=document.getElementById('pills');
+  wrap.style.gridTemplateColumns=`repeat(${2*pad+1},1fr)`;
+  wrap.innerHTML='';
+  for (let y=sel-pad; y<=sel+pad; y++) {
+    const dist=Math.abs(y-sel), count=getSpecialFridays(y).length;
+    const btn=document.createElement('button');
+    btn.className='pill'+(y===sel?' active':'');
+    btn.dataset.dist=dist;
+    btn.innerHTML=`${y}<span class="pill-count">${count}</span>`;
+    btn.addEventListener('click',()=>selectYear(y));
+    wrap.appendChild(btn);
+  }
+}
+
+/* ── Results ── */
+function numberToWord(n) {
+  return(['','one','two','three','four','five','six','seven','eight','nine','ten'])[n]||String(n);
+}
+
+function renderResults() {
+  const resRule=document.getElementById('res-rule'), resHd=document.getElementById('res-hd');
+  const resYear=document.getElementById('res-year'), resCount=document.getElementById('res-count');
+  const grid=document.getElementById('date-grid'), filtersEl=document.getElementById('filters');
+
+  resRule.style.display=resHd.style.display='flex';
+  resYear.textContent=sel;
+
+  const fridays=getSpecialFridays(sel);
+  const sumCount   = fridays.filter(f=>f.type==='sum'  ||f.type==='both').length;
+  const fri13Count = fridays.filter(f=>f.type==='fri13'||f.type==='both'||f.type==='year-fri13').length;
+  const yearCount  = fridays.filter(f=>f.type==='year' ||f.type==='year-fri13').length;
+
+  if (!fridays.length) {
+    resCount.innerHTML=`<span style="color:var(--muted);font-style:italic">no notable Fridays</span>`;
+    filtersEl.style.display='none';
+    grid.innerHTML=`<div class="empty"><span class="empty-glyph">0</span><p>No notable Fridays in ${sel}.</p></div>`;
+    return;
+  }
+
+  const parts=[];
+  if (sumCount)   parts.push(`<span class="res-count--sum">${numberToWord(sumCount)} qualifying</span>`);
+  if (fri13Count) parts.push(`<span class="res-count--13">${fri13Count===1?'one Friday the 13th':`${fri13Count} Friday the 13ths`}</span>`);
+  if (yearCount)  parts.push(`<span class="res-count--year">${numberToWord(yearCount)} by year</span>`);
+  resCount.innerHTML=parts.join('<span class="res-count--sep"> · </span>');
+
+  /* Show/hide each filter button based on which types exist this year */
+  const hasSumType   = sumCount   > 0;
+  const hasFri13Type = fri13Count > 0;
+  const hasYearType  = yearCount  > 0;
+  document.querySelector('.filter-btn--sum').style.display   = hasSumType   ? '' : 'none';
+  document.querySelector('.filter-btn--13').style.display    = hasFri13Type ? '' : 'none';
+  document.querySelector('.filter-btn--year').style.display  = hasYearType  ? '' : 'none';
+
+  /* Show filter row only if more than one type exists */
+  const typeCount=[hasSumType,hasFri13Type,hasYearType].filter(Boolean).length;
+  filtersEl.style.display = typeCount > 1 ? 'flex' : 'none';
+
+  const now=new Date(), nowY=now.getFullYear(), nowM=now.getMonth()+1, nowD=now.getDate();
+  grid.innerHTML='';
+
+  fridays.forEach((f,i) => {
+    const card=document.createElement('div');
+    card.className=`card card--${f.type}`;
+    card.dataset.type=f.type;  /* used by applyFilter() */
+    card.style.animationDelay=`${i*.06}s`;
+
+    let badgeText='XIII', extraBadgeClass='';
+    if (f.year===nowY) {
+      const isToday=f.month===nowM&&f.day===nowD;
+      const isPast=f.month<nowM||(f.month===nowM&&f.day<nowD);
+      if (isToday)    { card.classList.add('card--today'); badgeText='Today'; extraBadgeClass=' c-badge--today'; }
+      else if (isPast){ card.classList.add('card--past'); }
+    }
+    const defaultBadge={sum:'XIII',fri13:'fri. xiii',both:'XIII',year:'yr. xiii','year-fri13':'fri. xiii'}[f.type];
+    const badge=extraBadgeClass?badgeText:defaultBadge;
+    const badgeClass=extraBadgeClass||` c-badge--${f.type}`;
+
+    card.innerHTML=`
+      <div class="c-top">
+        <span class="c-friday c-friday--${f.type}">Friday</span>
+        <span class="c-badge${badgeClass}">${badge}</span>
+      </div>
+      <div class="c-date">
+        <span class="c-day-num">${f.day}</span>
+        <div class="c-month-wrap">
+          <span class="c-month c-month--${f.type}">${f.monthName}</span>
+          <span class="c-yr-sub">${f.year}</span>
+        </div>
+      </div>
+      ${buildEquation(f)}`;
+    grid.appendChild(card);
+  });
+
+  /* Apply current filter state to the freshly rendered cards */
+  applyFilter();
+}
+
+/* ── Navigation ── */
+function selectYear(y) {
+  sel=y;
+  /* Reset filters to show-all on year change */
+  activeFilters.clear();
+  activeFilters.add('sum'); activeFilters.add('fri13'); activeFilters.add('year');
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.add('active'));
+  renderPills(); renderResults();
+}
+
+document.getElementById('btn-prev').addEventListener('click',()=>selectYear(sel-getPad()));
+document.getElementById('btn-next').addEventListener('click',()=>selectYear(sel+getPad()));
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape')    closeModal();
+  if(e.key==='ArrowLeft') selectYear(sel-1);
+  if(e.key==='ArrowRight')selectYear(sel+1);
+});
+let lastPad=getPad();
+window.addEventListener('resize',()=>{const p=getPad();if(p!==lastPad){lastPad=p;renderPills();}});
+
+renderPills(); renderResults();
+</script>
+</body>
+</html>
