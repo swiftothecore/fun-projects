@@ -165,6 +165,11 @@
       color: var(--text);
     }
     .wordmark span { color: var(--accent); }
+    a.wordmark, a.wordmark:visited {
+      color: var(--text);
+      text-decoration: none;
+    }
+    a.wordmark:hover { opacity: 0.75; }
 
     /* ── SETUP SCREEN ─────────────────────────────────── */
     #setup {
@@ -907,7 +912,7 @@
 <!-- ── SETUP ──────────────────────────────────────────────── -->
 <div id="setup">
   <div class="setup-card">
-    <div class="wordmark">Music<span>.</span>Videos</div>
+    <a href="../" class="wordmark">Music<span>.</span>Videos</a>
     <p class="setup-desc" style="margin-top:8px;">
       Track official music videos from your favourite artists in one chronological feed. You'll need a free YouTube Data API key to get started.
     </p>
@@ -935,7 +940,7 @@
 
 <!-- ── HEADER ─────────────────────────────────────────────── -->
 <header id="header">
-  <div class="wordmark header-wordmark">Music<span>.</span>Videos</div>
+  <a href="../" class="wordmark header-wordmark">Music<span>.</span>Videos</a>
   <div class="header-spacer"></div>
   <div class="header-actions">
     <button class="btn btn-ghost btn-sm" id="refresh-btn">
