@@ -311,7 +311,7 @@
     body.compact-cards .card { width:132px; }
     body.compact-cards .card-body { padding:8px 9px 10px; }
     body.compact-cards .card-title { font-size:0.8rem; }
-    body.compact-cards .card-meta { font-size:0.62rem; min-height:2em; }
+    body.compact-cards .card-meta { font-size:0.62rem; height:2.8em; overflow:hidden; }
     body.compact-cards .service-badge { font-size:0.55rem; padding:2px 5px; }
     body.compact-cards .watched-stamp,
     body.compact-cards .graveyard-stamp,
@@ -608,13 +608,16 @@
   #duplicateWarning .dup-icon { flex-shrink:0; margin-top:1px; }
   .dup-match { color:var(--gold); cursor:pointer; text-decoration:underline; text-underline-offset:2px; white-space:nowrap; }
   .dup-match:hover { color:var(--text); }
-  #categoryDropdown .cat-suggestion, #watchWithDropdown .cat-suggestion { padding:9px 14px; font-size:0.82rem; color:var(--text-dim); cursor:pointer; font-family:'DM Sans',sans-serif; font-weight:300; display:flex; align-items:center; gap:8px; transition:background 0.1s; }
+  #categoryDropdown .cat-suggestion, #watchWithDropdown .cat-suggestion, #pasteCategoryDropdown .cat-suggestion { padding:9px 14px; font-size:0.82rem; color:var(--text-dim); cursor:pointer; font-family:'DM Sans',sans-serif; font-weight:300; display:flex; align-items:center; gap:8px; transition:background 0.1s; }
   #categoryDropdown .cat-suggestion:hover, #categoryDropdown .cat-suggestion.active { background:rgba(201,168,76,0.08); color:var(--text); }
   #categoryDropdown .cat-suggestion .cat-icon { font-size:0.75rem; opacity:0.5; }
   #categoryDropdown .cat-suggestion + .cat-suggestion { border-top:1px solid var(--border); }
   #watchWithDropdown .cat-suggestion:hover, #watchWithDropdown .cat-suggestion.active { background:rgba(201,168,76,0.08); color:var(--text); }
   #watchWithDropdown .cat-suggestion .cat-icon { font-size:0.75rem; opacity:0.5; }
   #watchWithDropdown .cat-suggestion + .cat-suggestion { border-top:1px solid var(--border); }
+  #pasteCategoryDropdown .cat-suggestion:hover, #pasteCategoryDropdown .cat-suggestion.active { background:rgba(201,168,76,0.08); color:var(--text); }
+  #pasteCategoryDropdown .cat-suggestion .cat-icon { font-size:0.75rem; opacity:0.5; }
+  #pasteCategoryDropdown .cat-suggestion + .cat-suggestion { border-top:1px solid var(--border); }
   @media(max-width:640px){
     #categoryBar{padding-left:20px;padding-right:20px;}
     .category-empty-state{padding:40px 20px;}
@@ -1037,6 +1040,103 @@
   .kbd-sep { font-size:0.54rem; color:var(--text-muted); margin:0 1px; }
   .shortcuts-panel-footer { padding:10px 22px; border-top:1px solid var(--border); font-size:0.57rem; color:var(--text-muted); opacity:0.55; flex-shrink:0; }
   @media(max-width:640px){ .shortcuts-panel-body { grid-template-columns:1fr; } }
+
+  /* ── Paste List Import ──────────────────────────────────────────────────── */
+  #pasteImportModal .modal { max-width:520px; }
+  .paste-textarea { width:100%; min-height:130px; max-height:240px; resize:vertical; background:var(--surface2); border:1px solid var(--border-hi); border-radius:var(--radius); color:var(--text); font-family:'DM Sans',sans-serif; font-size:0.82rem; line-height:1.7; padding:12px 14px; box-sizing:border-box; transition:border-color 0.15s; }
+  .paste-textarea:focus { outline:none; border-color:var(--gold-dim); }
+  .paste-textarea::placeholder { color:var(--text-muted); }
+  .paste-cat-field { position:relative; }
+  .paste-cat-input { width:100%; background:var(--surface2); border:1px solid var(--border-hi); border-radius:var(--radius); color:var(--text); font-family:'DM Sans',sans-serif; font-size:0.82rem; padding:9px 12px; box-sizing:border-box; transition:border-color 0.15s; }
+  .paste-cat-input:focus { outline:none; border-color:var(--gold-dim); }
+  .paste-cat-input::placeholder { color:var(--text-muted); }
+  #pasteCategoryDropdown { position:fixed; z-index:10000; background:var(--surface2); border:1px solid var(--border-hi); border-radius:var(--radius); overflow:hidden; box-shadow:0 8px 24px rgba(0,0,0,0.5); max-height:220px; overflow-y:auto; }
+  .paste-result-card { display:flex; align-items:flex-start; gap:10px; padding:10px 0; border-bottom:1px solid var(--border); }
+  .paste-result-card:last-child { border-bottom:none; }
+  .paste-result-card.pr-removed { opacity:0.35; }
+  .paste-result-poster { width:36px; height:54px; object-fit:cover; border-radius:3px; flex-shrink:0; background:var(--surface2); }
+  .paste-result-poster-ph { width:36px; height:54px; flex-shrink:0; background:var(--surface2); border-radius:3px; display:flex; align-items:center; justify-content:center; font-size:1rem; color:var(--text-muted); }
+  .paste-result-info { flex:1; min-width:0; }
+  .paste-result-title { font-size:0.82rem; font-weight:500; color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .paste-result-meta { font-size:0.7rem; color:var(--text-muted); margin-top:2px; }
+  .paste-result-notfound { font-size:0.7rem; color:#e07070; margin-top:2px; font-style:italic; }
+  .paste-result-actions { display:flex; gap:5px; align-items:center; flex-shrink:0; }
+  .paste-action-btn { font-size:0.65rem; font-weight:500; letter-spacing:0.05em; color:var(--text-muted); background:none; border:1px solid var(--border); border-radius:4px; padding:3px 8px; cursor:pointer; font-family:'DM Sans',sans-serif; text-transform:uppercase; transition:all 0.15s; white-space:nowrap; }
+  .paste-action-btn:hover { color:var(--text); border-color:var(--border-hi); }
+  .paste-action-btn.pab-active { color:var(--gold); border-color:rgba(201,168,76,0.4); }
+  .paste-action-btn.pab-danger:hover { color:#e07070; border-color:rgba(224,112,112,0.4); }
+  .paste-action-btn.pab-restore { color:var(--gold); border-color:rgba(201,168,76,0.35); }
+  .paste-alts-panel { background:var(--surface2); border:1px solid var(--border-hi); border-radius:var(--radius); margin-top:8px; padding:8px 10px; }
+  .paste-alts-label { font-size:0.62rem; letter-spacing:0.1em; text-transform:uppercase; color:var(--text-muted); margin-bottom:6px; }
+  .paste-alt-item { display:flex; align-items:center; gap:8px; padding:5px 6px; border-radius:4px; cursor:pointer; transition:background 0.12s; }
+  .paste-alt-item:hover { background:rgba(255,255,255,0.04); }
+  .paste-alt-item.pai-selected { background:rgba(201,168,76,0.1); }
+  .paste-alt-item.pai-highlighted { background:rgba(255,255,255,0.07); outline:1px solid rgba(201,168,76,0.3); }
+  .paste-alt-item.pai-selected.pai-highlighted { background:rgba(201,168,76,0.16); }
+  .paste-alt-thumb { width:22px; height:33px; object-fit:cover; border-radius:2px; flex-shrink:0; background:var(--surface); }
+  .paste-alt-thumb-ph { width:22px; height:33px; flex-shrink:0; background:var(--surface); border-radius:2px; display:flex; align-items:center; justify-content:center; font-size:0.65rem; color:var(--text-muted); }
+  .paste-alt-title { font-size:0.74rem; color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .paste-alt-year  { font-size:0.64rem; color:var(--text-muted); }
+  .paste-alts-search-row { display:flex; gap:6px; margin-top:8px; border-top:1px solid var(--border); padding-top:8px; }
+  .paste-alts-search-input { flex:1; background:var(--surface); border:1px solid var(--border); border-radius:4px; color:var(--text); font-family:'DM Sans',sans-serif; font-size:0.74rem; padding:5px 8px; min-width:0; transition:border-color 0.15s; }
+  .paste-alts-search-input:focus { outline:none; border-color:var(--gold-dim); }
+  .paste-alts-search-btn { background:none; border:1px solid var(--border); border-radius:4px; color:var(--text-muted); font-size:0.68rem; font-family:'DM Sans',sans-serif; padding:5px 10px; cursor:pointer; transition:all 0.15s; white-space:nowrap; }
+  .paste-alts-search-btn:hover { color:var(--text); border-color:var(--border-hi); }
+  .paste-dupe-badge { font-size:0.6rem; font-weight:500; letter-spacing:0.06em; text-transform:uppercase; color:#60a5fa; background:rgba(96,165,250,0.08); border:1px solid rgba(96,165,250,0.22); border-radius:3px; padding:1px 5px; margin-left:5px; vertical-align:middle; }
+  @media(max-width:640px){
+    #pasteImportModal { align-items:flex-end; padding:0; }
+    #pasteImportModal .modal { border-radius:22px 22px 0 0; max-width:100%; width:100%; max-height:92vh; border-bottom:none; border-left:none; border-right:none; overflow-y:hidden; display:flex; flex-direction:column; animation:mobileSheetUp 0.3s cubic-bezier(0.33,1,0.68,1); }
+    #pasteImportModal .modal::before { content:''; display:block; width:36px; height:4px; background:var(--border-hi); border-radius:2px; margin:14px auto 0; flex-shrink:0; }
+    #pasteImportModal .modal-header { flex-shrink:0; padding:8px 20px 0; margin-bottom:12px; }
+    #pasteImportModal .modal-body { overflow-y:auto; -webkit-overflow-scrolling:touch; flex:1; padding:0 20px max(20px,env(safe-area-inset-bottom)); }
+  }
+  /* ── Mobile bottom search bar ──────────────────────────────────────────── */
+  #mobileSearchBar { display:none; } /* hidden on desktop */
+  @media(max-width:640px){
+    #searchBarWrap { display:none !important; } /* replace with bottom bar on mobile */
+    body { padding-bottom:calc(52px + env(safe-area-inset-bottom, 0px)); }
+    #mobileSearchBar {
+      display:flex;
+      align-items:center;
+      gap:10px;
+      position:fixed;
+      bottom:0;
+      left:0;
+      right:0;
+      z-index:90;
+      padding:0 16px;
+      height:52px;
+      padding-bottom:env(safe-area-inset-bottom, 0px);
+      background:var(--surface2);
+      border-top:1px solid var(--border-hi);
+      box-shadow:0 -4px 24px rgba(0,0,0,0.45);
+      transition:border-top-color 0.15s;
+    }
+    body.modal-open #mobileSearchBar,
+    body.bulk-mode  #mobileSearchBar { display:none !important; }
+    #mobileSearchBar.msb-active { border-top-color:var(--gold-dim); }
+    #mobileSearchBarIcon {
+      flex-shrink:0; display:flex; align-items:center;
+      color:var(--text-muted); transition:color 0.15s;
+    }
+    #mobileSearchBar.msb-active #mobileSearchBarIcon { color:var(--gold); }
+    #mobileSearchBarInput {
+      flex:1; min-width:0;
+      background:none; border:none; outline:none;
+      color:var(--text);
+      font-family:'DM Sans',sans-serif;
+      font-size:16px !important; /* prevents iOS Safari zoom on focus */
+    }
+    #mobileSearchBarInput::placeholder { color:var(--text-muted); opacity:0.55; }
+    #mobileSearchBarClear {
+      display:none;
+      background:none; border:none;
+      color:var(--text-muted); font-size:1.35rem; line-height:1;
+      cursor:pointer; padding:0 0 0 4px; flex-shrink:0;
+      transition:color 0.15s;
+    }
+    #mobileSearchBar.msb-active #mobileSearchBarClear { display:block; }
+  }
   </style>
 </head>
 <body>
@@ -1047,7 +1147,7 @@
   <button class="btn btn-ghost btn-sm" onclick="toggleChristmasMode()" style="flex-shrink:0">Exit Christmas Mode</button>
 </div>
 
-<script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js" async onload="window._sbLibReady&&window._sbLibReady()"></script>
 <style>
 #_sb_wrap { font-family: system-ui, sans-serif; font-size: 0.82rem; display: none; position: relative; z-index: 9999; background: #141414; border-bottom: 1px solid #232323; }
 #_sb_main_row { display: flex; align-items: center; gap: 12px; padding: 10px 20px; }
@@ -1096,10 +1196,11 @@
 </div>
 
 <script>
-(async function () {
-  // Guard: if the supabase CDN script didn't load, exit cleanly.
+async function _sbRun() {
+  if (window._sbInitDone) return;
+  window._sbInitDone = true;
   if (typeof supabase === 'undefined') {
-    console.warn('[Sync] Supabase library not loaded — check CDN / network / content blockers.');
+    console.warn('[Sync] Supabase library not loaded — cloud sync unavailable.');
     return;
   }
 
@@ -1385,7 +1486,11 @@
     if (document.visibilityState === 'hidden') _syncNow();
     else if (_pendingSync) { _pendingSync = false; _syncNow(); }
   });
-})();
+}
+// Run immediately if supabase loaded synchronously; otherwise the script's
+// onload fires _sbLibReady() once the async download completes.
+if (typeof supabase !== 'undefined') { _sbRun(); }
+else { window._sbLibReady = _sbRun; }
 </script>
 
 
@@ -1447,6 +1552,10 @@
   </button>
   <button class="btn btn-ghost btn-sm" id="selectModeBtn" onclick="enterSelectMode()" style="flex-shrink:0;">Select</button>
   <div class="view-toggle">
+    <button class="view-toggle-btn" onclick="openPasteImportModal()" title="Paste film list  [P]">
+      <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="1" width="7" height="9" rx="1.2"/><path d="M4 3H2.8A1.8 1.8 0 0 0 1 4.8v5.4A1.8 1.8 0 0 0 2.8 12h4.4A1.8 1.8 0 0 0 9 10.2V10"/><path d="M6 4.5h3M6 6.5h3"/></svg>
+    </button>
+    <span class="view-toggle-sep"></span>
     <button id="groupToggleBtn" class="view-toggle-btn active" onclick="toggleGrouping()" title="Switch to flat list">
       <svg width="13" height="10" viewBox="0 0 13 10" fill="currentColor"><rect x="0" y="0" width="13" height="4" rx="1.5"/><rect x="0" y="6" width="13" height="4" rx="1.5"/></svg>
     </button>
@@ -2150,8 +2259,9 @@ function isArchivedWatched(m){
 
 // ── List view builders ──
 function buildListRow(m,i){
-  const thumb=m.poster
-    ?`<img class="list-thumb" src="${esc(m.poster)}" alt="${esc(m.title)}" loading="lazy" onerror="this.style.display='none';this.nextSibling.style.display='flex'"><div class="list-thumb-placeholder" style="display:none">🎬</div>`
+  const thumbSrc=m.poster?m.poster.replace('/t/p/w500/','/t/p/w92/'):'';
+  const thumb=thumbSrc
+    ?`<img class="list-thumb" data-src="${esc(thumbSrc)}" alt="${esc(m.title)}" onerror="this.style.display='none';this.nextSibling.style.display='flex'"><div class="list-thumb-placeholder" style="display:none">🎬</div>`
     :`<div class="list-thumb-placeholder">🎬</div>`;
   const soonPip=m.watchingSoon?`<span class="list-soon-pip"></span>`:'';
   const meta=[m.year,m.genre,m.director,formatRuntime(m.runtime)].filter(Boolean).join(' · ');
@@ -2680,14 +2790,16 @@ function _getFilteredCore(){
 }
 
 function buildSoonCard(m,i){
-  const img=m.poster?`<img class="soon-card-poster" src="${esc(m.poster)}" alt="${esc(m.title)}" loading="lazy" onerror="this.style.display='none';this.nextSibling.style.display='flex'"><div class="soon-card-placeholder" style="display:none">&#127917;</div>`:`<div class="soon-card-placeholder">&#127917;</div>`;
+  const src=m.poster?m.poster.replace('/t/p/w500/','/t/p/w185/'):'';
+  const img=src?`<img class="soon-card-poster" data-src="${esc(src)}" alt="${esc(m.title)}" onerror="this.style.display='none';this.nextSibling.style.display='flex'"><div class="soon-card-placeholder" style="display:none">&#127917;</div>`:`<div class="soon-card-placeholder">&#127917;</div>`;
   return`<div class="soon-card" data-id="${m.id}" onclick="openDetail('${m.id}')" style="animation-delay:${i*0.04}s"><div class="soon-pip"></div>${img}<div class="soon-card-body"><div class="soon-card-title">${esc(m.title)}</div>${m.year?`<div class="soon-card-year">${esc(m.year)}</div>`:''}</div></div>`;
 }
 
 function buildCard(m,i){
   const stale=getStaleClass(m);
   const graveyardCls=m.graveyard?' card-graveyard':'';
-  const ph=m.poster?`<img class="card-poster" src="${esc(m.poster)}" alt="${esc(m.title)}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="card-poster-placeholder" style="display:none">&#127917;<span>No poster</span></div>`:`<div class="card-poster-placeholder">&#127917;<span>No poster</span></div>`;
+  const cardSrc=m.poster?m.poster.replace('/t/p/w500/','/t/p/w342/'):'';
+  const ph=cardSrc?`<img class="card-poster" data-src="${esc(cardSrc)}" alt="${esc(m.title)}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="card-poster-placeholder" style="display:none">&#127917;<span>No poster</span></div>`:`<div class="card-poster-placeholder">&#127917;<span>No poster</span></div>`;
   const ov=m.graveyard?`<div class="card-graveyard-overlay"><span class="graveyard-stamp">💀 Never</span></div>`:m.watched&&m.rewatch?`<div class="card-rewatch-overlay"><span class="rewatch-stamp">Rewatch</span></div>`:m.watched?`<div class="card-watched-overlay"><span class="watched-stamp">Watched</span></div>`:'';
   const exemptPip=(currentFilter==='categories'&&m.detachExempt&&categorySettings[m.category]?.detached)?`<div class="detach-exempt-pip">Visible</div>`:'';
   return`<div class="card${stale}${graveyardCls}" data-id="${m.id}" onclick="openDetail('${m.id}')" style="animation-delay:${i*0.03}s">${ph}${ov}${exemptPip}<div class="card-body"><div class="card-title">${esc(m.title)}</div><div class="card-meta" data-year="${esc(m.year||'')}" data-genre="${esc(m.genre||'')}" data-runtime="${esc(formatRuntime(m.runtime)||'')}">${[m.year,m.genre,formatRuntime(m.runtime)].filter(Boolean).join(' &middot; ')}</div><div class="card-services">${buildBadges(m,true)}</div></div></div>`;
@@ -3165,12 +3277,14 @@ function onSearchBarInput(v){
 function clearSearchBar(){
   const i=document.getElementById('searchBar');
   i.value='';
+  const mi=document.getElementById('mobileSearchBarInput');
+  if(mi){ mi.value=''; document.getElementById('mobileSearchBar').classList.remove('msb-active'); }
   if(window.selectionMode)exitSelectMode(false);
   searchQuery='';
   const w=document.getElementById('searchBarWrap');
   w.classList.remove('has-query');
   render();
-  i.focus();
+  if(mi && window.innerWidth<=640) mi.focus(); else i.focus();
 }
 function onSearchBarKeyDown(e){
   if(e.key==='Escape'){
@@ -3469,7 +3583,7 @@ function save(){
 function esc(s){if(!s)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
 document.addEventListener('keydown',e=>{
-  if(e.key==='Escape'){const so=document.getElementById('shortcutsOverlay');if(so&&so.classList.contains('open')){closeShortcutsPanel();return;}if(window.selectionMode)exitSelectMode();closeSortMenu();closePillMenu();closeAddModal();closeDetail();return;}
+  if(e.key==='Escape'){const so=document.getElementById('shortcutsOverlay');if(so&&so.classList.contains('open')){closeShortcutsPanel();return;}if(window.selectionMode)exitSelectMode();closeSortMenu();closePillMenu();closeAddModal();closeDetail();if(typeof closePasteImportModal==='function')closePasteImportModal();return;}
   if(e.key==='Enter'&&!e.shiftKey){
     const modalOpen=document.getElementById('addModal').classList.contains('open');
     if(modalOpen){
@@ -3578,12 +3692,14 @@ document.addEventListener('keydown',e=>{
   }
 
   const inField=document.activeElement.tagName==='INPUT'||document.activeElement.tagName==='TEXTAREA';
-  const noModal=!document.getElementById('addModal').classList.contains('open')&&!document.getElementById('detailModal').classList.contains('open');
+  const noModal=!document.getElementById('addModal').classList.contains('open')&&!document.getElementById('detailModal').classList.contains('open')&&!document.getElementById('importModal').classList.contains('open')&&!document.getElementById('pasteImportModal').classList.contains('open');
   if(!inField&&!e.metaKey&&!e.ctrlKey&&!e.altKey&&noModal){
     const key=e.key.toUpperCase();
     if(key==='A'){e.preventDefault();if(currentCategory)openAddModalWithCategory(currentCategory);else openAddModal();return;}
-    if(key==='R'){e.preventDefault();openSurpriseModal();return;}
+    if(key==='R'||key==='S'){e.preventDefault();openSurpriseModal();return;}
     if(key==='H'){e.preventDefault();toggleHideWatched();return;}
+    if(key==='L'){e.preventDefault();openImportModal();return;}
+    if(key==='P'){e.preventDefault();openPasteImportModal();return;}
     if(e.key==='?'){e.preventDefault();openShortcutsPanel();return;}
     if(e.key==='/'){e.preventDefault();const w=document.getElementById('searchBarWrap');if(w){w.classList.add('expanded');const sb=document.getElementById('searchBar');sb.focus();sb.select();}return;}
   }
@@ -3894,16 +4010,48 @@ function initSheetDrag(modalId, closeFn) {
 
 (function() {
   function setup() {
-    initSheetDrag('detailModal',   closeDetail);
-    initSheetDrag('addModal',      closeAddModal);
-    initSheetDrag('surpriseModal', closeSurpriseModal);
-    initSheetDrag('importModal',   closeImportModal);
+    initSheetDrag('detailModal',      closeDetail);
+    initSheetDrag('addModal',         closeAddModal);
+    initSheetDrag('surpriseModal',    closeSurpriseModal);
+    initSheetDrag('importModal',      closeImportModal);
+    initSheetDrag('pasteImportModal', closePasteImportModal);
   }
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', setup);
   } else {
     setup();
   }
+})();
+
+// ── Lazy image loading — custom observer with aggressive pre-fetch ─────────
+// 800px rootMargin means posters start loading well before they reach the
+// viewport, so by the time the user scrolls to them they're already done.
+(function(){
+  const obs = new IntersectionObserver((entries, ob) => {
+    for(const e of entries){
+      if(!e.isIntersecting) continue;
+      const img = e.target;
+      const src = img.dataset.src;
+      if(src){ img.src = src; img.removeAttribute('data-src'); }
+      ob.unobserve(img);
+    }
+  }, { rootMargin:'800px 0px' });
+
+  // Watch for new img[data-src] elements added anywhere in the DOM
+  // (fires whenever render() or any other function sets innerHTML)
+  new MutationObserver(muts => {
+    for(const mut of muts){
+      for(const node of mut.addedNodes){
+        if(node.nodeType !== 1) continue;
+        if(node.tagName === 'IMG' && node.dataset.src) obs.observe(node);
+        if(node.querySelectorAll) node.querySelectorAll('img[data-src]').forEach(img => obs.observe(img));
+      }
+    }
+  }).observe(document.body, { childList:true, subtree:true });
+
+  // Catch any img[data-src] elements already in the DOM from the initial render
+  // (MutationObserver only sees future additions, not past ones)
+  document.querySelectorAll('img[data-src]').forEach(img => obs.observe(img));
 })();
 </script>
 
@@ -5112,7 +5260,9 @@ document.addEventListener('click', function(e){
         <div class="shortcut-section">
           <div class="shortcut-section-label">Global</div>
           <div class="shortcut-row"><span class="shortcut-desc">Add a film</span><span class="shortcut-keys"><span class="kbd">A</span></span></div>
-          <div class="shortcut-row"><span class="shortcut-desc">Surprise Me</span><span class="shortcut-keys"><span class="kbd">R</span></span></div>
+          <div class="shortcut-row"><span class="shortcut-desc">Surprise Me</span><span class="shortcut-keys"><span class="kbd">R</span><span class="kbd-sep">/</span><span class="kbd">S</span></span></div>
+          <div class="shortcut-row"><span class="shortcut-desc">Letterboxd import</span><span class="shortcut-keys"><span class="kbd">L</span></span></div>
+          <div class="shortcut-row"><span class="shortcut-desc">Paste film list</span><span class="shortcut-keys"><span class="kbd">P</span></span></div>
           <div class="shortcut-row"><span class="shortcut-desc">Toggle hide watched</span><span class="shortcut-keys"><span class="kbd">H</span></span></div>
           <div class="shortcut-row"><span class="shortcut-desc">This panel</span><span class="shortcut-keys"><span class="kbd">?</span></span></div>
           <div class="shortcut-row"><span class="shortcut-desc">Focus search</span><span class="shortcut-keys"><span class="kbd">/</span><span class="kbd-sep">/</span><span class="kbd">⌘</span><span class="kbd-sep">+</span><span class="kbd">K</span></span></div>
@@ -5160,6 +5310,603 @@ function closeShortcutsPanel(){
   if(!el.classList.contains('open'))return;
   el.classList.remove('open');
   unlockScroll();
+}
+</script>
+
+<!-- ── MOBILE BOTTOM SEARCH BAR ─────────────────────────────────────────── -->
+<div id="mobileSearchBar">
+  <span id="mobileSearchBarIcon">
+    <svg width="16" height="16" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="6" cy="6" r="4.5"/><line x1="9.5" y1="9.5" x2="12.5" y2="12.5"/></svg>
+  </span>
+  <input id="mobileSearchBarInput" type="text" placeholder="Search films, directors…"
+    autocomplete="off" autocorrect="off" spellcheck="false"
+    oninput="_msbInput(this.value)"
+    onkeydown="if(event.key==='Escape'){this.value='';_msbInput('');this.blur();}">
+  <button id="mobileSearchBarClear" onclick="_msbClear()" title="Clear search">&times;</button>
+</div>
+
+<!-- ── PASTE LIST IMPORT MODAL ─────────────────────────────────────────── -->
+<div class="modal-overlay" id="pasteImportModal" onclick="handlePasteImportOverlay(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 class="modal-title">📋 Paste Film List</h2>
+      <button class="modal-close" onclick="closePasteImportModal()">&times;</button>
+    </div>
+    <div class="modal-body" id="pasteImportBody"></div>
+  </div>
+</div>
+
+<script>
+// ── Mobile bottom search bar helpers ─────────────────────────────────────
+function _msbInput(v){
+  onSearchBarInput(v);
+  document.getElementById('mobileSearchBar').classList.toggle('msb-active', !!v.trim());
+}
+function _msbClear(){
+  const inp = document.getElementById('mobileSearchBarInput');
+  if(inp){ inp.value = ''; inp.focus(); }
+  _msbInput('');
+}
+
+// ── Paste List Import ─────────────────────────────────────────────────────
+
+let _pasteItems          = []; // [{ inputTitle, results, selectedIdx, removed, showingAlts }]
+let _pasteCategory       = '';
+let _pasteWatched        = false;
+let _pasteSearchActive   = false;
+let _pasteConfirmActive  = false;
+let _pasteSnap           = null;
+let _openAltsIdx         = -1; // which item's alts panel is currently open
+let _altHighlightIdx     = -1; // keyboard-highlighted row within that panel
+let _pasteCatHighlight   = -1; // keyboard highlight in category dropdown
+
+// ── Open / close ──────────────────────────────────────────────────────────
+function openPasteImportModal(){
+  _pasteItems = []; _pasteCategory = ''; _pasteWatched = false;
+  _pasteSearchActive = false; _pasteConfirmActive = false; _pasteSnap = null;
+  _openAltsIdx = -1; _altHighlightIdx = -1; _pasteCatHighlight = -1;
+  _renderPasteStep1();
+  document.getElementById('pasteImportModal').classList.add('open');
+  lockScroll();
+}
+function closePasteImportModal(){
+  if(_pasteSearchActive || _pasteConfirmActive) return;
+  document.getElementById('pasteImportModal').classList.remove('open');
+  unlockScroll();
+}
+function handlePasteImportOverlay(e){
+  if(e.target === document.getElementById('pasteImportModal')) closePasteImportModal();
+}
+
+// ── Step 1: input ─────────────────────────────────────────────────────────
+function _renderPasteStep1(){
+  const hasKey = !!tmdbKey;
+  document.getElementById('pasteImportBody').innerHTML = `
+    <div style="font-size:0.8rem;color:var(--text-dim);line-height:1.65;margin-bottom:18px;">
+      Paste a list of film titles — one per line. The best TMDB match for each title is chosen automatically, and you can review and swap results before saving.
+      ${!hasKey ? `<br><span style="color:var(--text-muted);font-size:0.72rem;">⚠ No TMDB key — films will be saved with title only. <a href="#" onclick="closePasteImportModal();showApiSettings();return false;" style="color:var(--gold)">Add a key</a> for posters and metadata.</span>` : ''}
+    </div>
+    <div style="margin-bottom:14px;">
+      <div style="font-size:0.68rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-muted);margin-bottom:7px;">Film Titles</div>
+      <textarea class="paste-textarea" id="pasteTitlesInput" placeholder="The Godfather
+2001: A Space Odyssey
+Spirited Away
+Paddington 2
+…one title per line. Markdown checkboxes (- [ ]) are stripped automatically."></textarea>
+    </div>
+    <div style="margin-bottom:14px;">
+      <div style="font-size:0.68rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-muted);margin-bottom:7px;">Add to Category <span style="font-weight:300;text-transform:none;letter-spacing:0;">(optional)</span></div>
+      <div class="paste-cat-field">
+        <input class="paste-cat-input" id="pasteCatInput" type="text" placeholder="e.g. Pixar, Horror Classics…" autocomplete="off"
+          value="${esc(_pasteCategory)}"
+          oninput="_filterPasteCatSuggestions()"
+          onfocus="_filterPasteCatSuggestions()"
+          onblur="setTimeout(_hidePasteCatSuggestions,150)"
+          onkeydown="_onPasteCatKeyDown(event)">
+        <div id="pasteCategoryDropdown" style="display:none"></div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:22px;">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:0.8rem;color:var(--text-dim);user-select:none;">
+        <input type="checkbox" id="pasteWatchedToggle" style="accent-color:var(--gold);width:14px;height:14px;" ${_pasteWatched?'checked':''}>
+        Mark all as watched
+      </label>
+    </div>
+    <button class="btn btn-primary" style="width:100%;justify-content:center;" onclick="_startPasteSearch()">
+      Search TMDB →
+    </button>`;
+  document.getElementById('pasteTitlesInput').focus();
+}
+
+function _startPasteSearch(){
+  const raw = (document.getElementById('pasteTitlesInput').value || '').trim();
+  const catInp = document.getElementById('pasteCatInput');
+  if(catInp) _pasteCategory = catInp.value.trim();
+  _pasteWatched = document.getElementById('pasteWatchedToggle').checked;
+  const titles = raw.split('\n')
+    .map(t => {
+      t = t.trim();
+      // Strip markdown/todo checkbox prefixes in all common forms:
+      // "- [ ] Title", "- [x] Title", "* [X] Title", "[ ] Title", etc.
+      t = t.replace(/^[-*+]?\s*\[[xX \t✓✔]\]\s+/, '');
+      // Strip remaining leading bullet/dash (e.g. "- Title", "* Title")
+      t = t.replace(/^[-*+•]\s+/, '');
+      // Strip leading numbered list ("1. ", "2) ")
+      t = t.replace(/^\d+[.)]\s+/, '');
+      return t.trim();
+    })
+    .filter(Boolean);
+  if(!titles.length){
+    const ta = document.getElementById('pasteTitlesInput');
+    if(ta){ ta.style.borderColor = 'var(--danger)'; ta.focus(); }
+    return;
+  }
+  _runPasteSearch(titles);
+}
+
+// ── Step 2: search ────────────────────────────────────────────────────────
+async function _runPasteSearch(titles){
+  if(_pasteSearchActive) return;
+  _pasteSearchActive = true;
+  const total = titles.length;
+  const hasKey = !!tmdbKey;
+
+  document.getElementById('pasteImportBody').innerHTML = `
+    <div style="padding:8px 0;">
+      <div style="font-size:0.82rem;color:var(--text-dim);margin-bottom:14px;">
+        Searching for ${total} film${total!==1?'s':''}…
+        ${!hasKey?'<span style="color:var(--text-muted);font-size:0.72rem;"> (no TMDB key)</span>':''}
+      </div>
+      <div class="import-progress-bar"><div class="import-progress-fill" id="pasteFill"></div></div>
+      <div style="display:flex;justify-content:space-between;font-size:0.7rem;color:var(--text-muted);margin-top:4px;">
+        <span id="pasteProgLabel" style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">Starting…</span>
+        <span id="pasteProgCount" style="flex-shrink:0;margin-left:12px;">0 / ${total}</span>
+      </div>
+    </div>`;
+
+  _pasteItems = [];
+
+  for(let i = 0; i < titles.length; i++){
+    const title = titles[i];
+    const fill  = document.getElementById('pasteFill');
+    const label = document.getElementById('pasteProgLabel');
+    const count = document.getElementById('pasteProgCount');
+    if(fill)  fill.style.width = Math.round((i / total) * 100) + '%';
+    if(label) label.textContent = title;
+    if(count) count.textContent = `${i} / ${total}`;
+    await new Promise(r => setTimeout(r, 0));
+
+    let results = [];
+    if(hasKey){
+      try {
+        const q           = title.replace(/[-\u2010-\u2015]/g,' ').replace(/\s+/g,' ').trim();
+        const aliasKey    = q.toLowerCase();
+        const aliasKeyStr = aliasKey.replace(/\s+/g,'');
+        const aliasId     = TMDB_SEARCH_ALIASES[aliasKey] || TMDB_SEARCH_ALIASES[aliasKeyStr] || null;
+        const base        = `https://api.themoviedb.org/3/search/movie?api_key=${encodeURIComponent(tmdbKey)}&query=${encodeURIComponent(q)}&include_adult=false`;
+        const fetches     = [fetch(base)];
+        if(aliasId) fetches.push(fetch(`https://api.themoviedb.org/3/movie/${aliasId}?api_key=${encodeURIComponent(tmdbKey)}`));
+        const [res, aliasRes] = await Promise.all(fetches);
+        if(res.ok){
+          const data = await res.json();
+          results = (data.results || []).slice(0, 8);
+          if(aliasRes && aliasRes.ok){
+            const aliasMovie = await aliasRes.json();
+            results = [aliasMovie, ...results.filter(m => m.id !== aliasMovie.id)];
+          }
+        }
+      } catch(e){ /* skip */ }
+    }
+    _pasteItems.push({ inputTitle:title, results, selectedIdx:0, removed:false, showingAlts:false });
+    await new Promise(r => setTimeout(r, 160));
+  }
+
+  const fill = document.getElementById('pasteFill');
+  if(fill) fill.style.width = '100%';
+  await new Promise(r => setTimeout(r, 80));
+  _pasteSearchActive = false;
+  _openAltsIdx = -1; _altHighlightIdx = -1;
+  _renderPasteReview();
+}
+
+// ── Step 3: review ────────────────────────────────────────────────────────
+function _renderPasteReview(){
+  const adding = _pasteAddingCount();
+  const catLine = _pasteCategory
+    ? `<span style="color:var(--gold);font-weight:500;">${esc(_pasteCategory)}</span>`
+    : `<span style="color:var(--text-muted);font-style:italic;">none set</span>`;
+  document.getElementById('pasteImportBody').innerHTML = `
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+      <button class="btn btn-ghost btn-sm" onclick="_renderPasteStep1()" style="flex-shrink:0;">← Back</button>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:0.82rem;font-weight:500;color:var(--text);">Review results</div>
+        <div style="font-size:0.7rem;color:var(--text-muted);margin-top:2px;" id="pasteReviewMeta">${_pasteReviewMeta()}</div>
+      </div>
+    </div>
+    ${_pasteCategory ? `<div style="display:flex;align-items:center;gap:6px;margin-bottom:12px;padding:8px 12px;background:rgba(201,168,76,0.06);border:1px solid rgba(201,168,76,0.18);border-radius:var(--radius);font-size:0.75rem;">
+      <span style="color:var(--text-muted);">Category:</span>
+      ${catLine}
+      <button onclick="_renderPasteStep1()" style="margin-left:auto;background:none;border:none;color:var(--text-muted);font-size:0.68rem;cursor:pointer;font-family:'DM Sans',sans-serif;text-decoration:underline;padding:0;" onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color=''">Change</button>
+    </div>` : ''}
+    <div id="pasteResultsList">
+      ${_pasteItems.map((item,idx) => _buildPasteCard(item, idx)).join('')}
+    </div>
+    <div style="padding-top:16px;border-top:1px solid var(--border);display:flex;gap:8px;">
+      <button class="btn btn-primary" id="pasteConfirmBtn" style="flex:1;justify-content:center;"
+        onclick="_pasteConfirmAll()" ${adding===0?'disabled':''}>
+        Add ${adding} Film${adding!==1?'s':''}
+      </button>
+    </div>`;
+}
+
+// ── Category dropdown (paste-specific, mirrors fCategory pattern exactly) ──
+function _filterPasteCatSuggestions(){
+  const dd  = document.getElementById('pasteCategoryDropdown');
+  const inp = document.getElementById('pasteCatInput');
+  if(!dd || !inp) return;
+  const q   = inp.value.trim().toLowerCase();
+  const cats = getCategoryNames();
+  const matches = q ? cats.filter(n => n.toLowerCase().includes(q)) : cats;
+  _pasteCatHighlight = -1;
+  if(!matches.length){ dd.style.display = 'none'; return; }
+  dd.innerHTML = matches.map(n =>
+    `<div class="cat-suggestion" data-name="${esc(n)}" onmousedown="_pickPasteCategory('${n.replace(/'/g,"\\'")}')">
+      <span class="cat-icon">&#128196;</span>${esc(n)}
+    </div>`).join('');
+  // Position using fixed coords so the dropdown escapes the modal's overflow clipping
+  const rect = inp.getBoundingClientRect();
+  dd.style.top   = (rect.bottom + 4) + 'px';
+  dd.style.left  = rect.left + 'px';
+  dd.style.width = rect.width + 'px';
+  dd.style.display = ''; // removes inline "display:none", making element visible
+}
+function _hidePasteCatSuggestions(){
+  _pasteCatHighlight = -1;
+  const dd = document.getElementById('pasteCategoryDropdown');
+  if(dd) dd.style.display = 'none';
+}
+function _pickPasteCategory(name){
+  _pasteCategory = name;
+  const inp = document.getElementById('pasteCatInput');
+  if(inp) inp.value = name;
+  _hidePasteCatSuggestions();
+}
+function _onPasteCatKeyDown(e){
+  const dd = document.getElementById('pasteCategoryDropdown');
+  if(!dd || dd.style.display === 'none') return;
+  const items = dd.querySelectorAll('.cat-suggestion');
+  if(!items.length) return;
+  if(e.key === 'ArrowDown'){
+    e.preventDefault();
+    _pasteCatHighlight = Math.min(_pasteCatHighlight + 1, items.length - 1);
+    _updatePasteCatHighlight(items);
+  } else if(e.key === 'ArrowUp'){
+    e.preventDefault();
+    _pasteCatHighlight = Math.max(_pasteCatHighlight - 1, -1);
+    _updatePasteCatHighlight(items);
+  } else if(e.key === 'Enter'){
+    const target = _pasteCatHighlight >= 0 ? items[_pasteCatHighlight] : items[0];
+    if(target){ e.preventDefault(); e.stopPropagation(); _pickPasteCategory(target.dataset.name); }
+  } else if(e.key === 'Escape'){
+    _hidePasteCatSuggestions();
+  }
+}
+function _updatePasteCatHighlight(items){
+  items.forEach((el,i) => el.classList.toggle('active', i === _pasteCatHighlight));
+  if(_pasteCatHighlight >= 0) items[_pasteCatHighlight].scrollIntoView({block:'nearest'});
+}
+
+// ── Review helpers ────────────────────────────────────────────────────────
+function _pasteReviewMeta(){
+  const total   = _pasteItems.length;
+  const found   = _pasteItems.filter(i => i.results.length > 0).length;
+  const missing = total - found;
+  const removed = _pasteItems.filter(i => i.removed && i.results.length > 0).length;
+  const adding  = _pasteAddingCount();
+  const parts   = [`${adding} of ${total} will be added`];
+  if(missing) parts.push(`${missing} not found`);
+  if(removed)  parts.push(`${removed} removed`);
+  return parts.join(' · ');
+}
+function _pasteAddingCount(){
+  return _pasteItems.filter(i => !i.removed && i.results.length > 0).length;
+}
+
+function _buildPasteCard(item, idx){
+  const hit       = item.results[item.selectedIdx] || null;
+  const isRemoved = item.removed;
+  const isDupe    = hit ? !!_findExistingForImport(hit.id, hit.title, (hit.release_date||'').slice(0,4)) : false;
+
+  let posterEl, infoEl;
+  if(hit){
+    const yr  = (hit.release_date||'').slice(0,4) || '?';
+    const vot = hit.vote_average ? ` · ★ ${hit.vote_average.toFixed(1)}` : '';
+    posterEl  = hit.poster_path
+      ? `<img class="paste-result-poster" src="${TMDB_SM}${hit.poster_path}" alt="" loading="lazy">`
+      : `<div class="paste-result-poster-ph">🎬</div>`;
+    const origNote = item.inputTitle.toLowerCase().trim() !== hit.title.toLowerCase().trim()
+      ? `<div style="font-size:0.63rem;color:var(--text-muted);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">searched: "${esc(item.inputTitle)}"</div>`
+      : '';
+    infoEl = `
+      <div class="paste-result-title">${esc(hit.title)}${isDupe?'<span class="paste-dupe-badge">In list</span>':''}</div>
+      <div class="paste-result-meta">${yr}${vot}</div>${origNote}`;
+  } else {
+    posterEl = `<div class="paste-result-poster-ph">?</div>`;
+    infoEl   = `<div class="paste-result-title">${esc(item.inputTitle)}</div>
+      <div class="paste-result-notfound">Not found on TMDB</div>`;
+  }
+
+  const altsPanel = (item.showingAlts && hit) ? _buildPasteAltsPanel(item, idx) : '';
+  const changeCls = item.showingAlts ? 'paste-action-btn pab-active' : 'paste-action-btn';
+
+  return `<div class="paste-result-card ${isRemoved?'pr-removed':''}" id="paste-card-${idx}">
+    <div style="flex:1;min-width:0;">
+      <div style="display:flex;align-items:flex-start;gap:10px;">
+        ${posterEl}
+        <div class="paste-result-info">${infoEl}</div>
+        <div class="paste-result-actions">
+          ${hit ? `<button class="${changeCls}" onclick="_pasteToggleAlts(${idx})">${item.showingAlts?'Hide':'Change'}</button>` : ''}
+          ${isRemoved
+            ? `<button class="paste-action-btn pab-restore" onclick="_pasteRestore(${idx})">Restore</button>`
+            : `<button class="paste-action-btn pab-danger" onclick="_pasteRemove(${idx})">Remove</button>`}
+        </div>
+      </div>
+      ${altsPanel}
+    </div>
+  </div>`;
+}
+
+function _buildPasteAltsPanel(item, idx){
+  const altRows = item.results.slice(0, 7).map((r, i) => {
+    const isSel  = i === item.selectedIdx;
+    const isHigh = i === _altHighlightIdx && _openAltsIdx === idx;
+    const yr     = (r.release_date||'').slice(0,4) || '?';
+    const thumb  = r.poster_path
+      ? `<img class="paste-alt-thumb" src="${TMDB_SM}${r.poster_path}" alt="" loading="lazy">`
+      : `<div class="paste-alt-thumb-ph">🎬</div>`;
+    const cls = ['paste-alt-item', isSel?'pai-selected':'', isHigh?'pai-highlighted':''].filter(Boolean).join(' ');
+    return `<div class="${cls}" data-altidx="${i}" onclick="_pastePickAlt(${idx},${i})">
+      ${thumb}
+      <div style="flex:1;min-width:0;">
+        <div class="paste-alt-title">${esc(r.title)}</div>
+        <div class="paste-alt-year">${yr}${r.vote_average?' · ★ '+r.vote_average.toFixed(1):''}</div>
+      </div>
+      ${isSel?'<span style="color:var(--gold);font-size:0.8rem;flex-shrink:0;">✓</span>':''}
+    </div>`;
+  }).join('');
+
+  return `<div class="paste-alts-panel" id="paste-alts-panel-${idx}">
+    <div class="paste-alts-label">Pick a different result</div>
+    <div id="paste-alts-list-${idx}">${altRows||'<div style="font-size:0.74rem;color:var(--text-muted);padding:4px 0;">No alternatives found</div>'}</div>
+    <div class="paste-alts-search-row">
+      <input class="paste-alts-search-input" id="pasteAltSearch-${idx}" type="text"
+        placeholder="Search for a different title…"
+        onkeydown="_onPasteAltSearchKey(event,${idx})">
+      <button class="paste-alts-search-btn" onclick="_pasteCustomSearch(${idx})">Search</button>
+    </div>
+  </div>`;
+}
+
+// ── Alt panel keyboard handler (on the search input) ─────────────────────
+function _onPasteAltSearchKey(e, idx){
+  if(e.key === 'ArrowDown' || e.key === 'ArrowUp'){
+    e.preventDefault(); e.stopPropagation();
+    const list = document.getElementById(`paste-alts-list-${idx}`);
+    if(!list) return;
+    const items = list.querySelectorAll('.paste-alt-item');
+    if(e.key === 'ArrowDown')      _altHighlightIdx = Math.min(_altHighlightIdx + 1, items.length - 1);
+    else if(e.key === 'ArrowUp')   _altHighlightIdx = Math.max(_altHighlightIdx - 1, 0);
+    _updateAltHighlight(list);
+  } else if(e.key === 'Enter'){
+    e.preventDefault(); e.stopPropagation(); // stop global handler from seeing this
+    const q = e.target.value.trim();
+    if(q){
+      _pasteCustomSearch(idx); // runs search, keeps panel open
+    } else {
+      _pasteToggleAlts(idx); // empty search box → close panel
+    }
+  } else if(e.key === 'Escape'){
+    e.preventDefault(); e.stopPropagation();
+    _pasteToggleAlts(idx);
+  }
+}
+
+// ── Global keydown for alt panel navigation (arrow keys / Enter) ──────────
+document.addEventListener('keydown', e => {
+  if(_openAltsIdx < 0) return;
+  // Only intercept if we're NOT focused in the search input (that's handled separately)
+  const searchInp = document.getElementById(`pasteAltSearch-${_openAltsIdx}`);
+  if(document.activeElement === searchInp) return;
+  // Don't fire if a text field is active (category input etc.)
+  if(document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA') return;
+
+  const list = document.getElementById(`paste-alts-list-${_openAltsIdx}`);
+  if(!list) return;
+
+  if(e.key === 'ArrowDown'){
+    e.preventDefault();
+    const items = list.querySelectorAll('.paste-alt-item');
+    _altHighlightIdx = Math.min(_altHighlightIdx + 1, items.length - 1);
+    _updateAltHighlight(list);
+  } else if(e.key === 'ArrowUp'){
+    e.preventDefault();
+    const items = list.querySelectorAll('.paste-alt-item');
+    _altHighlightIdx = Math.max(_altHighlightIdx - 1, 0);
+    _updateAltHighlight(list);
+  } else if(e.key === 'Enter'){
+    // Commit the keyboard-highlighted item (if any), then close the panel
+    e.preventDefault();
+    const items = list.querySelectorAll('.paste-alt-item');
+    if(_altHighlightIdx >= 0 && items[_altHighlightIdx]){
+      const ai = parseInt(items[_altHighlightIdx].dataset.altidx);
+      _pasteItems[_openAltsIdx].selectedIdx = ai;
+    }
+    _pasteItems[_openAltsIdx].showingAlts = false;
+    const closedIdx = _openAltsIdx;
+    _openAltsIdx = -1; _altHighlightIdx = -1;
+    _pasteReplaceCard(closedIdx);
+    _pasteRefreshCounters();
+  } else if(e.key === 'Escape'){
+    e.preventDefault();
+    _pasteToggleAlts(_openAltsIdx);
+  }
+});
+
+function _updateAltHighlight(list){
+  const items = list.querySelectorAll('.paste-alt-item');
+  items.forEach((el, i) => el.classList.toggle('pai-highlighted', i === _altHighlightIdx));
+  if(_altHighlightIdx >= 0) items[_altHighlightIdx].scrollIntoView({block:'nearest'});
+}
+
+// ── Card update helpers ───────────────────────────────────────────────────
+function _pasteReplaceCard(idx){
+  const card = document.getElementById(`paste-card-${idx}`);
+  if(!card) return;
+  const tmp = document.createElement('div');
+  tmp.innerHTML = _buildPasteCard(_pasteItems[idx], idx);
+  card.replaceWith(tmp.firstElementChild);
+}
+function _pasteRefreshCounters(){
+  const metaEl = document.getElementById('pasteReviewMeta');
+  if(metaEl) metaEl.textContent = _pasteReviewMeta();
+  const btn    = document.getElementById('pasteConfirmBtn');
+  const adding = _pasteAddingCount();
+  if(btn){ btn.disabled = adding === 0; btn.textContent = `Add ${adding} Film${adding!==1?'s':''}`; }
+}
+
+function _pasteToggleAlts(idx){
+  const wasOpen = _pasteItems[idx].showingAlts;
+  // Close any other open panel first
+  if(_openAltsIdx >= 0 && _openAltsIdx !== idx && _pasteItems[_openAltsIdx]){
+    _pasteItems[_openAltsIdx].showingAlts = false;
+    _pasteReplaceCard(_openAltsIdx);
+  }
+  _pasteItems[idx].showingAlts = !wasOpen;
+  if(_pasteItems[idx].showingAlts){
+    _openAltsIdx     = idx;
+    _altHighlightIdx = _pasteItems[idx].selectedIdx; // start keyboard highlight at current pick
+  } else {
+    _openAltsIdx = -1; _altHighlightIdx = -1;
+  }
+  _pasteReplaceCard(idx);
+}
+
+function _pastePickAlt(idx, altIdx){
+  _pasteItems[idx].selectedIdx = altIdx;
+  _altHighlightIdx = altIdx;
+  _pasteReplaceCard(idx);
+  _pasteRefreshCounters();
+}
+function _pasteRemove(idx){
+  if(_openAltsIdx === idx){ _openAltsIdx = -1; _altHighlightIdx = -1; }
+  _pasteItems[idx].removed = true; _pasteItems[idx].showingAlts = false;
+  _pasteReplaceCard(idx); _pasteRefreshCounters();
+}
+function _pasteRestore(idx){
+  _pasteItems[idx].removed = false;
+  _pasteReplaceCard(idx); _pasteRefreshCounters();
+}
+
+async function _pasteCustomSearch(idx){
+  const input = document.getElementById(`pasteAltSearch-${idx}`);
+  if(!input || !tmdbKey) return;
+  const q = input.value.trim();
+  if(!q) return;
+  input.disabled = true;
+  const btn = input.nextElementSibling;
+  if(btn) btn.disabled = true;
+  try {
+    const norm = q.replace(/[-\u2010-\u2015]/g,' ').replace(/\s+/g,' ').trim();
+    const res  = await fetch(`https://api.themoviedb.org/3/search/movie?api_key=${encodeURIComponent(tmdbKey)}&query=${encodeURIComponent(norm)}&include_adult=false`);
+    if(res.ok){
+      const data = await res.json();
+      const nr   = (data.results||[]).slice(0, 8);
+      if(nr.length){ _pasteItems[idx].results = nr; _pasteItems[idx].selectedIdx = 0; _altHighlightIdx = 0; }
+    }
+  } catch(e){ /* skip */ }
+  input.disabled = false;
+  if(btn) btn.disabled = false;
+  _pasteReplaceCard(idx); _pasteRefreshCounters();
+}
+
+// ── Step 4: confirm ───────────────────────────────────────────────────────
+async function _pasteConfirmAll(){
+  if(_pasteConfirmActive) return;
+  const toAdd = _pasteItems.filter(i => !i.removed && i.results.length > 0);
+  if(!toAdd.length) return;
+  _pasteConfirmActive = true;
+  const btn = document.getElementById('pasteConfirmBtn');
+  if(btn){ btn.disabled = true; btn.textContent = 'Saving…'; }
+
+  _pasteSnap = JSON.parse(JSON.stringify(movies));
+  let added = 0, skipped = 0;
+  const now = new Date().toISOString();
+
+  for(const item of toAdd){
+    const hit = item.results[item.selectedIdx];
+    if(!hit) continue;
+    const yr = (hit.release_date||'').slice(0,4);
+    if(_findExistingForImport(hit.id, hit.title, yr)){ skipped++; continue; }
+    let d = null, crew = null;
+    if(tmdbKey && hit.id){
+      try {
+        const [dr, cr] = await Promise.all([
+          fetch(`https://api.themoviedb.org/3/movie/${hit.id}?api_key=${encodeURIComponent(tmdbKey)}`),
+          fetch(`https://api.themoviedb.org/3/movie/${hit.id}/credits?api_key=${encodeURIComponent(tmdbKey)}`)
+        ]);
+        if(dr.ok) d    = await dr.json();
+        if(cr.ok) crew = await cr.json();
+      } catch(e){ /* fallback to search result */ }
+    }
+    const dir = crew ? (crew.crew||[]).find(x => x.job==='Director') : null;
+    movies.push({
+      id:           crypto.randomUUID(),
+      title:        d?.title        || hit.title,
+      year:         (d?.release_date||hit.release_date||'').slice(0,4),
+      genre:        d?.genres       ? d.genres.map(g=>g.name).join(', ') : '',
+      director:     dir             ? dir.name : '',
+      rating:       d?.vote_average ? d.vote_average.toFixed(1)+'/10' : '',
+      runtime:      d?.runtime      || undefined,
+      poster:       (d?.poster_path||hit.poster_path) ? TMDB_IMG+(d?.poster_path||hit.poster_path) : '',
+      notes:        d?.overview     || '',
+      otherName:    '',
+      collection:   '',
+      category:     _pasteCategory,
+      watchWith:    '',
+      tmdbId:       hit.id,
+      detachExempt: false,
+      watched:      _pasteWatched,
+      watchingSoon: false,
+      streaming:    {},
+      dateAdded:    now,
+      dateWatched:  _pasteWatched ? now : undefined,
+    });
+    added++;
+    await new Promise(r => setTimeout(r, 40));
+  }
+
+  save(); render(); _pasteConfirmActive = false;
+  document.getElementById('pasteImportBody').innerHTML = `
+    <div style="text-align:center;padding:10px 0 24px;">
+      <div style="font-size:2.2rem;margin-bottom:8px;">✓</div>
+      <div style="font-family:'Playfair Display',serif;font-size:1.1rem;margin-bottom:4px;">Done</div>
+      <div style="font-size:0.72rem;color:var(--text-muted);">
+        ${added} film${added!==1?'s':''} added
+        ${_pasteCategory?` to <strong style="color:var(--text-dim);">${esc(_pasteCategory)}</strong>`:''}
+        ${skipped?` · ${skipped} already in your list`:''}
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-primary" style="flex:1;justify-content:center;" onclick="closePasteImportModal()">Done</button>
+      ${_pasteSnap?`<button class="btn btn-ghost" onclick="_undoPasteImport()">Undo</button>`:''}
+    </div>`;
+}
+
+function _undoPasteImport(){
+  if(!_pasteSnap) return;
+  movies = _pasteSnap; _pasteSnap = null;
+  save(); render(); closePasteImportModal();
+  showInfoToast('Paste import undone.', 3500);
 }
 </script>
 
