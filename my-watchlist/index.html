@@ -1176,6 +1176,16 @@
     #mobileSearchBarClear:hover { background:rgba(255,255,255,0.14); }
     #mobileSearchBar.msb-active #mobileSearchBarClear { visibility:visible; }
   }
+    /* ── Release date backfill progress ── */
+    #backfillProgress{position:fixed;bottom:28px;right:24px;z-index:95;background:var(--surface2);border:1px solid var(--border-hi);border-radius:var(--radius);padding:12px 16px;display:none;flex-direction:column;gap:8px;min-width:220px;box-shadow:0 6px 24px rgba(0,0,0,0.45);pointer-events:none;}
+    #backfillProgress.visible{display:flex;}
+    .bp-header{display:flex;justify-content:space-between;align-items:center;gap:16px;}
+    .bp-label{font-size:0.7rem;letter-spacing:0.06em;color:var(--text-muted);text-transform:uppercase;}
+    .bp-count{font-size:0.75rem;color:var(--text);font-family:'DM Sans',sans-serif;font-variant-numeric:tabular-nums;white-space:nowrap;}
+    .bp-done{color:var(--gold) !important;}
+    .bp-track{height:2px;background:var(--border);border-radius:1px;overflow:hidden;}
+    .bp-fill{height:100%;background:var(--gold);border-radius:1px;transition:width 0.2s ease;}
+    @media(max-width:640px){#backfillProgress{bottom:calc(78px + env(safe-area-inset-bottom,0px));right:16px;left:16px;min-width:0;}}
   </style>
 </head>
 <body>
@@ -1684,7 +1694,10 @@ else { window._sbLibReady = _sbRun; }
             <label>Title <span style="color:var(--danger)">*</span></label>
             <input type="text" id="fTitle" placeholder="e.g. Dune: Part Two" oninput="updateModalJustWatch();updateModalLetterboxd();syncCollapsedTitle()">
           </div>
-          <div class="field"><label>Year</label><input type="number" id="fYear" placeholder="2024" min="1900" max="2099" oninput="syncCollapsedTitle()"></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+            <div class="field"><label>Year</label><input type="number" id="fYear" placeholder="2024" min="1900" max="2099" oninput="syncCollapsedTitle()"></div>
+            <div class="field"><label>Release Date</label><input type="text" id="fReleaseDate" placeholder="YYYY-MM-DD"></div>
+          </div>
           <div class="field"><label>Genre</label><input type="text" id="fGenre" placeholder="Sci-Fi, Drama..." oninput="syncCollapsedTitle()"></div>
           <div class="field"><label>Director</label><input type="text" id="fDirector" placeholder="Director name"></div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
@@ -1825,7 +1838,7 @@ var movies=JSON.parse(localStorage.getItem('watchlist_v2')||'[]');
 let christmasMovies=JSON.parse(localStorage.getItem('christmas_watchlist_v1')||'[]');
 let christmasMode=localStorage.getItem('christmas_mode_active')==='true';
 let _normalMovies=null;
-let currentFilter='all',currentCategory=null,currentDetailId=null,editingId=null,searchTimer=null,searchHighlightIndex=-1,_pendingTmdbId=null;
+let currentFilter='all',currentCategory=null,currentDetailId=null,editingId=null,searchTimer=null,searchHighlightIndex=-1,_pendingTmdbId=null,_pendingReleaseDate=null;
 let searchQuery='';
 let currentWatchWith=null;
 let _watchWithNames=[];
@@ -1905,6 +1918,7 @@ function init(){
   if(christmasMode)requestAnimationFrame(startChristmasEffects);
   // Backfill runtimes for any existing movies that don't have one yet
   setTimeout(backfillRuntimes,1000);
+  setTimeout(backfillReleaseDates,1500);
 }
 
 window.addEventListener('resize',()=>{
@@ -1963,7 +1977,7 @@ function toggleHideWatched(){
 
 function updateBanner(){document.getElementById('apiBanner').classList.toggle('hidden',!!tmdbKey);}
 function updateSearchSection(){const h=!!tmdbKey;document.getElementById('searchOrNotice').style.display=h?'block':'none';document.getElementById('noApiNotice').style.display=h?'none':'block';}
-function saveApiKey(){const v=document.getElementById('apiKeyInput').value.trim();if(!v)return;tmdbKey=v;localStorage.setItem('tmdb_api_key',tmdbKey);updateBanner();updateSearchSection();setTimeout(backfillRuntimes,500);}
+function saveApiKey(){const v=document.getElementById('apiKeyInput').value.trim();if(!v)return;tmdbKey=v;localStorage.setItem('tmdb_api_key',tmdbKey);updateBanner();updateSearchSection();setTimeout(backfillRuntimes,500);setTimeout(backfillReleaseDates,800);}
 function showApiSettings(){
   const banner=document.getElementById('apiBanner');
   if(!banner.classList.contains('hidden')){banner.classList.add('hidden');return;}
@@ -2124,6 +2138,7 @@ async function selectMovie(id){
 
   document.getElementById('fTitle').value=d.title||'';
   document.getElementById('fYear').value=d.release_date?d.release_date.slice(0,4):'';
+  document.getElementById('fReleaseDate').value=d.release_date||'';
   document.getElementById('fGenre').value=d.genres?d.genres.map(g=>g.name).join(', '):'';
   const dir=c?(c.crew||[]).find(x=>x.job==='Director'):null;
   document.getElementById('fDirector').value=dir?dir.name:'';
@@ -2134,6 +2149,7 @@ async function selectMovie(id){
   if(!document.getElementById('fNotes').value)document.getElementById('fNotes').value=d.overview||'';
   document.getElementById('searchInput').value='';
   _pendingTmdbId=id;
+  _pendingReleaseDate=d.release_date||null;
   h.textContent=`Filled from TMDB: "${d.title}". Edit details below.`;h.classList.add('visible');
   updateModalJustWatch();updateModalLetterboxd();
   // Remove focus from the search input after selection
@@ -2212,6 +2228,17 @@ async function backfillRuntimes(){
   }
   if(changed){save();render();}
 }
+
+function _formatCinemaDate(dateStr,short){
+  if(!dateStr)return'';
+  const d=new Date(dateStr+'T12:00:00');
+  if(isNaN(d))return'';
+  const ms=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const ss=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return`${d.getDate()} ${short?ss[d.getMonth()]:ms[d.getMonth()]} ${d.getFullYear()}`;
+}
+
+async function backfillReleaseDates(){}
 
 // ── Date added helpers ──
 function formatDateAdded(dateStr){
@@ -2618,7 +2645,7 @@ function _movieSortValue(m,field){
     case 'dateWatched':
       return m.dateWatched?new Date(m.dateWatched).getTime():0;
     case 'year':
-      return parseInt(m.year)||0;
+      return m.releaseDate?new Date(m.releaseDate+'T00:00:00').getTime():m.year?new Date(m.year+'-01-01T00:00:00').getTime():0;
     case 'title':
       return (m.title||'').replace(/^(the|a|an)\s+/i,'').toLowerCase();
     case 'runtime':
@@ -2676,9 +2703,9 @@ function groupIntoRenderItems(sorted){
       if(seen.has(m.collection))continue;
       seen.add(m.collection);
       const group=sorted.filter(x=>x.collection===m.collection).sort((a,b)=>{
-        const ya=parseInt(a.year)||Infinity;
-        const yb=parseInt(b.year)||Infinity;
-        return ya-yb;
+        const va=a.releaseDate?new Date(a.releaseDate+'T00:00:00').getTime():a.year?new Date(a.year+'-01-01T00:00:00').getTime():Infinity;
+        const vb=b.releaseDate?new Date(b.releaseDate+'T00:00:00').getTime():b.year?new Date(b.year+'-01-01T00:00:00').getTime():Infinity;
+        return va-vb;
       });
       items.push({type:'group',name:m.collection,movies:group});
     }else{
@@ -2903,7 +2930,7 @@ function buildBadges(m,c){
     if(s[k]?.direct)o+=`<span class="service-badge ${k}">${l}</span>`;
     if(s[k]?.vpn)o+=`<span class="service-badge vpn">${countryFlag(s[k]?.vpnCountry)} ${l}</span>`;
   }
-  if(s.cinema?.coming)o+=`<span class="service-badge cinema-soon">&#127916; Coming Soon</span>`;
+  if(s.cinema?.coming){const rd=m.releaseDate||null;o+=`<span class="service-badge cinema-soon">&#127916; ${rd?_formatCinemaDate(rd,true):'Coming Soon'}</span>`;}
   return o||`<span class="service-badge other">${c?'OTHER':'Other'}</span>`;
 }
 
@@ -3002,7 +3029,7 @@ function buildDetailSvc(m){
     if(s[k]?.direct)o+=`<span class="detail-service-pill ${k}">${lb[k]}</span>`;
     if(s[k]?.vpn){const c=s[k]?.vpnCountry?` &middot; ${esc(s[k].vpnCountry)}`:'';o+=`<span class="detail-service-pill vpn">${countryFlag(s[k]?.vpnCountry)} ${lb[k]} (VPN${c})</span>`;}
   }
-  if(s.cinema?.coming)o+=`<span class="detail-service-pill cinema-soon">&#127916; Coming to Cinemas Soon</span>`;
+  if(s.cinema?.coming){const rd=m.releaseDate||null;o+=`<span class="detail-service-pill cinema-soon">&#127916; Coming to Cinemas${rd?` · ${_formatCinemaDate(rd,false)}`:''}</span>`;}
   return o||`<span class="detail-service-pill other">Other</span>`;
 }
 
@@ -3045,6 +3072,9 @@ function toggleWatchingSoon(id){
   const m=movies.find(x=>x.id===id);
   if(m){
     m.watchingSoon=!m.watchingSoon;
+    if(m.watchingSoon&&m.streaming?.cinema?.coming){
+      m.streaming.cinema.coming=false;
+    }
     save();render();openDetail(id);
   }
 }
@@ -3304,7 +3334,7 @@ function _cardHash(m){
     m.rewatchingSoon?1:0,m.watchingSoon?1:0,m.rating||'',m.genre||'',m.director||'',
     m.runtime||'',m.category||'',m.graveyard?1:0,m.collection||'',m.watchWith||'',
     m.streaming||'',m.dateWatched||'',m.dateAdded||'',m.detachExempt?1:0,
-    m._animateIn?1:0,currentFilter].join('\0');
+    m._animateIn?1:0,currentFilter,m.releaseDate||''].join('\0');
 }
 
 // djb2 hash — cheap fingerprint for long HTML strings
@@ -3503,13 +3533,14 @@ function closeAddModal(){
   document.getElementById('searchResults').classList.remove('open');
   document.getElementById('searchHint').classList.remove('visible');
   editingId=null;
+  _pendingTmdbId=null;_pendingReleaseDate=null;
   unlockScroll();
 }
 
 function handleOverlayClick(e){if(e.target===document.getElementById('addModal'))closeAddModal();}
 
 function clearForm(){
-  ['fTitle','fYear','fGenre','fDirector','fRating','fRuntime','fPoster','fNotes','fOtherName','fCollection','fCategory','fWatchWith','searchInput',
+  ['fTitle','fYear','fReleaseDate','fGenre','fDirector','fRating','fRuntime','fPoster','fNotes','fOtherName','fCollection','fCategory','fWatchWith','searchInput',
    'fVpnCountry-netflix','fVpnCountry-disney','fVpnCountry-prime','fVpnCountry-other'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   document.getElementById('fWatched').checked=false;
   document.getElementById('fWatchingSoon').checked=false;
@@ -3519,12 +3550,13 @@ function clearForm(){
   document.getElementById('posterThumb').innerHTML='&#127917;';
   document.getElementById('searchResults').classList.remove('open');
   document.getElementById('searchHint').classList.remove('visible');
-  _pendingTmdbId=null;
+  _pendingTmdbId=null;_pendingReleaseDate=null;
 }
 
 function populateForm(m){
   document.getElementById('fTitle').value=m.title||'';
   document.getElementById('fYear').value=m.year||'';
+  document.getElementById('fReleaseDate').value=m.releaseDate||'';
   document.getElementById('fGenre').value=m.genre||'';
   document.getElementById('fDirector').value=m.director||'';
   document.getElementById('fRating').value=m.rating||'';
@@ -3574,17 +3606,18 @@ function saveMovie(){
     if(d||v)streaming[k]={direct:!!d,vpn:!!v,vpnCountry:v?vc:''};
   }
   // Handle cinema "coming soon" as a separate toggle
+  const existing=editingId?movies.find(m=>m.id===editingId):null;
   const comingSoon=document.querySelector('.toggle-chip[data-service="cinema"][data-type="coming"]')?.classList.contains('active');
   if(comingSoon){
     if(!streaming.cinema)streaming.cinema={direct:false,vpn:false,vpnCountry:''};
     streaming.cinema.coming=true;
   }
-  const existing=editingId?movies.find(m=>m.id===editingId):null;
   const watched=document.getElementById('fWatched').checked;
   const movie={
     id:editingId||crypto.randomUUID(),
     title,
     year:document.getElementById('fYear').value.trim(),
+    releaseDate:document.getElementById('fReleaseDate').value.trim()||existing?.releaseDate,
     genre:document.getElementById('fGenre').value.trim(),
     director:document.getElementById('fDirector').value.trim(),
     rating:document.getElementById('fRating').value.trim(),
@@ -3610,6 +3643,7 @@ function saveMovie(){
   if(editingId){const i=movies.findIndex(m=>m.id===editingId);if(i!==-1)movies[i]=movie;}
   else movies.push(movie);
   save();closeAddModal();render();
+  setTimeout(backfillReleaseDates,500);
   // Suppress the fadeIn re-animation on every card/row that already existed —
   // only the newly added/edited entry should animate into view.
   const savedId=movie.id;
@@ -4061,7 +4095,7 @@ window._sbOnLoad = function(data) {
     if (Array.isArray(data)) {
       const incoming = JSON.stringify(data);
       // Update in-memory state first so it's never blocked by a localStorage failure.
-      if (!christmasMode && JSON.stringify(movies) !== incoming) { movies = data; render(); }
+      if (!christmasMode && JSON.stringify(movies) !== incoming) { movies = data; render(); setTimeout(backfillReleaseDates,300); }
       try { __sbOrigSet('watchlist_v2', incoming); } catch(e) {}
       return;
     }
@@ -4072,7 +4106,7 @@ window._sbOnLoad = function(data) {
         if (christmasMode) {
           _normalMovies = data.watchlist; // update the stashed normal list
         } else if (JSON.stringify(movies) !== wIncoming) {
-          movies = data.watchlist; render();
+          movies = data.watchlist; render(); setTimeout(backfillReleaseDates,300);
         }
         try { __sbOrigSet('watchlist_v2', wIncoming); } catch(e) {}
       }
@@ -4396,7 +4430,7 @@ function getSurprisePool(){
     // Sort all films in this collection by year (films without a year go last)
     const siblings = movies
       .filter(x => x.collection === m.collection)
-      .sort((a, b) => (parseInt(a.year) || 9999) - (parseInt(b.year) || 9999));
+      .sort((a,b)=>{const va=a.releaseDate?new Date(a.releaseDate+'T00:00:00').getTime():a.year?new Date(a.year+'-01-01T00:00:00').getTime():9e15;const vb=b.releaseDate?new Date(b.releaseDate+'T00:00:00').getTime():b.year?new Date(b.year+'-01-01T00:00:00').getTime():9e15;return va-vb;});
 
     const idx = siblings.findIndex(x => x.id === m.id);
     if(idx <= 0) return true; // First in collection — always eligible
@@ -4479,7 +4513,7 @@ function showSurprisePick(m){
   if(m.collection){
     const siblings = movies
       .filter(x => x.collection === m.collection)
-      .sort((a, b) => (parseInt(a.year) || 9999) - (parseInt(b.year) || 9999));
+      .sort((a,b)=>{const va=a.releaseDate?new Date(a.releaseDate+'T00:00:00').getTime():a.year?new Date(a.year+'-01-01T00:00:00').getTime():9e15;const vb=b.releaseDate?new Date(b.releaseDate+'T00:00:00').getTime():b.year?new Date(b.year+'-01-01T00:00:00').getTime():9e15;return va-vb;});
     const idx = siblings.findIndex(x => x.id === m.id);
     if(idx >= 0 && siblings.length > 1){
       collNote = `<div class="surprise-collection-note">🎬 Film ${idx + 1} of ${siblings.length} &middot; ${esc(m.collection)}</div>`;
@@ -6034,6 +6068,7 @@ async function _pasteConfirmAll(){
       director:     dir             ? dir.name : '',
       rating:       d?.vote_average ? d.vote_average.toFixed(1)+'/10' : '',
       runtime:      d?.runtime      || undefined,
+      releaseDate:  d?.release_date || hit.release_date || undefined,
       poster:       (d?.poster_path||hit.poster_path) ? TMDB_IMG+(d?.poster_path||hit.poster_path) : '',
       notes:        d?.overview     || '',
       otherName:    '',
