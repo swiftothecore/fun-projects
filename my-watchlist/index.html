@@ -14,7 +14,7 @@
       --border: #2a2520; --border-hi: #3a342d;
       --gold: #c9a84c; --gold-dim: #8a6e2f;
       --text: #e8e0d4; --text-dim: #8a8078; --text-muted: #4a4440;
-      --danger: #c0392b; --soon: #d97706; --radius: 6px;
+      --danger: #c0392b; --soon: #4ade80; --radius: 6px;
     }
     html { scroll-behavior: smooth; }
     body { background:var(--bg); color:var(--text); font-family:'DM Sans',sans-serif; font-weight:300; min-height:100vh; background-image:radial-gradient(ellipse 80% 50% at 50% -10%,rgba(201,168,76,0.07) 0%,transparent 60%); }
@@ -56,20 +56,46 @@
     #soonSection.visible { display:block; }
     .soon-heading { display:flex; align-items:center; gap:12px; margin-bottom:16px; }
     .soon-heading-text { font-size:0.7rem; letter-spacing:0.18em; text-transform:uppercase; color:var(--soon); }
-    .soon-heading-line { flex:1; height:1px; background:rgba(217,119,6,0.2); }
+    .soon-heading-line { flex:1; height:1px; background:rgba(74,222,128,0.2); }
     .soon-scroll-hint { display:none; width:8px; height:8px; border-top:2px solid var(--soon); border-right:2px solid var(--soon); transform:rotate(45deg); opacity:0.85; flex-shrink:0; }
     .soon-strip { display:flex; gap:16px; overflow-x:auto; padding-bottom:6px; scrollbar-width:thin; scrollbar-color:var(--border) transparent; }
     .soon-strip::-webkit-scrollbar { height:4px; }
     .soon-strip::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
-    .soon-card { background:var(--surface); border:1px solid rgba(217,119,6,0.25); border-radius:var(--radius); overflow:hidden; cursor:pointer; flex-shrink:0; width:130px; transition:transform 0.2s,border-color 0.2s,box-shadow 0.2s; position:relative; animation:fadeIn 0.3s ease both; }
-    .soon-card:hover { transform:translateY(-3px); border-color:rgba(217,119,6,0.6); box-shadow:0 10px 28px rgba(0,0,0,0.4); }
+    .soon-card { background:var(--surface); border:1px solid rgba(74,222,128,0.25); border-radius:var(--radius); overflow:hidden; cursor:pointer; flex-shrink:0; width:130px; transition:transform 0.2s,border-color 0.2s,box-shadow 0.2s; position:relative; animation:fadeIn 0.3s ease both; }
+    .soon-card:hover { transform:translateY(-3px); border-color:rgba(74,222,128,0.6); box-shadow:0 10px 28px rgba(0,0,0,0.4); }
     .soon-card-poster { width:100%; aspect-ratio:2/3; object-fit:cover; display:block; background:var(--surface2); }
     .soon-card-placeholder { width:100%; aspect-ratio:2/3; background:var(--surface2); display:flex; align-items:center; justify-content:center; color:var(--text-muted); font-size:1.6rem; }
-    .soon-card-body { padding:8px 10px 10px; }
+    .soon-card-body { padding:8px 10px 10px; min-height:calc(1.95rem + 0.13rem + 0.75rem + 18px); }
     .soon-card-title { font-family:'Playfair Display',serif; font-size:0.78rem; line-height:1.25; color:var(--text); display:-webkit-box; -webkit-line-clamp:2; line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
     .soon-card-year { font-size:0.62rem; color:var(--text-muted); margin-top:2px; }
-    .soon-pip { position:absolute; top:7px; left:7px; width:7px; height:7px; border-radius:50%; background:var(--soon); box-shadow:0 0 6px rgba(217,119,6,0.7); }
+    .soon-pip { position:absolute; top:7px; left:7px; width:7px; height:7px; border-radius:50%; background:var(--soon); box-shadow:0 0 6px rgba(74,222,128,0.7); }
     .soon-divider { margin:24px 48px 0; border:none; border-top:1px solid var(--border); }
+    #rewatchSoonSection { padding:16px 48px 0; display:none; }
+    #rewatchSoonSection.visible { display:block; }
+    /* ── Side-by-side combined layout (desktop only, when both strips fit in one row) ── */
+    #soonWrapper.soon-combined { display:flex; align-items:flex-start; padding:28px 48px 0; gap:52px; }
+    #soonWrapper.soon-combined #soonSection,
+    #soonWrapper.soon-combined #rewatchSoonSection { padding:0; flex:0 0 auto; }
+    #soonWrapper.soon-combined #rewatchSoonSection { position:relative; }
+    #soonWrapper.soon-combined #rewatchSoonSection::before {
+      content:''; position:absolute; left:-26px; top:0; bottom:0; width:1px;
+      background:linear-gradient(to bottom, rgba(201,168,76,0) 0%, rgba(201,168,76,0.4) 18%, rgba(201,168,76,0.15) 44%, rgba(20,184,166,0.15) 56%, rgba(20,184,166,0.4) 82%, rgba(20,184,166,0) 100%);
+    }
+    .rewatch-soon-heading { display:flex; align-items:center; gap:12px; margin-bottom:16px; }
+    .rewatch-soon-heading-text { font-size:0.7rem; letter-spacing:0.18em; text-transform:uppercase; color:#14b8a6; }
+    .rewatch-soon-heading-line { flex:1; height:1px; background:rgba(20,184,166,0.2); }
+    .rewatch-soon-strip { display:flex; gap:16px; overflow-x:auto; padding-bottom:6px; scrollbar-width:thin; scrollbar-color:var(--border) transparent; }
+    .rewatch-soon-strip::-webkit-scrollbar { height:4px; }
+    .rewatch-soon-strip::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
+    .rewatch-soon-card { background:var(--surface); border:1px solid rgba(20,184,166,0.25); border-radius:var(--radius); overflow:hidden; cursor:pointer; flex-shrink:0; width:130px; transition:transform 0.2s,border-color 0.2s,box-shadow 0.2s; position:relative; animation:fadeIn 0.3s ease both; }
+    .rewatch-soon-card:hover { transform:translateY(-3px); border-color:rgba(20,184,166,0.6); box-shadow:0 10px 28px rgba(0,0,0,0.4); }
+    .rewatch-soon-card-poster { width:100%; aspect-ratio:2/3; object-fit:cover; display:block; background:var(--surface2); }
+    .rewatch-soon-card-placeholder { width:100%; aspect-ratio:2/3; background:var(--surface2); display:flex; align-items:center; justify-content:center; color:var(--text-muted); font-size:1.6rem; }
+    .rewatch-soon-card-body { padding:8px 10px 10px; min-height:calc(1.95rem + 0.13rem + 0.75rem + 18px); }
+    .rewatch-soon-card-title { font-family:'Playfair Display',serif; font-size:0.78rem; line-height:1.25; color:var(--text); display:-webkit-box; -webkit-line-clamp:2; line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+    .rewatch-soon-card-year { font-size:0.62rem; color:var(--text-muted); margin-top:2px; }
+    .rewatch-soon-pip { position:absolute; top:7px; left:7px; width:7px; height:7px; border-radius:50%; background:#14b8a6; box-shadow:0 0 6px rgba(20,184,166,0.7); }
+    .list-rewatch-soon-pip { position:absolute; top:-3px; right:-3px; width:7px; height:7px; border-radius:50%; background:#14b8a6; box-shadow:0 0 5px rgba(20,184,166,0.8); border:1.5px solid var(--surface); }
 
     /* ── Grouped "All" view ── */
     .movie-container { padding:28px 48px; }
@@ -239,6 +265,11 @@
     .detail-soon-btn.active::before { opacity:1; box-shadow:0 0 6px rgba(245,158,11,0.9); }
     .detail-soon-btn.active:hover { color:rgba(210,195,175,0.45); background:linear-gradient(to top, rgba(8,7,6,0.97) 0%, rgba(8,7,6,0.75) 45%, transparent 100%); }
     .detail-soon-btn.active:hover::before { opacity:0.5; box-shadow:none; }
+    .detail-rewatch-soon-btn:hover { color:#2dd4bf !important; background:linear-gradient(to top, rgba(0,18,16,0.98) 0%, rgba(0,18,16,0.78) 45%, transparent 100%) !important; }
+    .detail-rewatch-soon-btn.active { color:#2dd4bf; background:linear-gradient(to top, rgba(0,22,20,0.97) 0%, rgba(0,15,13,0.72) 45%, transparent 100%); }
+    .detail-rewatch-soon-btn.active::before { opacity:1; box-shadow:0 0 6px rgba(45,212,191,0.9); }
+    .detail-rewatch-soon-btn.active:hover { color:rgba(210,195,175,0.45) !important; background:linear-gradient(to top, rgba(8,7,6,0.97) 0%, rgba(8,7,6,0.75) 45%, transparent 100%) !important; }
+    .detail-rewatch-soon-btn.active:hover::before { opacity:0.5; box-shadow:none; }
     .detail-watched-btn { position:absolute; bottom:0; left:0; right:0; padding:36px 8px 10px; background:linear-gradient(to top, rgba(6,5,2,0.97) 0%, rgba(10,8,2,0.72) 45%, transparent 100%); border:none; color:var(--gold); font-family:'DM Sans',sans-serif; font-size:0.58rem; font-weight:500; letter-spacing:0.13em; text-transform:uppercase; cursor:pointer; transition:color 0.2s,background 0.2s; display:flex; align-items:center; justify-content:center; gap:5px; width:100%; }
     .detail-watched-btn::before { content:'✓'; font-size:0.6rem; opacity:0.9; flex-shrink:0; transition:opacity 0.2s; }
     .detail-watched-btn:hover { color:rgba(210,195,175,0.45); background:linear-gradient(to top, rgba(8,7,6,0.97) 0%, rgba(8,7,6,0.75) 45%, transparent 100%); }
@@ -275,7 +306,7 @@
     .list-thumb-wrap { position:relative; flex-shrink:0; }
     .list-thumb { width:34px; height:51px; object-fit:cover; border-radius:3px; display:block; background:var(--surface2); }
     .list-thumb-placeholder { width:34px; height:51px; background:var(--surface2); border-radius:3px; display:flex; align-items:center; justify-content:center; color:var(--text-muted); font-size:0.9rem; flex-shrink:0; }
-    .list-soon-pip { position:absolute; top:-3px; right:-3px; width:7px; height:7px; border-radius:50%; background:var(--soon); box-shadow:0 0 5px rgba(217,119,6,0.8); border:1.5px solid var(--surface); }
+    .list-soon-pip { position:absolute; top:-3px; right:-3px; width:7px; height:7px; border-radius:50%; background:var(--soon); box-shadow:0 0 5px rgba(74,222,128,0.8); border:1.5px solid var(--surface); }
     .list-info { flex:1; min-width:0; }
     .list-title { font-family:'Playfair Display',serif; font-size:0.92rem; font-weight:400; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; line-height:1.2; }
     .list-meta { font-size:0.7rem; color:var(--text-dim); margin-top:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
@@ -329,7 +360,7 @@
 
       /* Padding resets */
       .list-container{padding-left:20px;padding-right:20px;}
-      header,.controls,.movie-container,.grid,#apiBanner,#soonSection,.soon-divider{padding-left:20px;padding-right:20px;}
+      header,.controls,.movie-container,.grid,#apiBanner,#soonSection,#rewatchSoonSection,.soon-divider{padding-left:20px;padding-right:20px;}
       .christmas-banner{padding-left:20px;padding-right:20px;}
 
       /* Mobile header: keep the key actions in a compact row */
@@ -1093,28 +1124,30 @@
   /* ── Mobile bottom search bar ──────────────────────────────────────────── */
   #mobileSearchBar { display:none; } /* hidden on desktop */
   @media(max-width:640px){
-    #searchBarWrap { display:none !important; } /* replace with bottom bar on mobile */
-    body { padding-bottom:calc(52px + env(safe-area-inset-bottom, 0px)); }
+    #searchBarWrap { display:none !important; } /* replace with floating pill on mobile */
+    body { padding-bottom:calc(82px + env(safe-area-inset-bottom, 0px)); }
     #mobileSearchBar {
       display:flex;
       align-items:center;
       gap:10px;
       position:fixed;
-      bottom:0;
-      left:0;
-      right:0;
+      bottom:calc(18px + env(safe-area-inset-bottom, 0px));
+      left:16px;
+      right:16px;
       z-index:90;
       padding:0 16px;
-      height:52px;
-      padding-bottom:env(safe-area-inset-bottom, 0px);
-      background:var(--surface2);
-      border-top:1px solid var(--border-hi);
-      box-shadow:0 -4px 24px rgba(0,0,0,0.45);
-      transition:border-top-color 0.15s;
+      height:46px;
+      background:rgba(28,24,20,0.92);
+      -webkit-backdrop-filter:blur(18px) saturate(160%);
+      backdrop-filter:blur(18px) saturate(160%);
+      border:1px solid rgba(255,255,255,0.09);
+      border-radius:23px;
+      box-shadow:0 8px 32px rgba(0,0,0,0.5);
+      transition:border-color 0.2s;
     }
     body.modal-open #mobileSearchBar,
     body.bulk-mode  #mobileSearchBar { display:none !important; }
-    #mobileSearchBar.msb-active { border-top-color:var(--gold-dim); }
+    #mobileSearchBar.msb-active { border-color:rgba(201,168,76,0.35); }
     #mobileSearchBarIcon {
       flex-shrink:0; display:flex; align-items:center;
       color:var(--text-muted); transition:color 0.15s;
@@ -1129,13 +1162,19 @@
     }
     #mobileSearchBarInput::placeholder { color:var(--text-muted); opacity:0.55; }
     #mobileSearchBarClear {
-      display:none;
-      background:none; border:none;
-      color:var(--text-muted); font-size:1.35rem; line-height:1;
-      cursor:pointer; padding:0 0 0 4px; flex-shrink:0;
-      transition:color 0.15s;
+      visibility:hidden;
+      background:rgba(255,255,255,0.08);
+      border:none;
+      color:rgba(180,168,155,0.7);
+      font-size:0.8rem; line-height:1;
+      cursor:pointer;
+      width:20px; height:20px; border-radius:50%;
+      display:flex; align-items:center; justify-content:center;
+      flex-shrink:0; padding:0;
+      transition:background 0.15s;
     }
-    #mobileSearchBar.msb-active #mobileSearchBarClear { display:block; }
+    #mobileSearchBarClear:hover { background:rgba(255,255,255,0.14); }
+    #mobileSearchBar.msb-active #mobileSearchBarClear { visibility:visible; }
   }
   </style>
 </head>
@@ -1594,9 +1633,15 @@ else { window._sbLibReady = _sbRun; }
   <!-- populated by renderCategoriesView when a category is selected -->
 </div>
 
+<div id="soonWrapper">
 <div id="soonSection">
   <div class="soon-heading"><span class="soon-heading-text">&#9658; Watching Soon</span><span class="soon-heading-line" aria-hidden="true"></span><span class="soon-scroll-hint" aria-hidden="true"></span></div>
   <div class="soon-strip" id="soonStrip"></div>
+</div>
+<div id="rewatchSoonSection">
+  <div class="rewatch-soon-heading"><span class="rewatch-soon-heading-text">&#9658; Rewatching Soon</span><span class="rewatch-soon-heading-line" aria-hidden="true"></span></div>
+  <div class="rewatch-soon-strip" id="rewatchSoonStrip"></div>
+</div>
 </div>
 <hr class="soon-divider" id="soonDivider" style="display:none;">
 
@@ -1605,7 +1650,7 @@ else { window._sbLibReady = _sbRun; }
 <div id="toastContainer"></div>
 
 <!-- ADD/EDIT MODAL -->
-<div class="modal-overlay" id="addModal" onclick="handleOverlayClick(event)">
+<div class="modal-overlay" id="addModal" onmousedown="handleOverlayClick(event)">
   <div class="modal">
     <div class="modal-header">
       <h2 class="modal-title" id="modalTitle">Add Film</h2>
@@ -1706,7 +1751,7 @@ else { window._sbLibReady = _sbRun; }
       <div class="form-footer">
         <div class="form-footer-left">
           <label class="toggle-row"><input type="checkbox" id="fWatched"><span class="track"></span><span class="toggle-label">Marked as watched</span></label>
-          <label class="toggle-row soon-toggle"><input type="checkbox" id="fWatchingSoon"><span class="track"></span><span class="toggle-label" style="color:rgba(217,119,6,0.85)">Watching soon</span></label>
+          <label class="toggle-row soon-toggle"><input type="checkbox" id="fWatchingSoon"><span class="track"></span><span class="toggle-label" style="color:rgba(74,222,128,0.85)">Watching soon</span></label>
         </div>
         <div class="form-footer-right">
           <a id="modalJustWatch" class="btn-justwatch btn-sm" href="#" target="_blank" rel="noopener" style="text-decoration:none;opacity:0.35;pointer-events:none;"><span class="jw-dot"></span>JustWatch</a>
@@ -1723,7 +1768,7 @@ else { window._sbLibReady = _sbRun; }
 </div>
 
 <!-- DETAIL MODAL -->
-<div class="modal-overlay" id="detailModal" onclick="handleDetailOverlay(event)">
+<div class="modal-overlay" id="detailModal" onmousedown="handleDetailOverlay(event)">
   <div class="modal">
     <div class="modal-header"><div></div><button class="modal-close" onclick="closeDetail()">&times;</button></div>
     <div class="modal-body" id="detailContent"></div>
@@ -1866,6 +1911,7 @@ window.addEventListener('resize',()=>{
   if(window.innerWidth<=640&&currentView!=='list'){
     currentView='list';applyViewToggleUI();render();
   }
+  _checkSoonLayout();
 });
 
 function setView(v){
@@ -2263,7 +2309,7 @@ function buildListRow(m,i){
   const thumb=thumbSrc
     ?`<img class="list-thumb" data-src="${esc(thumbSrc)}" alt="${esc(m.title)}" onerror="this.style.display='none';this.nextSibling.style.display='flex'"><div class="list-thumb-placeholder" style="display:none">🎬</div>`
     :`<div class="list-thumb-placeholder">🎬</div>`;
-  const soonPip=m.watchingSoon?`<span class="list-soon-pip"></span>`:'';
+  const soonPip=m.watchingSoon?`<span class="list-soon-pip"></span>`:m.rewatchingSoon?`<span class="list-rewatch-soon-pip"></span>`:'';
   const meta=[m.year,m.genre,m.director,formatRuntime(m.runtime)].filter(Boolean).join(' · ');
   const badges=buildBadges(m,true);
   const staleClass=getStaleClass(m);
@@ -2274,7 +2320,7 @@ function buildListRow(m,i){
   const exemptTag=(currentFilter==='categories'&&m.detachExempt&&categorySettings[m.category]?.detached)?`<span class="list-status" style="background:rgba(96,165,250,0.08);color:#60a5fa;border:1px solid rgba(96,165,250,0.22);">👁 Visible</span>`:'';
   const dateLabel=m.watched?formatDateWatched(m.dateWatched):formatDateAdded(m.dateAdded);
   const rowClass=`list-row${m.watched?' list-row-watched':''}${m.graveyard?' list-row-graveyard':''}${staleClass?staleClass.replace('card-stale','list-stale'):''}`;
-  return`<div class="${rowClass}" data-id="${m.id}" onclick="openDetail('${m.id}')" style="animation-delay:${i*0.02}s">
+  return`<div class="${rowClass}" data-id="${m.id}" data-render-hash="${_cardHash(m)}" onclick="openDetail('${m.id}')" style="animation-delay:${i*0.02}s">
     <div class="list-thumb-wrap">${thumb}${soonPip}</div>
     <div class="list-info">
       <div class="list-title">${esc(m.title)}</div>
@@ -2366,6 +2412,11 @@ function render(){
   const ss=document.getElementById('soonSection'),sd=document.getElementById('soonDivider'),sr=document.getElementById('soonStrip');
   if(soon.length&&currentFilter==='all'&&!searchQuery){ss.classList.add('visible');sd.style.display='none';sr.innerHTML=soon.map((m,i)=>buildSoonCard(m,i)).join('');}
   else{ss.classList.remove('visible');sd.style.display='none';}
+  const rewatchSoon=sortWithCollections(movies.filter(m=>m.rewatchingSoon&&m.rewatch&&m.watched&&!m.graveyard));
+  const rss=document.getElementById('rewatchSoonSection'),rsr=document.getElementById('rewatchSoonStrip');
+  if(rewatchSoon.length&&currentFilter==='all'&&!searchQuery){rss.classList.add('visible');rsr.innerHTML=rewatchSoon.map((m,i)=>buildRewatchSoonCard(m,i)).join('');}
+  else{rss.classList.remove('visible');}
+  requestAnimationFrame(_checkSoonLayout);
 
   if(currentFilter==='categories'){renderCategoriesView();return;}
 
@@ -2381,22 +2432,23 @@ function render(){
     if(currentFilter==='all'){
       const base=searchQuery
         ?_postFilter(movies.filter(m=>!m.graveyard&&!isDetachedMovie(m)))
-        :_postFilter(movies.filter(m=>!m.watchingSoon&&!m.graveyard&&!isArchivedWatched(m)&&!isDetachedMovie(m)));
+        :_postFilter(movies.filter(m=>!m.watchingSoon&&!m.rewatchingSoon&&!m.graveyard&&!isArchivedWatched(m)&&!isDetachedMovie(m)));
       if(searchQuery){
-        g.innerHTML=base.length?`<div class="list-rows">${base.map((m,i)=>buildListRow(m,i)).join('')}</div>`:emptyFilter;
+        if(!base.length){_setHTML(g,emptyFilter);}
+        else{_reconcileListRows(g,base.map((m,i)=>buildListRow(m,i)).join(''));}
       }else if(currentGrouping==='flat'){
         const _cdm=collectionDateMap();const _flatSorted=[...sortWithCollections(base.filter(m=>!m.watched),_cdm),...sortWithCollections(base.filter(m=>m.watched&&m.rewatch),_cdm),...sortWithCollections(base.filter(m=>m.watched&&!m.rewatch),_cdm)];
-        g.innerHTML=base.length?`<div class="list-rows">${buildListItems(groupIntoRenderItems(_flatSorted))}</div>`:emptyAll;
+        _setHTML(g,base.length?`<div class="list-rows">${buildListItems(groupIntoRenderItems(_flatSorted))}</div>`:emptyAll);
       }else{
-        g.innerHTML=base.length?buildListGrouped(base):emptyAll;
+        _setHTML(g,base.length?buildListGrouped(base):emptyAll);
       }
     }else{
       const f=getFiltered();
-      if(!f.length){g.innerHTML=emptyFilter;return;}
+      if(!f.length){_setHTML(g,emptyFilter);return;}
       if(searchQuery){
-        g.innerHTML=`<div class="list-rows">${f.map((m,i)=>buildListRow(m,i)).join('')}</div>`;
+        _reconcileListRows(g,f.map((m,i)=>buildListRow(m,i)).join(''));
       }else{
-        g.innerHTML=`<div class="list-rows">${buildListItems(groupIntoRenderItems(f))}</div>`;
+        _setHTML(g,`<div class="list-rows">${buildListItems(groupIntoRenderItems(f))}</div>`);
       }
     }
     return;
@@ -2405,27 +2457,29 @@ function render(){
   if(currentFilter==='all'){
     const base=searchQuery
       ?_postFilter(movies.filter(m=>!m.graveyard&&!isDetachedMovie(m)))
-      :_postFilter(movies.filter(m=>!m.watchingSoon&&!m.graveyard&&!isArchivedWatched(m)&&!isDetachedMovie(m)));
+      :_postFilter(movies.filter(m=>!m.watchingSoon&&!m.rewatchingSoon&&!m.graveyard&&!isArchivedWatched(m)&&!isDetachedMovie(m)));
     if(searchQuery){
       g.className='grid';
-      g.innerHTML=base.length?base.map((m,i)=>buildCard(m,i)).join(''):emptyFilter;
+      if(base.length)_reconcile(g,base.map((m,i)=>buildCard(m,i)).join(''));
+      else _setHTML(g,emptyFilter);
     }else if(currentGrouping==='flat'){
       g.className='grid';
       const _cdm2=collectionDateMap();const _gridSorted=[...sortWithCollections(base.filter(m=>!m.watched),_cdm2),...sortWithCollections(base.filter(m=>m.watched&&m.rewatch),_cdm2),...sortWithCollections(base.filter(m=>m.watched&&!m.rewatch),_cdm2)];
-      g.innerHTML=base.length?renderItems(groupIntoRenderItems(_gridSorted)):emptyAll;
+      if(base.length)_reconcile(g,renderItems(groupIntoRenderItems(_gridSorted)));
+      else _setHTML(g,emptyAll);
     }else{
       g.className='movie-container';
       const grouped=buildGrouped(base);
-      g.innerHTML=grouped||emptyAll;
+      _setHTML(g,grouped||emptyAll);
     }
   }else{
     g.className='grid';
     const f=getFiltered();
-    if(!f.length){g.innerHTML=emptyFilter;return;}
+    if(!f.length){_setHTML(g,emptyFilter);return;}
     if(searchQuery){
-      g.innerHTML=f.map((m,i)=>buildCard(m,i)).join('');
+      _reconcile(g,f.map((m,i)=>buildCard(m,i)).join(''));
     }else{
-      g.innerHTML=renderItems(groupIntoRenderItems(f));
+      _setHTML(g,renderItems(groupIntoRenderItems(f)));
     }
   }
   trimCardMetas();
@@ -2759,7 +2813,7 @@ function getFiltered(){
 function _getFilteredCore(){
   const cdMap=collectionDateMap();
   let result;
-  if(currentFilter==='all')result=movies.filter(m=>!m.watchingSoon&&!m.graveyard&&!isArchivedWatched(m)&&!isDetachedMovie(m));
+  if(currentFilter==='all')result=movies.filter(m=>!m.watchingSoon&&!m.rewatchingSoon&&!m.graveyard&&!isArchivedWatched(m)&&!isDetachedMovie(m));
   else if(currentFilter==='soon')result=movies.filter(m=>m.watchingSoon&&!m.graveyard); // detached movies CAN appear in watching soon
   else if(currentFilter==='watched')result=movies.filter(m=>m.watched&&!m.graveyard&&!isDetachedMovie(m));
   else if(currentFilter==='rewatch'){result=movies.filter(m=>m.watched&&m.rewatch&&!m.graveyard&&!isDetachedMovie(m));return sortWithCollections(result,cdMap);}
@@ -2795,6 +2849,12 @@ function buildSoonCard(m,i){
   return`<div class="soon-card" data-id="${m.id}" onclick="openDetail('${m.id}')" style="animation-delay:${i*0.04}s"><div class="soon-pip"></div>${img}<div class="soon-card-body"><div class="soon-card-title">${esc(m.title)}</div>${m.year?`<div class="soon-card-year">${esc(m.year)}</div>`:''}</div></div>`;
 }
 
+function buildRewatchSoonCard(m,i){
+  const src=m.poster?m.poster.replace('/t/p/w500/','/t/p/w185/'):'';
+  const img=src?`<img class="rewatch-soon-card-poster" data-src="${esc(src)}" alt="${esc(m.title)}" onerror="this.style.display='none';this.nextSibling.style.display='flex'"><div class="rewatch-soon-card-placeholder" style="display:none">&#127917;</div>`:`<div class="rewatch-soon-card-placeholder">&#127917;</div>`;
+  return`<div class="rewatch-soon-card" data-id="${m.id}" onclick="openDetail('${m.id}')" style="animation-delay:${i*0.04}s"><div class="rewatch-soon-pip"></div>${img}<div class="rewatch-soon-card-body"><div class="rewatch-soon-card-title">${esc(m.title)}</div>${m.year?`<div class="rewatch-soon-card-year">${esc(m.year)}</div>`:''}</div></div>`;
+}
+
 function buildCard(m,i){
   const stale=getStaleClass(m);
   const graveyardCls=m.graveyard?' card-graveyard':'';
@@ -2802,7 +2862,7 @@ function buildCard(m,i){
   const ph=cardSrc?`<img class="card-poster" data-src="${esc(cardSrc)}" alt="${esc(m.title)}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="card-poster-placeholder" style="display:none">&#127917;<span>No poster</span></div>`:`<div class="card-poster-placeholder">&#127917;<span>No poster</span></div>`;
   const ov=m.graveyard?`<div class="card-graveyard-overlay"><span class="graveyard-stamp">💀 Never</span></div>`:m.watched&&m.rewatch?`<div class="card-rewatch-overlay"><span class="rewatch-stamp">Rewatch</span></div>`:m.watched?`<div class="card-watched-overlay"><span class="watched-stamp">Watched</span></div>`:'';
   const exemptPip=(currentFilter==='categories'&&m.detachExempt&&categorySettings[m.category]?.detached)?`<div class="detach-exempt-pip">Visible</div>`:'';
-  return`<div class="card${stale}${graveyardCls}" data-id="${m.id}" onclick="openDetail('${m.id}')" style="animation-delay:${i*0.03}s">${ph}${ov}${exemptPip}<div class="card-body"><div class="card-title">${esc(m.title)}</div><div class="card-meta" data-year="${esc(m.year||'')}" data-genre="${esc(m.genre||'')}" data-runtime="${esc(formatRuntime(m.runtime)||'')}">${[m.year,m.genre,formatRuntime(m.runtime)].filter(Boolean).join(' &middot; ')}</div><div class="card-services">${buildBadges(m,true)}</div></div></div>`;
+  return`<div class="card${stale}${graveyardCls}" data-id="${m.id}" data-render-hash="${_cardHash(m)}" onclick="openDetail('${m.id}')" style="animation-delay:${i*0.03}s">${ph}${ov}${exemptPip}<div class="card-body"><div class="card-title">${esc(m.title)}</div><div class="card-meta" data-year="${esc(m.year||'')}" data-genre="${esc(m.genre||'')}" data-runtime="${esc(formatRuntime(m.runtime)||'')}">${[m.year,m.genre,formatRuntime(m.runtime)].filter(Boolean).join(' &middot; ')}</div><div class="card-services">${buildBadges(m,true)}</div></div></div>`;
 }
 
 function trimCardMetas(){
@@ -2884,9 +2944,11 @@ function openDetail(id){
   const ph=m.graveyard
     ?posterInner
     :`<div class="detail-poster-wrap">${posterInner}${
-        m.watched
-          ?`<button class="detail-watched-btn" onclick="toggleWatched('${m.id}')">Watched</button>`
-          :`<button class="detail-soon-btn${m.watchingSoon?' active':''}" onclick="toggleWatchingSoon('${m.id}')">${m.watchingSoon?'Watching Soon':'Watch Soon'}</button>`
+        m.watched&&m.rewatch
+          ?`<button class="detail-soon-btn detail-rewatch-soon-btn${m.rewatchingSoon?' active':''}" onclick="toggleRewatchingSoon('${m.id}')">${m.rewatchingSoon?'Rewatching Soon':'Rewatch Soon'}</button>`
+          :m.watched
+            ?`<button class="detail-watched-btn" onclick="toggleWatched('${m.id}')">Watched</button>`
+            :`<button class="detail-soon-btn${m.watchingSoon?' active':''}" onclick="toggleWatchingSoon('${m.id}')">${m.watchingSoon?'Watching Soon':'Watch Soon'}</button>`
       }</div>`;
   const svc=buildDetailSvc(m);
   const jw=`https://www.justwatch.com/au/search?q=${encodeURIComponent(m.title)}`;
@@ -2952,8 +3014,8 @@ function toggleWatched(id){
   const m=movies.find(x=>x.id===id);
   if(m){
     m.watched=!m.watched;
-    if(m.watched){m.watchingSoon=false;m.dateWatched=new Date().toISOString();m.rewatch=false;}
-    else{m.dateWatched=undefined;m.rewatch=false;}
+    if(m.watched){m.watchingSoon=false;m.dateWatched=new Date().toISOString();m.rewatch=false;m.rewatchingSoon=false;}
+    else{m.dateWatched=undefined;m.rewatch=false;m.rewatchingSoon=false;}
     save();closeDetail();render();
   }
 }
@@ -2965,7 +3027,7 @@ function toggleGraveyard(id){
   if(m){
     m.graveyard=!m.graveyard;
     // Moving to graveyard clears watched and watchingSoon flags
-    if(m.graveyard){m.watched=false;m.watchingSoon=false;}
+    if(m.graveyard){m.watched=false;m.watchingSoon=false;m.rewatchingSoon=false;}
     save();closeDetail();render();
   }
 }
@@ -2974,6 +3036,7 @@ function toggleRewatch(id){
   const m=movies.find(x=>x.id===id);
   if(m&&m.watched){
     m.rewatch=!m.rewatch;
+    if(!m.rewatch)m.rewatchingSoon=false;
     save();render();openDetail(id);
   }
 }
@@ -2984,6 +3047,35 @@ function toggleWatchingSoon(id){
     m.watchingSoon=!m.watchingSoon;
     save();render();openDetail(id);
   }
+}
+
+function toggleRewatchingSoon(id){
+  const m=movies.find(x=>x.id===id);
+  if(m&&m.watched&&m.rewatch){
+    m.rewatchingSoon=!m.rewatchingSoon;
+    save();render();openDetail(id);
+  }
+}
+
+function _checkSoonLayout(){
+  const wrapper=document.getElementById('soonWrapper');
+  if(!wrapper)return;
+  if(window.innerWidth<=640){wrapper.classList.remove('soon-combined');return;}
+  const ss=document.getElementById('soonSection');
+  const rss=document.getElementById('rewatchSoonSection');
+  if(!ss.classList.contains('visible')||!rss.classList.contains('visible')){
+    wrapper.classList.remove('soon-combined');return;
+  }
+  // scrollWidth is unreliable when content doesn't overflow its container —
+  // it just returns the container width. Calculate directly from card count instead.
+  const CARD=130,GAP=16;
+  const nSoon=document.getElementById('soonStrip').querySelectorAll('.soon-card').length;
+  const nRewatch=document.getElementById('rewatchSoonStrip').querySelectorAll('.rewatch-soon-card').length;
+  const soonW=nSoon>0?nSoon*CARD+(nSoon-1)*GAP:0;
+  const rewatchW=nRewatch>0?nRewatch*CARD+(nRewatch-1)*GAP:0;
+  // outer padding (48*2=96) + soonW + gap (52px) + rewatchW
+  const totalNeeded=96+soonW+52+rewatchW;
+  wrapper.classList.toggle('soon-combined',totalNeeded<=document.documentElement.clientWidth);
 }
 
 // ── Scroll lock (prevents background scroll while any modal is open) ──────
@@ -3204,7 +3296,79 @@ async function openTrailer(tmdbId,btnEl){
   }
 }
 
-// ── Sort dropdown menu ────────────────────────────────────────────────────
+// ── DOM reconciliation ────────────────────────────────────────────────────
+// Fingerprint of everything that affects how a card/row looks.
+// Including currentFilter because the exemptPip + statusTag depend on it.
+function _cardHash(m){
+  return[m.id,m.title||'',m.year||'',m.poster||'',m.watched?1:0,m.rewatch?1:0,
+    m.rewatchingSoon?1:0,m.watchingSoon?1:0,m.rating||'',m.genre||'',m.director||'',
+    m.runtime||'',m.category||'',m.graveyard?1:0,m.collection||'',m.watchWith||'',
+    m.streaming||'',m.dateWatched||'',m.dateAdded||'',m.detachExempt?1:0,
+    m._animateIn?1:0,currentFilter].join('\0');
+}
+
+// djb2 hash — cheap fingerprint for long HTML strings
+function _htmlHash(s){let h=5381;for(let i=0;i<s.length;i++)h=((h<<5)+h)^s.charCodeAt(i);return h>>>0;}
+const _htmlCache=new WeakMap();
+
+// innerHTML with hash guard — skips the write when content hasn't changed
+function _setHTML(el,html){
+  const h=_htmlHash(html);
+  if(_htmlCache.get(el)===h)return;
+  _htmlCache.set(el,h);
+  el.innerHTML=html;
+}
+
+// Keyed in-place reconciliation — only touches nodes that changed or moved.
+// Falls back to _setHTML for content that mixes non-keyed nodes (group headers etc).
+function _reconcile(container,newHTML){
+  const temp=document.createElement('div');
+  temp.innerHTML=newHTML;
+  const newNodes=Array.from(temp.children);
+  if(!newNodes.length||newNodes.some(n=>!n.dataset.id)){_setHTML(container,newHTML);return;}
+  // Index existing keyed children; remove any non-keyed stragglers
+  const existing=new Map();
+  for(const ch of Array.from(container.children)){
+    if(ch.dataset.id)existing.set(ch.dataset.id,ch);else ch.remove();
+  }
+  // Walk new list in order, patching in-place
+  let cursor=container.firstChild;
+  for(const newNode of newNodes){
+    const id=newNode.dataset.id;
+    const old=existing.get(id);
+    if(old){
+      existing.delete(id);
+      if(old.dataset.renderHash===newNode.dataset.renderHash){
+        // Unchanged — reposition if out of order, then advance cursor
+        if(old!==cursor)container.insertBefore(old,cursor);
+        cursor=old.nextSibling;
+      }else{
+        // Content changed — swap in the new node
+        container.insertBefore(newNode,old);
+        old.remove();
+        cursor=newNode.nextSibling;
+      }
+    }else{
+      // New node — insert at current position
+      container.insertBefore(newNode,cursor);
+      cursor=newNode.nextSibling;
+    }
+  }
+  // Remove nodes no longer in the list
+  for(const stale of existing.values())stale.remove();
+}
+
+// Reconcile into a .list-rows wrapper inside g, creating it if needed
+function _reconcileListRows(g,rowsHTML){
+  let lr=g.querySelector(':scope>.list-rows');
+  if(!lr){
+    g.innerHTML='';
+    lr=document.createElement('div');
+    lr.className='list-rows';
+    g.appendChild(lr);
+  }
+  _reconcile(lr,rowsHTML);
+}
 function toggleSortMenu(){
   const menu=document.getElementById('sortMenu');
   const btn=document.getElementById('sortBtn');
@@ -3246,7 +3410,7 @@ function updateSortBtnLabel(){
 }
 
 // Close the sort menu on any click outside of it
-document.addEventListener('click',e=>{
+document.addEventListener('mousedown',e=>{
   const menu=document.getElementById('sortMenu');
   if(!menu||!menu.classList.contains('open'))return;
   if(!e.target.closest('#sortMenu')&&!e.target.closest('#sortBtn'))closeSortMenu();
@@ -3433,9 +3597,12 @@ function saveMovie(){
     watchWith:document.getElementById('fWatchWith').value.trim(),
     tmdbId:_pendingTmdbId||existing?.tmdbId||null,
     detachExempt:existing?.detachExempt||false,
+    graveyard:existing?.graveyard||false,
     watched,
+    rewatch:watched?(existing?.rewatch||false):false,
     // If marked watched, strip watchingSoon
     watchingSoon:watched?false:document.getElementById('fWatchingSoon').checked,
+    rewatchingSoon:watched?(existing?.rewatchingSoon||false):false,
     streaming,
     dateAdded:existing?.dateAdded||new Date().toISOString(),
     dateWatched:watched?(existing?.dateWatched||(existing?.watched?undefined:new Date().toISOString())):undefined,
@@ -3722,7 +3889,7 @@ document.addEventListener('keydown',e=>{
 });
 
 
-document.addEventListener('click',e=>{
+document.addEventListener('mousedown',e=>{
   const pop=document.getElementById('categoryPillPopover');
   if(pop&&pop.style.display!=='none'&&!pop.contains(e.target))closePillMenu();
 });
