@@ -28,7 +28,7 @@ if (missing.length) {
 }
 
 const YT_BASE  = 'https://www.googleapis.com/youtube/v3';
-const RSS_PATH = path.join(process.cwd(), 'music-videos-rss.xml');
+const RSS_PATH = path.join(process.cwd(), 'music-videos', 'rss.xml');
 
 // ── YouTube helpers ────────────────────────────────────────────────────────
 
@@ -140,11 +140,12 @@ function buildRss(videos) {
   const buildDate = new Date().toUTCString();
 
   return `<?xml version="1.0" encoding="UTF-8"?>
-<rss version="2.0">
+<rss version="2.0" xmlns:webfeeds="http://webfeeds.org/rss/1.0">
   <channel>
     <title>Music Videos</title>
     <link>https://swiftothecore.github.io/fun-projects/music-videos</link>
     <description>Official music videos from your tracked artists</description>
+    <webfeeds:icon>https://swiftothecore.github.io/fun-projects/music-videos/icon.svg</webfeeds:icon>
     <lastBuildDate>${buildDate}</lastBuildDate>
 ${items}
   </channel>
