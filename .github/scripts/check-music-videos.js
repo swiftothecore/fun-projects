@@ -143,7 +143,7 @@ function buildRss(videos) {
 <rss version="2.0">
   <channel>
     <title>Music Videos</title>
-    <link>https://swiftothecore.github.io/fun-projects/music-videos.html</link>
+    <link>https://swiftothecore.github.io/fun-projects/music-videos</link>
     <description>Official music videos from your tracked artists</description>
     <lastBuildDate>${buildDate}</lastBuildDate>
 ${items}
