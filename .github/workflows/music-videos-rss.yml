@@ -1,0 +1,40 @@
+name: Check Music Videos & Update RSS
+
+on:
+  schedule:
+    - cron: '0 22 * * *'   # 8 am AEST (UTC+10) — shifts to 9 am in AEDT
+  workflow_dispatch:        # allows manual trigger from the Actions tab in GitHub
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Run checker script
+        run: node .github/scripts/check-music-videos.js
+        env:
+          SUPABASE_URL:   ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY:   ${{ secrets.SUPABASE_KEY }}
+          SUPABASE_EMAIL: ${{ secrets.SUPABASE_EMAIL }}
+          SUPABASE_PASS:  ${{ secrets.SUPABASE_PASS }}
+          YT_API_KEY:     ${{ secrets.YT_API_KEY }}
+
+      - name: Commit and push RSS feed if changed
+        run: |
+          git config user.name  'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git add music-videos-rss.xml
+          git diff --cached --quiet && echo "No changes to commit." || {
+            git commit -m 'Update music videos RSS feed'
+            git push
+          }
