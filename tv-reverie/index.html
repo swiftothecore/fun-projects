@@ -710,6 +710,12 @@
 
       /* ── Page footer ── */
       footer{padding-left:16px!important;padding-right:16px!important;}
+
+      /* ── List meta: cap at 2 lines, genre/creator are trimmed first ── */
+      .list-meta{display:-webkit-box;-webkit-line-clamp:2;line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+
+      /* ── List date: hidden on mobile to free up width for the title ── */
+      .list-date{display:none;}
     }
   .shortcuts-btn { background:none; border:1px solid var(--border); border-radius:var(--radius); padding:5px 11px; display:flex; align-items:center; gap:6px; color:var(--text-muted); font-size:0.58rem; letter-spacing:0.12em; text-transform:uppercase; cursor:pointer; transition:border-color 0.2s,color 0.2s; flex-shrink:0; font-family:'DM Sans',sans-serif; }
   .shortcuts-btn:hover { border-color:var(--border-hi); color:var(--text-dim); }
@@ -2360,9 +2366,8 @@ function buildListRow(m,i){
     ?`<img class="list-thumb" src="${esc(m.poster)}" alt="${esc(m.title)}" loading="lazy" onerror="this.style.display='none';this.nextSibling.style.display='flex'"><div class="list-thumb-placeholder" style="display:none">📺</div>`
     :`<div class="list-thumb-placeholder">📺</div>`;
   const watchingPip=m.watching?`<span class="list-soon-pip"></span>`:'';
-  const meta=[m.year,m.genre,m.creator].filter(Boolean).join(' · ');
   const binge=getBingeTime(m);
-  const metaWithBinge=[meta,binge?`⏱ ${binge}`:null].filter(Boolean).join(' · ');
+  const metaWithBinge=[m.year,binge?`⏱ ${binge}`:null,m.rating?`★ ${esc(m.rating)}`:null,m.genre,m.creator].filter(Boolean).join(' · ');
   const badges=buildBadges(m,true);
   const staleClass=getStaleClass(m);
   let statusTag='';
@@ -2379,7 +2384,7 @@ function buildListRow(m,i){
     <div class="list-thumb-wrap">${thumb}${watchingPip}</div>
     <div class="list-info">
       <div class="list-title">${esc(m.title)}</div>
-      ${metaWithBinge?`<div class="list-meta">${metaWithBinge}${m.rating?' · ★ '+esc(m.rating):''}</div>`:''}
+      ${metaWithBinge?`<div class="list-meta">${metaWithBinge}</div>`:''}
       <div class="list-badges">${badges}</div>
     </div>
     <div class="list-right">
