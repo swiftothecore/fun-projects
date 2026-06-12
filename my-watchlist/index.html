@@ -1844,6 +1844,7 @@ let christmasMode=localStorage.getItem('christmas_mode_active')==='true';
 let _normalMovies=null;
 let currentFilter='all',currentCategory=null,currentDetailId=null,editingId=null,searchTimer=null,searchHighlightIndex=-1,_pendingTmdbId=null,_pendingReleaseDate=null;
 let searchQuery='';
+let searchIncludesDetached=false;
 let currentWatchWith=null;
 let _watchWithNames=[];
 let watchWithHighlightIndex=-1;
@@ -2462,10 +2463,10 @@ function render(){
     g.className='list-container';
     if(currentFilter==='all'){
       const base=searchQuery
-        ?_postFilter(movies.filter(m=>!m.graveyard&&!isDetachedMovie(m)))
+        ?_postFilter(movies.filter(m=>!m.graveyard&&(searchIncludesDetached||!isDetachedMovie(m))))
         :_postFilter(movies.filter(m=>!m.watchingSoon&&!m.rewatchingSoon&&!m.graveyard&&!isArchivedWatched(m)&&!isDetachedMovie(m)));
       if(searchQuery){
-        if(!base.length){_setHTML(g,emptyFilter);}
+        if(!base.length){_setHTML(g,_searchEmptyHTML(emptyFilter,emptyIcon));}
         else{_reconcileListRows(g,base.map((m,i)=>buildListRow(m,i)).join(''));}
       }else if(currentGrouping==='flat'){
         const _cdm=collectionDateMap();const _flatSorted=[...sortWithCollections(base.filter(m=>!m.watched),_cdm),...sortWithCollections(base.filter(m=>m.watched&&m.rewatch),_cdm),...sortWithCollections(base.filter(m=>m.watched&&!m.rewatch),_cdm)];
@@ -2487,12 +2488,12 @@ function render(){
 
   if(currentFilter==='all'){
     const base=searchQuery
-      ?_postFilter(movies.filter(m=>!m.graveyard&&!isDetachedMovie(m)))
+      ?_postFilter(movies.filter(m=>!m.graveyard&&(searchIncludesDetached||!isDetachedMovie(m))))
       :_postFilter(movies.filter(m=>!m.watchingSoon&&!m.rewatchingSoon&&!m.graveyard&&!isArchivedWatched(m)&&!isDetachedMovie(m)));
     if(searchQuery){
       g.className='grid';
       if(base.length)_reconcile(g,base.map((m,i)=>buildCard(m,i)).join(''));
-      else _setHTML(g,emptyFilter);
+      else _setHTML(g,_searchEmptyHTML(emptyFilter,emptyIcon));
     }else if(currentGrouping==='flat'){
       g.className='grid';
       const _cdm2=collectionDateMap();const _gridSorted=[...sortWithCollections(base.filter(m=>!m.watched),_cdm2),...sortWithCollections(base.filter(m=>m.watched&&m.rewatch),_cdm2),...sortWithCollections(base.filter(m=>m.watched&&!m.rewatch),_cdm2)];
@@ -3473,6 +3474,7 @@ function toggleSearchBar(){
 function onSearchBarInput(v){
   if(window.selectionMode)exitSelectMode(false);
   searchQuery=v.trim();
+  searchIncludesDetached=false;
   document.getElementById('searchBarWrap').classList.toggle('has-query',!!searchQuery);
   render();
 }
@@ -3483,6 +3485,7 @@ function clearSearchBar(){
   if(mi){ mi.value=''; document.getElementById('mobileSearchBar').classList.remove('msb-active'); }
   if(window.selectionMode)exitSelectMode(false);
   searchQuery='';
+  searchIncludesDetached=false;
   const w=document.getElementById('searchBarWrap');
   w.classList.remove('has-query');
   render();
@@ -3498,6 +3501,7 @@ function onSearchBarKeyDown(e){
     i.value='';
     if(window.selectionMode)exitSelectMode(false);
     searchQuery='';
+    searchIncludesDetached=false;
     w.classList.remove('expanded','has-query');
     if(hadQuery)render();
     const sy=window.scrollY;
@@ -3712,6 +3716,21 @@ function isDetachedMovie(m){
   if(!m.category)return false;
   if(m.detachExempt)return false;
   return!!(categorySettings[m.category]?.detached);
+}
+
+function includeDetachedInSearch(){
+  searchIncludesDetached=true;
+  render();
+}
+
+function _searchEmptyHTML(fallback,icon){
+  if(!searchIncludesDetached){
+    const detachedHits=_postFilter(movies.filter(m=>!m.graveyard&&isDetachedMovie(m)));
+    if(detachedHits.length){
+      return`<div class="empty-state"><span class="empty-icon">${icon}</span><p>No results in your main watchlist.</p><button class="btn btn-ghost btn-sm" style="margin-top:14px" onclick="includeDetachedInSearch()">Search detached categories too</button></div>`;
+    }
+  }
+  return fallback;
 }
 
 function saveCategorySettings(){
