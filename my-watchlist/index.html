@@ -5521,8 +5521,9 @@ function closeShortcutsPanel(){
   </span>
   <input id="mobileSearchBarInput" type="text" placeholder="Search films, directors…"
     autocomplete="off" autocorrect="off" spellcheck="false"
+    enterkeyhint="done"
     oninput="_msbInput(this.value)"
-    onkeydown="if(event.key==='Escape'){this.value='';_msbInput('');this.blur();}">
+    onkeydown="if(event.key==='Escape'){this.value='';_msbInput('');this.blur();}else if(event.key==='Enter'){this.blur();}">
   <button id="mobileSearchBarClear" onclick="_msbClear()" title="Clear search">&times;</button>
 </div>
 
