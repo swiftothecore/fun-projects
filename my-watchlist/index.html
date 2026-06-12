@@ -52,6 +52,12 @@
     .btn-letterboxd { background:rgba(0,224,84,0.07); color:#00e054; border:1px solid rgba(0,224,84,0.22); display:inline-flex; align-items:center; gap:7px; padding:8px 16px; border-radius:var(--radius); font-family:'DM Sans',sans-serif; font-size:0.78rem; font-weight:500; letter-spacing:0.05em; text-transform:uppercase; cursor:pointer; transition:all 0.15s; text-decoration:none; }
     .btn-letterboxd:hover { background:rgba(0,224,84,0.13); border-color:rgba(0,224,84,0.4); }
     .lb-dot { width:8px; height:8px; border-radius:50%; background:#00e054; flex-shrink:0; }
+    .btn-tmdb { background:rgba(1,180,228,0.07); color:#01b4e4; border:1px solid rgba(1,180,228,0.25); display:inline-flex; align-items:center; gap:7px; padding:8px 16px; border-radius:var(--radius); font-family:'DM Sans',sans-serif; font-size:0.78rem; font-weight:500; letter-spacing:0.05em; text-transform:uppercase; cursor:pointer; transition:all 0.15s; text-decoration:none; }
+    .btn-tmdb:hover { background:rgba(1,180,228,0.13); border-color:rgba(1,180,228,0.4); }
+    .tmdb-dot { width:8px; height:8px; border-radius:50%; background:#01b4e4; flex-shrink:0; }
+    .btn-imdb { background:rgba(245,197,24,0.08); color:#f5c518; border:1px solid rgba(245,197,24,0.25); display:inline-flex; align-items:center; gap:7px; padding:8px 16px; border-radius:var(--radius); font-family:'DM Sans',sans-serif; font-size:0.78rem; font-weight:500; letter-spacing:0.05em; text-transform:uppercase; cursor:pointer; transition:all 0.15s; text-decoration:none; }
+    .btn-imdb:hover { background:rgba(245,197,24,0.14); border-color:rgba(245,197,24,0.4); }
+    .imdb-dot { width:8px; height:8px; border-radius:50%; background:#f5c518; flex-shrink:0; }
     #soonSection { padding:28px 48px 0; display:none; }
     #soonSection.visible { display:block; }
     .soon-heading { display:flex; align-items:center; gap:12px; margin-bottom:16px; }
@@ -521,23 +527,21 @@
         padding:13px 20px!important;
         font-size:0.82rem!important;
       }
-      /* Secondary row (JustWatch + graveyard) → sits below, centred */
+      /* Secondary row (external links + graveyard) → 3-column grid */
       #detailContent > div:last-child > div:first-child{
         order:2;
         width:100%;
-        justify-content:center!important;
+        display:grid!important;
+        grid-template-columns:repeat(3,1fr)!important;
+        gap:8px!important;
         padding:12px 0 max(16px, env(safe-area-inset-bottom));
-        gap:12px!important;
         border-top:1px solid var(--border);
         margin-top:8px;
       }
-      #detailContent > div:last-child .btn-justwatch{
-        flex:1;
-        justify-content:center;
-      }
-      #detailContent > div:last-child .btn-ghost.btn-sm:not(.btn-justwatch){
-        /* Graveyard button — keep compact */
-        padding:8px 16px!important;
+      #detailContent > div:last-child > div:first-child > *{
+        justify-content:center!important;
+        width:100%!important;
+        box-sizing:border-box;
       }
 
       /* Watching Soon heading: show a subtle right-scroll arrow */
@@ -2980,6 +2984,8 @@ function openDetail(id){
   const svc=buildDetailSvc(m);
   const jw=`https://www.justwatch.com/au/search?q=${encodeURIComponent(m.title)}`;
   const lb=m.tmdbId?`https://letterboxd.com/tmdb/${m.tmdbId}/`:`https://letterboxd.com/search/films/${encodeURIComponent(m.title)}/`;
+  const tmdbUrl=m.tmdbId?`https://www.themoviedb.org/movie/${m.tmdbId}`:null;
+  const imdbUrl=`https://www.imdb.com/find/?q=${encodeURIComponent(m.title+(m.year?' '+m.year:''))}`;
   document.getElementById('detailContent').innerHTML=`
     <div class="detail-poster-row">${ph}<div class="detail-info">
       <div class="detail-title">${esc(m.title)}</div>
@@ -3000,6 +3006,8 @@ function openDetail(id){
         ${m.tmdbId?`<button class="btn-trailer" onclick="openTrailer(${m.tmdbId},this)" title="Watch trailer on YouTube"><span class="trailer-dot"></span>Trailer</button>`:''}
         <a class="btn-justwatch" href="${jw}" target="_blank" rel="noopener" style="text-decoration:none"><span class="jw-dot"></span>JW</a>
         <a class="btn-letterboxd" href="${lb}" target="_blank" rel="noopener" style="text-decoration:none"><span class="lb-dot"></span>LB</a>
+        ${tmdbUrl?`<a class="btn-tmdb" href="${tmdbUrl}" target="_blank" rel="noopener" style="text-decoration:none"><span class="tmdb-dot"></span>TMDB</a>`:''}
+        <a class="btn-imdb" href="${imdbUrl}" target="_blank" rel="noopener" style="text-decoration:none"><span class="imdb-dot"></span>IMDb</a>
         <button class="btn btn-ghost btn-sm" onclick="toggleGraveyard('${m.id}')" title="${m.graveyard?'Remove from graveyard':'Move to graveyard — never watching this'}" style="${m.graveyard?'color:#c084fc;border-color:rgba(124,58,237,0.4);':'color:var(--text-muted);'}">${m.graveyard?'💀 Unbury':'💀'}</button>
         ${m.watched&&!m.graveyard?`<button class="btn btn-ghost btn-sm" onclick="toggleRewatch('${m.id}')" title="${m.rewatch?'Remove rewatch flag':'Flag for rewatch'}" style="${m.rewatch?'color:#2dd4bf;border-color:rgba(45,212,191,0.4);':'color:var(--text-muted);'}">Rewatch</button>`:''}
       </div>
@@ -3877,6 +3885,18 @@ document.addEventListener('keydown',e=>{
         e.preventDefault();
         const lb=document.querySelector('#detailContent .btn-letterboxd');
         if(lb)lb.click();
+        return;
+      }
+      if(key==='T'){
+        e.preventDefault();
+        const tb=document.querySelector('#detailContent .btn-tmdb');
+        if(tb)tb.click();
+        return;
+      }
+      if(key==='I'){
+        e.preventDefault();
+        const ib=document.querySelector('#detailContent .btn-imdb');
+        if(ib)ib.click();
         return;
       }
       if(key==='E'){
