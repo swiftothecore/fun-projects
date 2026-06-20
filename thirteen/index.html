@@ -276,6 +276,27 @@ html.dark .card--today:hover { box-shadow: 0 6px 22px rgba(0,0,0,.4), 0 0 0 2px 
 .card--past { opacity: .5; }
 .card--past:hover { opacity: .75; transform: translateY(-1px); }
 
+/* The next-coming-up special Friday — obvious, distinct fill so it
+   reads at a glance even when scanning a whole year of cards.
+   Local custom-property overrides cascade to every child element
+   (day number, month, equation tiles, etc.) without needing to
+   touch each of their selectors individually. */
+.card--upcoming {
+  --card:      #f3cf6b; --border:    #b8881f; --border-lt: #d9b94f;
+  --eq-tile:   #fbe3a0; --text:      #3a2604; --muted:     #6b521b;
+  --muted-lt:  #8a6c2a;
+  background: var(--card); border-color: var(--border);
+}
+html.dark .card--upcoming {
+  --card:      #5c3d09; --border:    #d9a52a; --border-lt: #8a661c;
+  --eq-tile:   #6e4c10; --text:      #fbe7b0; --muted:     #d9b96a;
+  --muted-lt:  #b89042;
+  background: var(--card); border-color: var(--border);
+}
+.card.card--upcoming::before { background: var(--border); }
+.card--upcoming:hover { box-shadow: 0 6px 22px rgba(120,80,10,.25); }
+.c-badge--upcoming { color: var(--border); font-weight: 600; }
+
 .c-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: .8rem; }
 .c-friday { font-size: .56rem; letter-spacing: .3em; text-transform: uppercase; }
 .c-friday--sum        { color: var(--sage); }
@@ -639,6 +660,24 @@ document.querySelectorAll('.filter-btn').forEach(btn => {
   });
 });
 
+/* ── Next upcoming special Friday ──
+   Searches forward year by year from today until it finds the
+   soonest qualifying Friday on or after today. Computed once at
+   load since "today" doesn't change during a session. */
+function findNextUpcomingFriday() {
+  const now = new Date(); now.setHours(0,0,0,0);
+  let year = now.getFullYear();
+  for (let i = 0; i < 50; i++) {
+    const candidates = getSpecialFridays(year)
+      .filter(f => new Date(f.year, f.month - 1, f.day) >= now)
+      .sort((a,b) => new Date(a.year,a.month-1,a.day) - new Date(b.year,b.month-1,b.day));
+    if (candidates.length) return candidates[0];
+    year++;
+  }
+  return null;
+}
+const nextUpcoming = findNextUpcomingFriday();
+
 /* ── State ── */
 let sel = new Date().getFullYear();
 
@@ -752,11 +791,17 @@ function renderResults() {
     card.style.animationDelay=`${i*.06}s`;
 
     let badgeText='XIII', extraBadgeClass='';
+    const isUpcomingFriday = nextUpcoming && f.year===nextUpcoming.year && f.month===nextUpcoming.month && f.day===nextUpcoming.day;
     if (f.year===nowY) {
       const isToday=f.month===nowM&&f.day===nowD;
       const isPast=f.month<nowM||(f.month===nowM&&f.day<nowD);
       if (isToday)    { card.classList.add('card--today'); badgeText='Today'; extraBadgeClass=' c-badge--today'; }
       else if (isPast){ card.classList.add('card--past'); }
+    }
+    if (isUpcomingFriday && !card.classList.contains('card--today')) {
+      card.classList.add('card--upcoming');
+      badgeText='Up Next';
+      extraBadgeClass=' c-badge--upcoming';
     }
     const defaultBadge={sum:'XIII',fri13:'fri. xiii',both:'XIII',year:'yr. xiii','year-fri13':'fri. xiii'}[f.type];
     const badge=extraBadgeClass?badgeText:defaultBadge;
