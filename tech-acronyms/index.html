@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ultimate Tech Acronym Quiz</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent: #38bdf8;
+            --success: #22c55e;
+            --error: #ef4444;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .quiz-container {
+            background-color: var(--card-bg);
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+            width: 100%;
+            max-width: 600px;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            margin-bottom: 5px;
+            color: var(--accent);
+        }
+
+        .progress-bar {
+            background-color: #334155;
+            height: 8px;
+            border-radius: 4px;
+            margin: 20px 0;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            background-color: var(--accent);
+            height: 100%;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin-bottom: 25px;
+        }
+
+        .prompt {
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+        }
+
+        .category {
+            display: inline-block;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            background-color: #334155;
+            padding: 4px 10px;
+            border-radius: 20px;
+            color: var(--accent);
+            margin-bottom: 20px;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            padding: 12px;
+            border-radius: 6px;
+            border: 2px solid #334155;
+            background-color: #0f172a;
+            color: white;
+            font-size: 1rem;
+            outline: none;
+        }
+
+        input[type="text"]:focus {
+            border-color: var(--accent);
+        }
+
+        button {
+            padding: 12px 24px;
+            border-radius: 6px;
+            border: none;
+            background-color: var(--accent);
+            color: #0f172a;
+            font-weight: bold;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        button:hover {
+            background-color: #7dd3fc;
+        }
+
+        .feedback {
+            min-height: 50px;
+            font-size: 1rem;
+            font-weight: 500;
+            margin-top: 15px;
+        }
+
+        .success-text { color: var(--success); }
+        .error-text { color: var(--error); }
+        .info-text { color: var(--text-muted); font-size: 0.85rem; }
+
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+
+    <div class="quiz-container">
+        <h1>Tech Acronym Quiz</h1>
+        <div class="progress-bar"><div id="progressFill" class="progress-fill"></div></div>
+        
+        <div class="stats">
+            <span id="scoreTracker">Score: 0/0</span>
+            <span id="categoryTracker">Category: N/A</span>
+        </div>
+
+        <div id="quizSection">
+            <div id="categoryLabel" class="category">Category</div>
+            <div class="prompt">What does <strong id="acronymDisplay" style="color: var(--accent); font-size: 1.5rem;">---</strong> stand for?</div>
+            
+            <div class="input-group">
+                <input type="text" id="userInput" placeholder="Type full meaning here..." autocomplete="off">
+                <button id="submitBtn">Submit</button>
+            </div>
+            
+            <div id="feedbackDisplay" class="feedback"></div>
+        </div>
+
+        <div id="resultSection" class="hidden">
+            <h2>Quiz Complete! 🎉</h2>
+            <p id="finalScore" style="font-size: 1.3rem; margin: 20px 0;"></p>
+            <button onclick="resetQuiz()">Restart Quiz</button>
+        </div>
+    </div>
+
+    <script>
+        const acronymsData = [
+            // 1. Hardware
+            { a: "CPU", m: "Central Processing Unit", c: "Hardware" },
+            { a: "GPU", m: "Graphics Processing Unit", c: "Hardware" },
+            { a: "RAM", m: "Random Access Memory", c: "Hardware" },
+            { a: "ROM", m: "Read-Only Memory", c: "Hardware" },
+            { a: "SSD", m: "Solid-State Drive", c: "Hardware" },
+            { a: "HDD", m: "Hard Disk Drive", c: "Hardware" },
+            { a: "PSU", m: "Power Supply Unit", c: "Hardware" },
+            { a: "BIOS", m: "Basic Input/Output System", c: "Hardware" },
+            { a: "UEFI", m: "Unified Extensible Firmware Interface", c: "Hardware" },
+            { a: "SoC", m: "System on a Chip", c: "Hardware" },
+            // 2. Networking
+            { a: "IP", m: "Internet Protocol", c: "Networking" },
+            { a: "MAC", m: "Media Access Control", c: "Networking" },
+            { a: "DNS", m: "Domain Name System", c: "Networking" },
+            { a: "DHCP", m: "Dynamic Host Configuration Protocol", c: "Networking" },
+            { a: "LAN", m: "Local Area Network", c: "Networking" },
+            { a: "WAN", m: "Wide Area Network", c: "Networking" },
+            { a: "VPN", m: "Virtual Private Network", c: "Networking" },
+            { a: "ISP", m: "Internet Service Provider", c: "Networking" },
+            { a: "NAT", m: "Network Address Translation", c: "Networking" },
+            { a: "FTP", m: "File Transfer Protocol", c: "Networking" },
+            // 3. Web & Software Protocols
+            { a: "HTTP", m: "Hypertext Transfer Protocol", c: "Protocols" },
+            { a: "HTTPS", m: "Hypertext Transfer Protocol Secure", c: "Protocols" },
+            { a: "SSL", m: "Secure Sockets Layer", c: "Protocols" },
+            { a: "TLS", m: "Transport Layer Security", c: "Protocols" },
+            { a: "TCP", m: "Transmission Control Protocol", c: "Protocols" },
+            { a: "UDP", m: "User Datagram Protocol", c: "Protocols" },
+            { a: "SSH", m: "Secure Shell", c: "Protocols" },
+            { a: "SMTP", m: "Simple Mail Transfer Protocol", c: "Protocols" },
+            { a: "IMAP", m: "Internet Message Access Protocol", c: "Protocols" },
+            { a: "POP3", m: "Post Office Protocol", c: "Protocols" },
+            // 4. Software Development
+            { a: "API", m: "Application Programming Interface", c: "Software Dev" },
+            { a: "IDE", m: "Integrated Development Environment", c: "Software Dev" },
+            { a: "SDK", m: "Software Development Kit", c: "Software Dev" },
+            { a: "UI", m: "User Interface", c: "Software Dev" },
+            { a: "UX", m: "User Experience", c: "Software Dev" },
+            { a: "OS", m: "Operating System", c: "Software Dev" },
+            { a: "CLI", m: "Command Line Interface", c: "Software Dev" },
+            { a: "GUI", m: "Graphical User Interface", c: "Software Dev" },
+            { a: "OOP", m: "Object-Oriented Programming", c: "Software Dev" },
+            { a: "MVC", m: "Model-View-Controller", c: "Software Dev" },
+            // 5. Web Formats
+            { a: "HTML", m: "Hypertext Markup Language", c: "Web Tech" },
+            { a: "CSS", m: "Cascading Style Sheets", c: "Web Tech" },
+            { a: "JSON", m: "JavaScript Object Notation", c: "Web Tech" },
+            { a: "XML", m: "Extensible Markup Language", c: "Web Tech" },
+            { a: "URL", m: "Uniform Resource Locator", c: "Web Tech" },
+            { a: "URI", m: "Uniform Resource Identifier", c: "Web Tech" },
+            { a: "CMS", m: "Content Management System", c: "Web Tech" },
+            { a: "CDN", m: "Content Delivery Network", c: "Web Tech" },
+            { a: "SEO", m: "Search Engine Optimization", c: "Web Tech" },
+            { a: "SPA", m: "Single Page Application", c: "Web Tech" },
+            // 6. Ports & Connectivity
+            { a: "USB", m: "Universal Serial Bus", c: "Connectivity" },
+            { a: "HDMI", m: "High-Definition Multimedia Interface", c: "Connectivity" },
+            { a: "PCIe", m: "Peripheral Component Interconnect Express", c: "Connectivity" },
+            { a: "SATA", m: "Serial Advanced Technology Attachment", c: "Connectivity" },
+            { a: "NVMe", m: "Non-Volatile Memory Express", c: "Connectivity" },
+            { a: "MIDI", m: "Musical Instrument Digital Interface", c: "Connectivity" },
+            { a: "DisplayPort", m: "DisplayPort", c: "Connectivity" },
+            { a: "Thunderbolt", m: "Thunderbolt", c: "Connectivity" },
+            { a: "PoE", m: "Power over Ethernet", c: "Connectivity" },
+            { a: "RFID", m: "Radio-Frequency Identification", c: "Connectivity" },
+            // 7. Cybersecurity
+            { a: "2FA", m: "Two-Factor Authentication", c: "Cybersecurity" },
+            { a: "MFA", m: "Multi-Factor Authentication", c: "Cybersecurity" },
+            { a: "DDOS", m: "Distributed Denial of Service", c: "Cybersecurity" },
+            { a: "XSS", m: "Cross-Site Scripting", c: "Cybersecurity" },
+            { a: "SQLi", m: "SQL Injection", c: "Cybersecurity" },
+            { a: "AES", m: "Advanced Encryption Standard", c: "Cybersecurity" },
+            { a: "RSA", m: "Rivest-Shamir-Adleman", c: "Cybersecurity" },
+            { a: "CVE", m: "Common Vulnerabilities and Exposures", c: "Cybersecurity" },
+            { a: "SIEM", m: "Security Information and Event Management", c: "Cybersecurity" },
+            { a: "RAT", m: "Remote Access Trojan", c: "Cybersecurity" },
+            // 8. Data & Cloud
+            { a: "SQL", m: "Structured Query Language", c: "Data & Cloud" },
+            { a: "NoSQL", m: "Not Only SQL", c: "Data & Cloud" },
+            { a: "CRUD", m: "Create, Read, Update, Delete", c: "Data & Cloud" },
+            { a: "SaaS", m: "Software as a Service", c: "Data & Cloud" },
+            { a: "IaaS", m: "Infrastructure as a Service", c: "Data & Cloud" },
+            { a: "PaaS", m: "Platform as a Service", c: "Data & Cloud" },
+            { a: "AWS", m: "Amazon Web Services", c: "Data & Cloud" },
+            { a: "GCP", m: "Google Cloud Platform", c: "Data & Cloud" },
+            { a: "Blob", m: "Binary Large Object", c: "Data & Cloud" },
+            { a: "ACID", m: "Atomicity, Consistency, Isolation, Durability", c: "Data & Cloud" },
+            // 9. Modern Tech & AI
+            { a: "AI", m: "Artificial Intelligence", c: "AI & Future" },
+            { a: "ML", m: "Machine Learning", c: "AI & Future" },
+            { a: "LLM", m: "Large Language Model", c: "AI & Future" },
+            { a: "NLP", m: "Natural Language Processing", c: "AI & Future" },
+            { a: "IoT", m: "Internet of Things", c: "AI & Future" },
+            { a: "VR", m: "Virtual Reality", c: "AI & Future" },
+            { a: "AR", m: "Augmented Reality", c: "AI & Future" },
+            { a: "NFT", m: "Non-Fungible Token", c: "AI & Future" },
+            { a: "CI/CD", m: "Continuous Integration / Continuous Deployment", c: "AI & Future" },
+            { a: "DevOps", m: "Development and Operations", c: "AI & Future" },
+            // 10. Miscellaneous
+            { a: "FOSS", m: "Free and Open-Source Software", c: "Misc" },
+            { a: "OEM", m: "Original Equipment Manufacturer", c: "Misc" },
+            { a: "SLA", m: "Service Level Agreement", c: "Misc" },
+            { a: "ROI", m: "Return on Investment", c: "Misc" },
+            { a: "QA", m: "Quality Assurance", c: "Misc" },
+            { a: "WYSIWYG", m: "What You See Is What You Get", c: "Misc" },
+            { a: "DRY", m: "Don't Repeat Yourself", c: "Misc" },
+            { a: "VGA", m: "Video Graphics Array", c: "Misc" },
+            { a: "RAID", m: "Redundant Array of Independent Disks", c: "Misc" },
+            { a: "ASCII", m: "American Standard Code for Information Interchange", c: "Misc" }
+        ];
+
+        let shuffledPool = [];
+        let currentIndex = 0;
+        let correctAnswersCount = 0;
+        let awaitingNext = false;
+
+        // Standard Levenshtein Distance Algorithm for Fuzzy Matching
+        function getLevenshteinDistance(a, b) {
+            const matrix = [];
+            for (let i = 0; i <= b.length; i++) matrix[i] = [i];
+            for (let j = 0; j <= a.length; j++) matrix[0][j] = j;
+
+            for (let i = 1; i <= b.length; i++) {
+                for (let j = 1; j <= a.length; j++) {
+                    if (b.charAt(i - 1) === a.charAt(j - 1)) {
+                        matrix[i][j] = matrix[i - 1][j - 1];
+                    } else {
+                        matrix[i][j] = Math.min(
+                            matrix[i - 1][j - 1] + 1, // substitution
+                            matrix[i][j - 1] + 1,     // insertion
+                            matrix[i - 1][j] + 1      // deletion
+                        );
+                    }
+                }
+            }
+            return matrix[b.length][a.length];
+        }
+
+        // Determine if string is a close match based on string length ratios
+        function isFuzzyMatch(userInput, targetInput) {
+            const cleanUser = userInput.toLowerCase().replace(/[^a-z0-9]/g, '');
+            const cleanTarget = targetInput.toLowerCase().replace(/[^a-z0-9]/g, '');
+
+            if (cleanUser === cleanTarget) return true;
+
+            const distance = getLevenshteinDistance(cleanUser, cleanTarget);
+            const maxLength = Math.max(cleanUser.length, cleanTarget.length);
+            
+            // Allow more mistakes for longer names. Threshold adjusts dynamically.
+            let threshold = 1;
+            if (maxLength > 15) threshold = 3;
+            else if (maxLength > 8) threshold = 2;
+
+            return distance <= threshold;
+        }
+
+        function shuffleArray(arr) {
+            return arr.sort(() => Math.random() - 0.5);
+        }
+
+        function initQuiz() {
+            shuffledPool = shuffleArray([...acronymsData]);
+            currentIndex = 0;
+            correctAnswersCount = 0;
+            awaitingNext = false;
+            
+            document.getElementById('quizSection').classList.remove('hidden');
+            document.getElementById('resultSection').classList.add('hidden');
+            
+            renderQuestion();
+        }
+
+        function renderQuestion() {
+            awaitingNext = false;
+            const currentItem = shuffledPool[currentIndex];
+            
+            document.getElementById('acronymDisplay').innerText = currentItem.a;
+            document.getElementById('categoryLabel').innerText = currentItem.c;
+            document.getElementById('categoryTracker').innerText = `Category: ${currentItem.c}`;
+            document.getElementById('scoreTracker').innerText = `Progress: ${currentIndex + 1}/${shuffledPool.length} | Score: ${correctAnswersCount}`;
+            
+            const progressPercent = (currentIndex / shuffledPool.length) * 100;
+            document.getElementById('progressFill').style.width = `${progressPercent}%`;
+
+            const inputField = document.getElementById('userInput');
+            inputField.value = '';
+            inputField.disabled = false;
+            inputField.focus();
+            
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.innerText = "Submit";
+            
+            document.getElementById('feedbackDisplay').innerHTML = '';
+        }
+
+        function evaluateAnswer() {
+            const inputField = document.getElementById('userInput');
+            const submitBtn = document.getElementById('submitBtn');
+            const feedback = document.getElementById('feedbackDisplay');
+            const currentItem = shuffledPool[currentIndex];
+            
+            const rawUserValue = inputField.value.trim();
+            if (!rawUserValue && !awaitingNext) return; // ignore empty inputs
+
+            if (!awaitingNext) {
+                inputField.disabled = true;
+                const matches = isFuzzyMatch(rawUserValue, currentItem.m);
+
+                if (matches) {
+                    correctAnswersCount++;
+                    feedback.innerHTML = `<span class="success-text">Correct!</span>`;
+                    if(rawUserValue.toLowerCase().replace(/[^a-z0-9]/g, '') !== currentItem.m.toLowerCase().replace(/[^a-z0-9]/g, '')) {
+                        feedback.innerHTML += `<div class="info-text">(Close enough! Exact text: <strong>${currentItem.m}</strong>)</div>`;
+                    }
+                } else {
+                    feedback.innerHTML = `<span class="error-text">Incorrect.</span><br><span style="font-size:0.9rem">It stands for: <strong>${currentItem.m}</strong></span>`;
+                }
+
+                submitBtn.innerText = "Next";
+                awaitingNext = true;
+            } else {
+                currentIndex++;
+                if (currentIndex < shuffledPool.length) {
+                    renderQuestion();
+                } else {
+                    showFinalResults();
+                }
+            }
+        }
+
+        function showFinalResults() {
+            document.getElementById('quizSection').classList.add('hidden');
+            document.getElementById('resultSection').classList.remove('hidden');
+            document.getElementById('progressFill').style.width = `100%`;
+            
+            const percentage = Math.round((correctAnswersCount / shuffledPool.length) * 100);
+            document.getElementById('finalScore').innerHTML = `You scored <strong>${correctAnswersCount}</strong> out of <strong>${shuffledPool.length}</strong> (${percentage}%)`;
+        }
+
+        function resetQuiz() {
+            initQuiz();
+        }
+
+        // Event Listeners
+        document.getElementById('submitBtn').addEventListener('click', evaluateAnswer);
+        document.getElementById('userInput').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') evaluateAnswer();
+        });
+
+        // Fire it up on load
+        window.onload = initQuiz;
+    </script>
+</body>
+</html>
