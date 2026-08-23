@@ -756,6 +756,20 @@
   .import-dropzone-hint { font-size:0.7rem; color:var(--text-muted); margin-top:4px; }
   .import-warning { font-size:0.72rem; color:var(--text-muted); background:rgba(201,168,76,0.05); border:1px solid rgba(201,168,76,0.15); border-radius:var(--radius); padding:10px 12px; line-height:1.55; margin-bottom:18px; }
   .import-warning strong { color:var(--text-dim); }
+
+  /* ── Letterboxd export — scope picker ─────────────────────────────────── */
+  .export-scope-btn {
+    display:flex; align-items:center; justify-content:space-between;
+    width:100%; background:var(--surface2); border:1px solid var(--border);
+    color:var(--text-dim); font-family:'DM Sans',sans-serif; font-size:0.82rem;
+    padding:12px 14px; border-radius:var(--radius); cursor:pointer; text-align:left;
+    transition:background 0.12s, border-color 0.12s, color 0.12s;
+  }
+  .export-scope-btn:hover { border-color:var(--gold-dim); color:var(--text); }
+  .export-scope-btn.active { border-color:var(--gold); color:var(--gold); background:rgba(201,168,76,0.06); }
+  .export-scope-btn .export-scope-count { color:var(--text-muted); font-size:0.76rem; }
+  .export-scope-btn.active .export-scope-count { color:var(--gold-dim); }
+  .export-scope-btn.active::after { content:'\2713'; margin-left:10px; font-size:0.78rem; }
   .import-file-confirmed { display:flex; align-items:center; gap:10px; padding:10px 14px; background:rgba(201,168,76,0.06); border:1px solid rgba(201,168,76,0.22); border-radius:var(--radius); margin-bottom:16px; }
   .import-file-icon { font-size:1.1rem; flex-shrink:0; }
   .import-file-name { font-size:0.82rem; color:var(--text); font-weight:500; }
@@ -1565,6 +1579,7 @@ else { window._sbLibReady = _sbRun; }
     <button id="_sb_cloud_btn" class="btn btn-ghost btn-sm" onclick="window._sbOpenPanel&&window._sbOpenPanel()"><svg viewBox="0 0 24 24" width="13" height="13" style="flex-shrink:0"><path fill="currentColor" d="M19.35 10.04A7.49 7.49 0 0 0 12 4C9.11 4 6.6 5.64 5.35 8.04A5.994 5.994 0 0 0 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96z"/></svg>Cloud Save</button>
     <button class="btn btn-ghost btn-sm" onclick="showApiSettings()">🔑 API Key</button>
     <button class="btn btn-ghost btn-sm" onclick="openImportModal()">📥 Letterboxd</button>
+    <button class="btn btn-ghost btn-sm" onclick="openExportModal()" title="Export your watchlist to import into Letterboxd">📤 Export</button>
     <button class="btn btn-ghost btn-sm" onclick="openSurpriseModal()" title="Let the list decide">🎲 Surprise</button>
     <button class="btn btn-primary" onclick="openAddModal()">
       <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
@@ -4606,6 +4621,106 @@ function openSurprisedFilm(id){
 </script>
 
 <!-- ── LETTERBOXD IMPORT MODAL ────────────────────────────────────────────── -->
+<div class="modal-overlay" id="exportModal" onclick="handleExportOverlay(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 class="modal-title">📤 Export to Letterboxd</h2>
+      <button class="modal-close" onclick="closeExportModal()">&times;</button>
+    </div>
+    <div class="modal-body" id="exportBody"></div>
+  </div>
+</div>
+
+<script>
+// ── Letterboxd Export ───────────────────────────────────────────────────────
+
+let _exportScope = 'unwatched'; // 'unwatched' | 'all'
+
+function openExportModal(){
+  _exportScope = 'unwatched';
+  _renderExportSelect();
+  document.getElementById('exportModal').classList.add('open');
+  lockScroll();
+}
+
+function closeExportModal(){
+  document.getElementById('exportModal').classList.remove('open');
+  unlockScroll();
+}
+
+function handleExportOverlay(e){
+  if(e.target === document.getElementById('exportModal')) closeExportModal();
+}
+
+function _exportPool(){
+  // Respects Christmas Mode context — exports whichever list is currently active,
+  // and never includes graveyarded films (already given up on, not "to watch").
+  return movies.filter(m=>!m.graveyard);
+}
+
+function setExportScope(scope){
+  _exportScope = scope;
+  _renderExportSelect();
+}
+
+function _renderExportSelect(){
+  const pool = _exportPool();
+  const unwatchedCount = pool.filter(m=>!m.watched).length;
+  const allCount = pool.length;
+  const listLabel = christmasMode ? 'Christmas films' : 'films';
+  document.getElementById('exportBody').innerHTML = `
+    <div class="import-step-instructions">
+      <p>Generate a CSV file of your${christmasMode?' Christmas':''} watchlist that Letterboxd can import.</p>
+      <ol>
+        <li>Pick which films to include below and click <strong>Download CSV</strong></li>
+        <li>On Letterboxd, open your <a href="https://letterboxd.com/watchlist/" target="_blank" rel="noopener" style="color:var(--gold)">Watchlist</a>, then find the <strong>Import</strong> option</li>
+        <li>Upload the downloaded file — films with a TMDB match will match exactly, others by title &amp; year</li>
+      </ol>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <button class="export-scope-btn${_exportScope==='unwatched'?' active':''}" onclick="setExportScope('unwatched')">
+        <span>Unwatched ${listLabel}</span><span class="export-scope-count">${unwatchedCount}</span>
+      </button>
+      <button class="export-scope-btn${_exportScope==='all'?' active':''}" onclick="setExportScope('all')">
+        <span>All ${listLabel}</span><span class="export-scope-count">${allCount}</span>
+      </button>
+    </div>
+    <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:18px;" onclick="runLetterboxdExport()">Download CSV</button>
+  `;
+}
+
+// Letterboxd's CSV spec: quote fields containing commas/quotes/newlines,
+// and escape internal quotes with a backslash (NOT doubled, per their docs).
+function _lbCsvField(v){
+  if(v===null||v===undefined) return '';
+  v = String(v);
+  if(/[",\r\n]/.test(v)) v = '"' + v.replace(/"/g,'\\"') + '"';
+  return v;
+}
+
+function runLetterboxdExport(){
+  const pool = _exportPool();
+  const list = _exportScope==='unwatched' ? pool.filter(m=>!m.watched) : pool;
+  if(!list.length){ showInfoToast('Nothing to export.',2500); return; }
+  const header = 'tmdbID,Title,Year,Directors';
+  const rows = list.map(m=>[m.tmdbId||'', m.title||'', m.year||'', m.director||''].map(_lbCsvField).join(','));
+  const csv = [header,...rows].join('\r\n') + '\r\n';
+  const blob = new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const d = new Date();
+  const stamp = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${christmasMode?'christmas-':''}watchlist-letterboxd-${stamp}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url), 1000);
+  closeExportModal();
+  showInfoToast(`Exported ${list.length} film${list.length===1?'':'s'} for Letterboxd.`,3000);
+}
+</script>
+
 <div class="modal-overlay" id="importModal" onclick="handleImportOverlay(event)">
   <div class="modal">
     <div class="modal-header">
