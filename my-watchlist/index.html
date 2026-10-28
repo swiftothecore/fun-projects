@@ -1923,6 +1923,7 @@ function toggleChristmasMode(){
   document.getElementById('categoryOptions').classList.remove('visible');
   document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
   document.querySelector('.filter-btn[onclick*="\'all\'"]')?.classList.add('active');
+  applyViewToggleUI();
   render();
   showInfoToast(christmasMode?'🎄 Christmas Mode — films here are completely separate from your main watchlist.':'Returned to your main watchlist.',4000);
 }
@@ -2048,13 +2049,16 @@ function onSearchInput(val){
   clearTimeout(searchTimer);
   _preloadId=null;_preloadPromise=null;
   const r=document.getElementById('searchResults'),h=document.getElementById('searchHint');
-  if(!val.trim()){r.classList.remove('open');h.classList.remove('visible');document.getElementById('searchSpinner').classList.remove('active');searchHighlightIndex=-1;return;}
+  if(!val.trim()){_searchSeq++;r.classList.remove('open');h.classList.remove('visible');document.getElementById('searchSpinner').classList.remove('active');searchHighlightIndex=-1;return;}
   document.getElementById('searchSpinner').classList.add('active');
   searchTimer=setTimeout(()=>searchTMDB(val.trim()),400);
 }
 
+let _searchSeq=0;
 async function searchTMDB(q){
   const sp=document.getElementById('searchSpinner'),r=document.getElementById('searchResults');
+  // Drop responses that arrive after a newer search has started
+  const seq=++_searchSeq;
   // TMDB's search tokeniser treats hyphens as separators and some titles use
   // a middle-dot (e.g. WALL·E) rather than a hyphen, so normalise to a space
   // before querying — otherwise hyphenated queries return irrelevant results.
@@ -2068,8 +2072,9 @@ async function searchTMDB(q){
     const fetches=[fetch(`https://api.themoviedb.org/3/search/movie?api_key=${encodeURIComponent(tmdbKey)}&query=${encodeURIComponent(normalisedQ)}&include_adult=false`)];
     if(aliasId)fetches.push(fetch(`https://api.themoviedb.org/3/movie/${aliasId}?api_key=${encodeURIComponent(tmdbKey)}`));
     const [res,aliasRes]=await Promise.all(fetches);
-    if(!res.ok){if(res.status===401)r.innerHTML=`<div class="search-no-results">Invalid API key. <a href="#" onclick="showApiSettings();return false;" style="color:var(--gold)">Update it here.</a></div>`;r.classList.add('open');sp.classList.remove('active');return;}
-    const d=await res.json();sp.classList.remove('active');
+    if(seq!==_searchSeq||!document.getElementById('searchInput').value.trim())return;
+    if(!res.ok){r.innerHTML=res.status===401?`<div class="search-no-results">Invalid API key. <a href="#" onclick="showApiSettings();return false;" style="color:var(--gold)">Update it here.</a></div>`:`<div class="search-no-results">Search failed (${res.status}).</div>`;r.classList.add('open');sp.classList.remove('active');return;}
+    const d=await res.json();
     let results=d.results||[];
     // Prepend the aliased movie if the fetch succeeded — dedupe if it also
     // happened to come back in the regular search results.
@@ -2077,6 +2082,8 @@ async function searchTMDB(q){
       const aliasMovie=await aliasRes.json();
       results=[aliasMovie,...results.filter(m=>m.id!==aliasMovie.id)];
     }
+    if(seq!==_searchSeq)return;
+    sp.classList.remove('active');
     if(!results.length){r.innerHTML=`<div class="search-no-results">No results for "${esc(q)}"</div>`;r.classList.add('open');return;}
     r.innerHTML=results.slice(0,8).map(m=>{
       const yr=m.release_date?m.release_date.slice(0,4):'?';
@@ -2091,7 +2098,7 @@ async function searchTMDB(q){
     searchHighlightIndex=-1;
     r.classList.add('open');
     if(results.length)preloadMovie(results[0].id);
-  }catch{sp.classList.remove('active');r.innerHTML=`<div class="search-no-results">Search failed.</div>`;r.classList.add('open');}
+  }catch{if(seq!==_searchSeq)return;sp.classList.remove('active');r.innerHTML=`<div class="search-no-results">Search failed.</div>`;r.classList.add('open');}
 }
 
 function syncCollapsedTitle(){
@@ -2128,6 +2135,7 @@ function preloadMovie(id){
         fetch(`https://api.themoviedb.org/3/movie/${id}?api_key=${encodeURIComponent(tmdbKey)}`),
         fetch(`https://api.themoviedb.org/3/movie/${id}/credits?api_key=${encodeURIComponent(tmdbKey)}`)
       ]);
+      if(!dr.ok)return null;
       const d=await dr.json(),c=cr.ok?await cr.json():null;
       return{id,d,c};
     }catch{return null;}
@@ -2156,10 +2164,12 @@ async function selectMovie(id){
         fetch(`https://api.themoviedb.org/3/movie/${id}?api_key=${encodeURIComponent(tmdbKey)}`),
         fetch(`https://api.themoviedb.org/3/movie/${id}/credits?api_key=${encodeURIComponent(tmdbKey)}`)
       ]);
+      if(!dr.ok)throw new Error('TMDB '+dr.status);
       d=await dr.json();c=cr.ok?await cr.json():null;
     }catch{
       document.getElementById('searchSpinner').classList.remove('active');
       h.textContent='Could not load details. Fill in manually.';h.classList.add('visible');
+      expandMovieDetails();
       return;
     }
     document.getElementById('searchSpinner').classList.remove('active');
@@ -2233,21 +2243,24 @@ async function backfillRuntimes(){
   let changed=false;
   for(const m of needsFill){
     try{
+      // HTTP failures (rate limit, bad key) throw so the film is retried on the
+      // next backfill instead of being permanently stamped with runtime 0.
       let runtime=0;
       if(m.tmdbId){
         const res=await fetch(`https://api.themoviedb.org/3/movie/${m.tmdbId}?api_key=${encodeURIComponent(tmdbKey)}`);
-        if(res.ok){const d=await res.json();runtime=d.runtime||0;}
+        if(!res.ok)throw new Error('TMDB '+res.status);
+        const d=await res.json();runtime=d.runtime||0;
       } else if(m.title){
         const q=encodeURIComponent(m.title.replace(/[-\u2010-\u2015]/g,' ').replace(/\s+/g,' ').trim());
         const yr=m.year?`&year=${m.year}`:'';
         const res=await fetch(`https://api.themoviedb.org/3/search/movie?api_key=${encodeURIComponent(tmdbKey)}&query=${q}${yr}&include_adult=false`);
-        if(res.ok){
-          const d=await res.json();
-          if(d.results&&d.results.length){
-            const best=d.results[0];
-            const dr=await fetch(`https://api.themoviedb.org/3/movie/${best.id}?api_key=${encodeURIComponent(tmdbKey)}`);
-            if(dr.ok){const dd=await dr.json();runtime=dd.runtime||0;if(!m.tmdbId)m.tmdbId=best.id;}
-          }
+        if(!res.ok)throw new Error('TMDB '+res.status);
+        const d=await res.json();
+        if(d.results&&d.results.length){
+          const best=d.results[0];
+          const dr=await fetch(`https://api.themoviedb.org/3/movie/${best.id}?api_key=${encodeURIComponent(tmdbKey)}`);
+          if(!dr.ok)throw new Error('TMDB '+dr.status);
+          const dd=await dr.json();runtime=dd.runtime||0;if(!m.tmdbId)m.tmdbId=best.id;
         }
       }
       m.runtime=runtime;
@@ -2414,7 +2427,7 @@ function buildListRow(m,i){
     ?`<img class="list-thumb" data-src="${esc(thumbSrc)}" alt="${esc(m.title)}" onerror="this.style.display='none';this.nextSibling.style.display='flex'"><div class="list-thumb-placeholder" style="display:none">🎬</div>`
     :`<div class="list-thumb-placeholder">🎬</div>`;
   const soonPip=m.watchingSoon?`<span class="list-soon-pip"></span>`:m.rewatchingSoon?`<span class="list-rewatch-soon-pip"></span>`:'';
-  const meta=[m.year,m.genre,m.director,formatRuntime(m.runtime)].filter(Boolean).join(' · ');
+  const meta=[m.year,m.genre,m.director,formatRuntime(m.runtime)].filter(Boolean).map(esc).join(' · ');
   const badges=buildBadges(m,true);
   const staleClass=getStaleClass(m);
   const statusTag=m.graveyard
@@ -2424,7 +2437,7 @@ function buildListRow(m,i){
   const exemptTag=(currentFilter==='categories'&&m.detachExempt&&categorySettings[m.category]?.detached)?`<span class="list-status" style="background:rgba(96,165,250,0.08);color:#60a5fa;border:1px solid rgba(96,165,250,0.22);">👁 Visible</span>`:'';
   const dateLabel=m.watched?formatDateWatched(m.dateWatched):formatDateAdded(m.dateAdded);
   const rowClass=`list-row${m.watched?' list-row-watched':''}${m.graveyard?' list-row-graveyard':''}${staleClass?staleClass.replace('card-stale','list-stale'):''}`;
-  return`<div class="${rowClass}" data-id="${m.id}" data-render-hash="${_cardHash(m)}" onclick="openDetail('${m.id}')" style="animation-delay:${i*0.02}s">
+  return`<div class="${rowClass}" data-id="${m.id}" data-render-hash="${esc(_cardHash(m))}" onclick="openDetail('${m.id}')" style="animation-delay:${i*0.02}s">
     <div class="list-thumb-wrap">${thumb}${soonPip}</div>
     <div class="list-info">
       <div class="list-title">${esc(m.title)}</div>
@@ -2516,7 +2529,7 @@ function render(){
   const ss=document.getElementById('soonSection'),sd=document.getElementById('soonDivider'),sr=document.getElementById('soonStrip');
   if(soon.length&&currentFilter==='all'&&!searchQuery){ss.classList.add('visible');sd.style.display='none';sr.innerHTML=soon.map((m,i)=>buildSoonCard(m,i)).join('');}
   else{ss.classList.remove('visible');sd.style.display='none';}
-  const rewatchSoon=sortWithCollections(movies.filter(m=>m.rewatchingSoon&&m.rewatch&&m.watched&&!m.graveyard));
+  const rewatchSoon=_postFilter(sortWithCollections(movies.filter(m=>m.rewatchingSoon&&m.rewatch&&m.watched&&!m.graveyard)));
   const rss=document.getElementById('rewatchSoonSection'),rsr=document.getElementById('rewatchSoonStrip');
   if(rewatchSoon.length&&currentFilter==='all'&&!searchQuery){rss.classList.add('visible');rsr.innerHTML=rewatchSoon.map((m,i)=>buildRewatchSoonCard(m,i)).join('');}
   else{rss.classList.remove('visible');}
@@ -2966,7 +2979,7 @@ function buildCard(m,i){
   const ph=cardSrc?`<img class="card-poster" data-src="${esc(cardSrc)}" alt="${esc(m.title)}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="card-poster-placeholder" style="display:none">&#127917;<span>No poster</span></div>`:`<div class="card-poster-placeholder">&#127917;<span>No poster</span></div>`;
   const ov=m.graveyard?`<div class="card-graveyard-overlay"><span class="graveyard-stamp">💀 Never</span></div>`:m.watched&&m.rewatch?`<div class="card-rewatch-overlay"><span class="rewatch-stamp">Rewatch</span></div>`:m.watched?`<div class="card-watched-overlay"><span class="watched-stamp">Watched</span></div>`:'';
   const exemptPip=(currentFilter==='categories'&&m.detachExempt&&categorySettings[m.category]?.detached)?`<div class="detach-exempt-pip">Visible</div>`:'';
-  return`<div class="card${stale}${graveyardCls}" data-id="${m.id}" data-render-hash="${_cardHash(m)}" onclick="openDetail('${m.id}')" style="animation-delay:${i*0.03}s">${ph}${ov}${exemptPip}<div class="card-body"><div class="card-title">${esc(m.title)}</div><div class="card-meta" data-year="${esc(m.year||'')}" data-genre="${esc(m.genre||'')}" data-runtime="${esc(formatRuntime(m.runtime)||'')}">${[m.year,m.genre,formatRuntime(m.runtime)].filter(Boolean).join(' &middot; ')}</div><div class="card-services">${buildBadges(m,true)}</div></div></div>`;
+  return`<div class="card${stale}${graveyardCls}" data-id="${m.id}" data-render-hash="${esc(_cardHash(m))}" onclick="openDetail('${m.id}')" style="animation-delay:${i*0.03}s">${ph}${ov}${exemptPip}<div class="card-body"><div class="card-title">${esc(m.title)}</div><div class="card-meta" data-year="${esc(m.year||'')}" data-genre="${esc(m.genre||'')}" data-runtime="${esc(formatRuntime(m.runtime)||'')}">${[m.year,m.genre,formatRuntime(m.runtime)].filter(Boolean).map(esc).join(' &middot; ')}</div><div class="card-services">${buildBadges(m,true)}</div></div></div>`;
 }
 
 function trimCardMetas(){
@@ -3000,8 +3013,8 @@ function getOtherShort(name){
 
 function buildBadges(m,c){
   let o='';const s=m.streaming||{};
-  const sh={netflix:'NFLX',disney:'D+',prime:'PRIME',cinema:'CINE',other:getOtherShort(m.otherName)};
-  const fl={netflix:'Netflix',disney:'Disney+',prime:'Prime Video',cinema:'In Cinemas',other:m.otherName||'Other'};
+  const sh={netflix:'NFLX',disney:'D+',prime:'PRIME',cinema:'CINE',other:esc(getOtherShort(m.otherName))};
+  const fl={netflix:'Netflix',disney:'Disney+',prime:'Prime Video',cinema:'In Cinemas',other:esc(m.otherName)||'Other'};
   for(const k of SERVICES){
     const l=c?sh[k]:fl[k];
     if(s[k]?.direct)o+=`<span class="service-badge ${k}">${l}</span>`;
@@ -3037,6 +3050,8 @@ function setFilter(f,btn){
     localStorage.setItem('watchlist_sort',currentSort);
     updateSortBtnLabel();
   }
+  // Group toggle is only usable on the All tab — refresh its enabled state
+  applyViewToggleUI();
   render();
 }
 
@@ -3062,7 +3077,7 @@ function openDetail(id){
   document.getElementById('detailContent').innerHTML=`
     <div class="detail-poster-row">${ph}<div class="detail-info">
       <div class="detail-title">${esc(m.title)}</div>
-      <div class="detail-meta">${[m.year,m.genre,m.director,formatRuntime(m.runtime)].filter(Boolean).join(' &middot; ')}${(m.rating||m.rtRating)?'<br>'+[m.rating?'&#9733; '+esc(m.rating):'',rtBadge(m)].filter(Boolean).join(' &nbsp;&middot;&nbsp; '):''}</div>
+      <div class="detail-meta">${[m.year,m.genre,m.director,formatRuntime(m.runtime)].filter(Boolean).map(esc).join(' &middot; ')}${(m.rating||m.rtRating)?'<br>'+[m.rating?'&#9733; '+esc(m.rating):'',rtBadge(m)].filter(Boolean).join(' &nbsp;&middot;&nbsp; '):''}</div>
       ${m.notes?`<div id="detailNotesWrap" class="detail-notes-wrap clamped"><div id="detailNotes" class="detail-notes">${esc(m.notes)}</div><button class="detail-notes-expander" onclick="toggleDetailNotes()">...</button></div>`:''}
       ${(()=>{const b=(m.graveyard?`<span class="service-badge" style="background:rgba(80,60,80,0.25);color:#9a8a9a;border:1px solid rgba(120,100,120,0.4)">&#128128; Graveyard</span>`:'')+( m.rewatch?`<span class="service-badge" style="background:rgba(45,212,191,0.12);color:#2dd4bf;border:1px solid rgba(45,212,191,0.3)">Rewatch</span>`:'');return b?`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;">${b}</div>`:'';})()} 
       <div style="margin-top:8px;">
@@ -3070,7 +3085,7 @@ function openDetail(id){
           ?`<span id="detailDateWatched" onclick="editDateWatched('${m.id}')" title="Click to edit" style="cursor:pointer;font-size:0.68rem;color:var(--text-muted);letter-spacing:0.05em;border-bottom:1px dashed var(--border-hi);padding-bottom:1px;transition:color 0.15s;" onmouseover="this.style.color='var(--text-dim)'" onmouseout="this.style.color='var(--text-muted)'">${formatDateWatched(m.dateWatched)}</span>`
           :`<span id="detailDateAdded" onclick="editDateAdded('${m.id}')" title="Click to edit" style="cursor:pointer;font-size:0.68rem;color:var(--text-muted);letter-spacing:0.05em;border-bottom:1px dashed var(--border-hi);padding-bottom:1px;transition:color 0.15s;" onmouseover="this.style.color='var(--text-dim)'" onmouseout="this.style.color='var(--text-muted)'">${formatDateAdded(m.dateAdded)}</span>`}
       </div>
-      ${m.watchWith?`<div class="detail-watch-with"><span class="detail-watch-with-chip" onclick="filterByWatchWith(${JSON.stringify(m.watchWith)})" title="Show all films tagged ${esc(m.watchWith)}">👥 ${esc(m.watchWith)}</span></div>`:''}
+      ${m.watchWith?`<div class="detail-watch-with"><span class="detail-watch-with-chip" onclick="filterByWatchWith(${esc(JSON.stringify(m.watchWith))})" title="Show all films tagged ${esc(m.watchWith)}">👥 ${esc(m.watchWith)}</span></div>`:''}
     </div></div>
     <div class="detail-services-section"><div class="detail-services-title">Where to Watch</div><div class="detail-services-grid">${svc}</div></div>
     ${categorySettings[m.category]?.detached?`<div style="margin-top:12px;display:flex;align-items:center;gap:12px;padding:9px 14px;background:rgba(201,168,76,0.04);border:1px solid rgba(201,168,76,0.12);border-radius:var(--radius);"><div style="flex:1;"><div style="font-size:0.68rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-dim);">Show in main list</div><div style="font-size:0.62rem;color:var(--text-muted);margin-top:1px;">Exception to detached category</div></div><label class="toggle-row" style="margin:0;flex-shrink:0;"><input type="checkbox" ${m.detachExempt?'checked':''} onchange="toggleDetachExempt('${m.id}')"><span class="track"></span></label></div>`:''}
@@ -3104,7 +3119,7 @@ function toggleDetailNotes(){
 
 function buildDetailSvc(m){
   const s=m.streaming||{};
-  const lb={netflix:'Netflix',disney:'Disney+',prime:'Prime Video',cinema:'In Cinemas',other:m.otherName||'Other'};
+  const lb={netflix:'Netflix',disney:'Disney+',prime:'Prime Video',cinema:'In Cinemas',other:esc(m.otherName)||'Other'};
   let o='';
   for(const k of SERVICES){
     if(s[k]?.direct)o+=`<span class="detail-service-pill ${k}">${lb[k]}</span>`;
@@ -3114,7 +3129,7 @@ function buildDetailSvc(m){
   return o||`<span class="detail-service-pill other">Other</span>`;
 }
 
-function closeDetail(){document.getElementById('detailModal').classList.remove('open');currentDetailId=null;unlockScroll();}
+function closeDetail(){if(!document.getElementById('detailModal').classList.contains('open'))return;document.getElementById('detailModal').classList.remove('open');currentDetailId=null;unlockScroll();}
 function handleDetailOverlay(e){if(e.target===document.getElementById('detailModal'))closeDetail();}
 
 
@@ -3135,7 +3150,7 @@ function toggleGraveyard(id){
   if(m){
     m.graveyard=!m.graveyard;
     // Moving to graveyard clears watched and watchingSoon flags
-    if(m.graveyard){m.watched=false;m.watchingSoon=false;m.rewatchingSoon=false;}
+    if(m.graveyard){m.watched=false;m.watchingSoon=false;m.rewatch=false;m.rewatchingSoon=false;m.dateWatched=undefined;}
     save();closeDetail();render();
   }
 }
@@ -3414,7 +3429,7 @@ function _cardHash(m){
   return[m.id,m.title||'',m.year||'',m.poster||'',m.watched?1:0,m.rewatch?1:0,
     m.rewatchingSoon?1:0,m.watchingSoon?1:0,m.rating||'',m.genre||'',m.director||'',
     m.runtime||'',m.category||'',m.graveyard?1:0,m.collection||'',m.watchWith||'',
-    m.streaming||'',m.dateWatched||'',m.dateAdded||'',m.detachExempt?1:0,
+    JSON.stringify(m.streaming||{}),m.otherName||'',m.dateWatched||'',m.dateAdded||'',m.detachExempt?1:0,
     m._animateIn?1:0,currentFilter,m.releaseDate||'',m.rtRating||''].join('\0');
 }
 
@@ -3613,6 +3628,8 @@ function openEditModal(id){
 }
 
 function closeAddModal(){
+  // Escape calls every close fn — only unlock scroll for a modal that was actually open
+  if(!document.getElementById('addModal').classList.contains('open'))return;
   document.getElementById('addModal').classList.remove('open');
   document.getElementById('searchResults').classList.remove('open');
   document.getElementById('searchHint').classList.remove('visible');
@@ -3886,7 +3903,7 @@ function save(){
 function esc(s){if(!s)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
 document.addEventListener('keydown',e=>{
-  if(e.key==='Escape'){const so=document.getElementById('shortcutsOverlay');if(so&&so.classList.contains('open')){closeShortcutsPanel();return;}if(window.selectionMode)exitSelectMode();closeSortMenu();closePillMenu();closeAddModal();closeDetail();if(typeof closePasteImportModal==='function')closePasteImportModal();return;}
+  if(e.key==='Escape'){const so=document.getElementById('shortcutsOverlay');if(so&&so.classList.contains('open')){closeShortcutsPanel();return;}if(window.selectionMode)exitSelectMode();closeSortMenu();closePillMenu();closeAddModal();closeDetail();if(typeof closePasteImportModal==='function')closePasteImportModal();if(typeof closeSurpriseModal==='function')closeSurpriseModal();if(typeof closeExportModal==='function')closeExportModal();if(typeof closeImportModal==='function')closeImportModal();return;}
   if(e.key==='Enter'&&!e.shiftKey){
     const modalOpen=document.getElementById('addModal').classList.contains('open');
     if(modalOpen){
@@ -4007,7 +4024,7 @@ document.addEventListener('keydown',e=>{
   }
 
   const inField=document.activeElement.tagName==='INPUT'||document.activeElement.tagName==='TEXTAREA';
-  const noModal=!document.getElementById('addModal').classList.contains('open')&&!document.getElementById('detailModal').classList.contains('open')&&!document.getElementById('importModal').classList.contains('open')&&!document.getElementById('pasteImportModal').classList.contains('open');
+  const noModal=!document.querySelector('.modal-overlay.open')&&!document.getElementById('shortcutsOverlay')?.classList.contains('open');
   if(!inField&&!e.metaKey&&!e.ctrlKey&&!e.altKey&&noModal){
     const key=e.key.toUpperCase();
     if(key==='A'){e.preventDefault();if(currentCategory)openAddModalWithCategory(currentCategory);else openAddModal();return;}
@@ -4029,11 +4046,13 @@ document.addEventListener('keydown',e=>{
     else openAddModal();
     return;
   }
-  if(e.key==='z'&&(e.metaKey||e.ctrlKey)&&!e.shiftKey&&!inField){
+  // Require no open modal: the categorise panel has its own Cmd+Z undo, and both
+  // firing at once would also roll back an unrelated earlier deletion.
+  if(e.key==='z'&&(e.metaKey||e.ctrlKey)&&!e.shiftKey&&!inField&&noModal){
     e.preventDefault();
     if(undoStack.length){redoStack.push(JSON.parse(JSON.stringify(movies)));movies=undoStack.pop();save();render();document.querySelectorAll('.toast').forEach(t=>dismissToast(t));showInfoToast('Deletion undone.',3000);}
   }
-  if(e.key==='z'&&(e.metaKey||e.ctrlKey)&&e.shiftKey&&!inField){e.preventDefault();redoDelete();}
+  if(e.key==='z'&&(e.metaKey||e.ctrlKey)&&e.shiftKey&&!inField&&noModal){e.preventDefault();redoDelete();}
 });
 
 
@@ -4231,8 +4250,11 @@ window._sbOnLoad = function(data) {
         try { __sbOrigSet('christmas_watchlist_v1', cIncoming); } catch(e) {}
       }
       if (data.categorySettings) {
+        const changed = JSON.stringify(categorySettings) !== JSON.stringify(data.categorySettings);
         categorySettings = data.categorySettings;
         try { __sbOrigSet('category_settings_v1', JSON.stringify(data.categorySettings)); } catch(e) {}
+        // Detached state affects which films are visible, so redraw
+        if (changed) render();
       }
     }
   } catch(e) { console.warn('Supabase load error:', e); }
@@ -4451,6 +4473,7 @@ function openSurpriseModal(){
 }
 
 function closeSurpriseModal(){
+  if(!document.getElementById('surpriseModal').classList.contains('open')) return;
   document.getElementById('surpriseModal').classList.remove('open');
   _surpriseSeenIds = new Set();
   unlockScroll();
@@ -4549,9 +4572,10 @@ function getSurprisePool(){
     const idx = siblings.findIndex(x => x.id === m.id);
     if(idx <= 0) return true; // First in collection — always eligible
 
-    // Every film before this one must be watched
+    // Every film before this one must be watched (graveyarded ones are skipped,
+    // otherwise giving up on one entry would block the rest of the series forever)
     for(let i = 0; i < idx; i++){
-      if(!siblings[i].watched) return false;
+      if(!siblings[i].watched && !siblings[i].graveyard) return false;
     }
     return true;
   });
@@ -4569,7 +4593,7 @@ function getSurprisePool(){
 function buildSurpriseBadges(m){
   let o = '';
   const s = m.streaming || {};
-  const fl = {netflix:'Netflix', disney:'Disney+', prime:'Prime Video', cinema:'In Cinemas', other:m.otherName||'Other'};
+  const fl = {netflix:'Netflix', disney:'Disney+', prime:'Prime Video', cinema:'In Cinemas', other:esc(m.otherName)||'Other'};
   for(const k of SERVICES){
     const label = fl[k];
     if(s[k]?.direct) o += `<span class="service-badge ${k}">${label}</span>`;
@@ -4619,7 +4643,7 @@ function showSurprisePick(m){
     ? `<img class="surprise-result-poster" src="${esc(m.poster)}" alt="${esc(m.title)}" onerror="this.outerHTML='<div class=\\'surprise-result-placeholder\\'>🎬</div>'">`
     : `<div class="surprise-result-placeholder">🎬</div>`;
 
-  const meta = [m.year, m.genre, formatRuntime(m.runtime)].filter(Boolean).join(' · ');
+  const meta = [m.year, m.genre, formatRuntime(m.runtime)].filter(Boolean).map(esc).join(' · ');
   const rating = (m.rating||m.rtRating) ? `<div class="surprise-result-rating">${[m.rating?'★ '+esc(m.rating):'',rtBadge(m)].filter(Boolean).join(' · ')}</div>` : '';
 
   // Collection position note
@@ -4704,6 +4728,7 @@ function openExportModal(){
 }
 
 function closeExportModal(){
+  if(!document.getElementById('exportModal').classList.contains('open')) return;
   document.getElementById('exportModal').classList.remove('open');
   unlockScroll();
 }
@@ -4809,7 +4834,7 @@ function openImportModal(){
 }
 
 function closeImportModal(){
-  if(_importActive) return;
+  if(_importActive || !document.getElementById('importModal').classList.contains('open')) return;
   document.getElementById('importModal').classList.remove('open');
   unlockScroll();
 }
@@ -4961,7 +4986,9 @@ function _renderImportPreview(rows, filename){
 
 // ── Existing-movie matcher ──
 function _findExistingForImport(tmdbId, title, year){
-  const pool = christmasMode ? (_normalMovies||movies) : movies;
+  // Match against the active list — that's the list new films are pushed into,
+  // saved by save(), and snapshotted for undo.
+  const pool = movies;
   if(tmdbId){
     const m = pool.find(x => x.tmdbId && x.tmdbId === tmdbId);
     if(m) return m;
@@ -4999,6 +5026,7 @@ async function _tmdbDetailsForImport(id){
       fetch(`https://api.themoviedb.org/3/movie/${id}?api_key=${encodeURIComponent(tmdbKey)}`),
       fetch(`https://api.themoviedb.org/3/movie/${id}/credits?api_key=${encodeURIComponent(tmdbKey)}`)
     ]);
+    if(!dr.ok) return null;
     const d = await dr.json();
     const c = cr.ok ? await cr.json() : null;
     return { d, c };
@@ -5069,6 +5097,7 @@ async function runLetterboxdImport(){
         // Always override the watched date with Letterboxd's date
         existing.watched      = true;
         existing.watchingSoon = false;
+        existing.graveyard    = false;
         existing.dateWatched  = watchedISO;
         // Backfill missing metadata while we have it
         if(tmdbId  && !existing.tmdbId)   existing.tmdbId   = tmdbId;
@@ -5554,7 +5583,7 @@ function bulkUnwatch(){
   if(!window.selectedIds.size) return;
   const targets = movies.filter(m=>window.selectedIds.has(m.id));
   undoStack.push(JSON.parse(JSON.stringify(movies))); redoStack=[];
-  targets.forEach(m=>{ m.watched=false; m.dateWatched=undefined; });
+  targets.forEach(m=>{ m.watched=false; m.dateWatched=undefined; m.rewatch=false; m.rewatchingSoon=false; });
   save(); exitSelectMode(false); render();
   showInfoToast(`${targets.length} film${targets.length!==1?'s':''} marked as unwatched.`, 3000);
 }
@@ -5580,7 +5609,7 @@ function bulkGraveyard(){
   undoStack.push(JSON.parse(JSON.stringify(movies))); redoStack=[];
   targets.forEach(m=>{
     m.graveyard=!allInGrave;
-    if(m.graveyard){ m.watched=false; m.watchingSoon=false; }
+    if(m.graveyard){ m.watched=false; m.watchingSoon=false; m.rewatch=false; m.rewatchingSoon=false; m.dateWatched=undefined; }
   });
   save(); exitSelectMode(false); render();
   showInfoToast(`${targets.length} film${targets.length!==1?'s':''} ${allInGrave?'removed from':'moved to'} Graveyard.`, 3000);
@@ -5788,6 +5817,7 @@ function openPasteImportModal(){
 }
 function closePasteImportModal(){
   if(_pasteSearchActive || _pasteConfirmActive) return;
+  if(!document.getElementById('pasteImportModal').classList.contains('open')) return;
   document.getElementById('pasteImportModal').classList.remove('open');
   unlockScroll();
 }
@@ -5913,6 +5943,9 @@ async function _runPasteSearch(titles){
           }
         }
       } catch(e){ /* skip */ }
+    } else {
+      // No TMDB key: keep the typed title as a manual entry so it can still be saved
+      results = [{ id:null, title, release_date:'', _manual:true }];
     }
     _pasteItems.push({ inputTitle:title, results, selectedIdx:0, removed:false, showingAlts:false });
     await new Promise(r => setTimeout(r, 160));
@@ -6062,7 +6095,7 @@ function _buildPasteCard(item, idx){
         ${posterEl}
         <div class="paste-result-info">${infoEl}</div>
         <div class="paste-result-actions">
-          ${hit ? `<button class="${changeCls}" onclick="_pasteToggleAlts(${idx})">${item.showingAlts?'Hide':'Change'}</button>` : ''}
+          ${hit && !hit._manual ? `<button class="${changeCls}" onclick="_pasteToggleAlts(${idx})">${item.showingAlts?'Hide':'Change'}</button>` : ''}
           ${isRemoved
             ? `<button class="paste-action-btn pab-restore" onclick="_pasteRestore(${idx})">Restore</button>`
             : `<button class="paste-action-btn pab-danger" onclick="_pasteRemove(${idx})">Remove</button>`}
@@ -6291,7 +6324,7 @@ async function _pasteConfirmAll(){
       collection:   '',
       category:     _pasteCategory,
       watchWith:    '',
-      tmdbId:       hit.id,
+      tmdbId:       hit.id || null,
       detachExempt: false,
       watched:      _pasteWatched,
       watchingSoon: false,
