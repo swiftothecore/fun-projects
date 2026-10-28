@@ -1568,6 +1568,11 @@ else { window._sbLibReady = _sbRun; }
     <input class="banner-input" id="apiKeyInput" type="text" placeholder="Paste your TMDB API key...">
     <button class="btn btn-primary btn-sm" onclick="saveApiKey()">Save</button>
   </div>
+  <div class="banner-text"><strong>Rotten Tomatoes scores (optional).</strong> Get a free OMDb key at <a href="https://www.omdbapi.com/apikey.aspx" target="_blank">omdbapi.com</a> (check your email to activate it).</div>
+  <div class="banner-input-row">
+    <input class="banner-input" id="omdbKeyInput" type="text" placeholder="Paste your OMDb API key...">
+    <button class="btn btn-primary btn-sm" onclick="saveOmdbKey()">Save</button>
+  </div>
 </div>
 
 <header>
@@ -1869,6 +1874,7 @@ let hideWatched=localStorage.getItem('watchlist_hideWatched')==='true';
 let _preloadId=null,_preloadPromise=null;
 let currentView=localStorage.getItem('watchlist_view')||'grid';
 let tmdbKey=localStorage.getItem('tmdb_api_key')||'';
+let omdbKey=localStorage.getItem('omdb_api_key')||'';
 let undoStack=[],redoStack=[];
 let categorySettings=JSON.parse(localStorage.getItem('category_settings_v1')||'{}');
 let categoryOptionsDismissed=localStorage.getItem('category_options_dismissed')==='1';
@@ -1939,6 +1945,7 @@ function init(){
   // Backfill runtimes for any existing movies that don't have one yet
   setTimeout(backfillRuntimes,1000);
   setTimeout(backfillReleaseDates,1500);
+  setTimeout(backfillRtRatings,2000);
 }
 
 window.addEventListener('resize',()=>{
@@ -1997,12 +2004,14 @@ function toggleHideWatched(){
 
 function updateBanner(){document.getElementById('apiBanner').classList.toggle('hidden',!!tmdbKey);}
 function updateSearchSection(){const h=!!tmdbKey;document.getElementById('searchOrNotice').style.display=h?'block':'none';document.getElementById('noApiNotice').style.display=h?'none':'block';}
-function saveApiKey(){const v=document.getElementById('apiKeyInput').value.trim();if(!v)return;tmdbKey=v;localStorage.setItem('tmdb_api_key',tmdbKey);updateBanner();updateSearchSection();setTimeout(backfillRuntimes,500);setTimeout(backfillReleaseDates,800);}
+function saveApiKey(){const v=document.getElementById('apiKeyInput').value.trim();if(!v)return;tmdbKey=v;localStorage.setItem('tmdb_api_key',tmdbKey);updateBanner();updateSearchSection();setTimeout(backfillRuntimes,500);setTimeout(backfillReleaseDates,800);setTimeout(backfillRtRatings,1100);}
+function saveOmdbKey(){const v=document.getElementById('omdbKeyInput').value.trim();if(!v)return;omdbKey=v;localStorage.setItem('omdb_api_key',omdbKey);document.getElementById('apiBanner').classList.toggle('hidden',!!tmdbKey);setTimeout(backfillRtRatings,300);}
 function showApiSettings(){
   const banner=document.getElementById('apiBanner');
   if(!banner.classList.contains('hidden')){banner.classList.add('hidden');return;}
   banner.classList.remove('hidden');
   document.getElementById('apiKeyInput').value=tmdbKey;
+  document.getElementById('omdbKeyInput').value=omdbKey;
   document.getElementById('apiKeyInput').focus();
   window.scrollTo({top:0,behavior:'smooth'});
 }
@@ -2249,6 +2258,54 @@ async function backfillRuntimes(){
   if(changed){save();render();}
 }
 
+// ── Rotten Tomatoes (via OMDb) ──
+// rtRating: '92%' when found, '' when OMDb has no RT score (rechecked after RT_RECHECK_DAYS).
+const RT_RECHECK_DAYS=30;
+let _rtBackfillRunning=false;
+function rtNeedsFill(m){
+  if(m.rtRating===undefined||m.rtRating===null)return true;
+  if(m.rtRating!=='')return false;
+  return !m.rtCheckedAt||(Date.now()-new Date(m.rtCheckedAt))>RT_RECHECK_DAYS*86400000;
+}
+async function fetchRtRating(m){
+  let imdbId=m.imdbId||null;
+  if(!imdbId&&m.tmdbId&&tmdbKey){
+    const res=await fetch(`https://api.themoviedb.org/3/movie/${m.tmdbId}/external_ids?api_key=${encodeURIComponent(tmdbKey)}`);
+    if(res.ok){const d=await res.json();imdbId=d.imdb_id||null;}
+  }
+  const q=imdbId?`i=${encodeURIComponent(imdbId)}`
+    :`t=${encodeURIComponent(m.title)}&type=movie${m.year?`&y=${encodeURIComponent(m.year)}`:''}`;
+  const res=await fetch(`https://www.omdbapi.com/?${q}&apikey=${encodeURIComponent(omdbKey)}`);
+  if(!res.ok)throw new Error('OMDb '+res.status);
+  const d=await res.json();
+  // Invalid key / daily limit hit — stop rather than marking films as "no score"
+  if(d.Response==='False'&&/key|limit/i.test(d.Error||''))throw Object.assign(new Error(d.Error),{fatal:true});
+  const rt=(d.Ratings||[]).find(r=>r.Source==='Rotten Tomatoes');
+  return{rtRating:rt?rt.Value:'',imdbId:imdbId||(d.imdbID&&d.imdbID.startsWith('tt')?d.imdbID:null)};
+}
+async function backfillRtRatings(){
+  if(!omdbKey||_rtBackfillRunning)return;
+  _rtBackfillRunning=true;
+  const list=movies;
+  let changed=false;
+  try{
+    for(const m of list.filter(rtNeedsFill)){
+      if(!m.title)continue;
+      try{
+        const r=await fetchRtRating(m);
+        m.rtRating=r.rtRating;m.rtCheckedAt=new Date().toISOString();
+        if(r.imdbId&&!m.imdbId)m.imdbId=r.imdbId;
+        changed=true;
+      }catch(e){if(e.fatal){console.warn('RT backfill stopped:',e.message);break;}}
+      await new Promise(r=>setTimeout(r,200));
+    }
+  }finally{
+    _rtBackfillRunning=false;
+    if(changed&&list===movies){save();render();}
+  }
+}
+function rtBadge(m){return m.rtRating?`🍅 ${esc(m.rtRating)}`:'';}
+
 function _formatCinemaDate(dateStr,short){
   if(!dateStr)return'';
   const d=new Date(dateStr+'T12:00:00');
@@ -2371,7 +2428,7 @@ function buildListRow(m,i){
     <div class="list-thumb-wrap">${thumb}${soonPip}</div>
     <div class="list-info">
       <div class="list-title">${esc(m.title)}</div>
-      ${meta?`<div class="list-meta">${meta}${m.rating?' · ★ '+esc(m.rating):''}</div>`:''}
+      ${meta?`<div class="list-meta">${meta}${m.rating?' · ★ '+esc(m.rating):''}${m.rtRating?' · '+rtBadge(m):''}</div>`:''}
       <div class="list-badges">${badges}</div>
     </div>
     <div class="list-right">
@@ -3005,7 +3062,7 @@ function openDetail(id){
   document.getElementById('detailContent').innerHTML=`
     <div class="detail-poster-row">${ph}<div class="detail-info">
       <div class="detail-title">${esc(m.title)}</div>
-      <div class="detail-meta">${[m.year,m.genre,m.director,formatRuntime(m.runtime)].filter(Boolean).join(' &middot; ')}${m.rating?'<br>&#9733; '+esc(m.rating):''}</div>
+      <div class="detail-meta">${[m.year,m.genre,m.director,formatRuntime(m.runtime)].filter(Boolean).join(' &middot; ')}${(m.rating||m.rtRating)?'<br>'+[m.rating?'&#9733; '+esc(m.rating):'',rtBadge(m)].filter(Boolean).join(' &nbsp;&middot;&nbsp; '):''}</div>
       ${m.notes?`<div id="detailNotesWrap" class="detail-notes-wrap clamped"><div id="detailNotes" class="detail-notes">${esc(m.notes)}</div><button class="detail-notes-expander" onclick="toggleDetailNotes()">...</button></div>`:''}
       ${(()=>{const b=(m.graveyard?`<span class="service-badge" style="background:rgba(80,60,80,0.25);color:#9a8a9a;border:1px solid rgba(120,100,120,0.4)">&#128128; Graveyard</span>`:'')+( m.rewatch?`<span class="service-badge" style="background:rgba(45,212,191,0.12);color:#2dd4bf;border:1px solid rgba(45,212,191,0.3)">Rewatch</span>`:'');return b?`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;">${b}</div>`:'';})()} 
       <div style="margin-top:8px;">
@@ -3358,7 +3415,7 @@ function _cardHash(m){
     m.rewatchingSoon?1:0,m.watchingSoon?1:0,m.rating||'',m.genre||'',m.director||'',
     m.runtime||'',m.category||'',m.graveyard?1:0,m.collection||'',m.watchWith||'',
     m.streaming||'',m.dateWatched||'',m.dateAdded||'',m.detachExempt?1:0,
-    m._animateIn?1:0,currentFilter,m.releaseDate||''].join('\0');
+    m._animateIn?1:0,currentFilter,m.releaseDate||'',m.rtRating||''].join('\0');
 }
 
 // djb2 hash — cheap fingerprint for long HTML strings
@@ -3656,6 +3713,8 @@ function saveMovie(){
     category:document.getElementById('fCategory').value.trim(),
     watchWith:document.getElementById('fWatchWith').value.trim(),
     tmdbId:_pendingTmdbId||existing?.tmdbId||null,
+    ...(existing&&(!_pendingTmdbId||_pendingTmdbId===existing.tmdbId)&&existing.title===title&&(existing.year||'')===document.getElementById('fYear').value.trim()
+      ?{rtRating:existing.rtRating,rtCheckedAt:existing.rtCheckedAt,imdbId:existing.imdbId}:{}),
     detachExempt:existing?.detachExempt||false,
     graveyard:existing?.graveyard||false,
     watched,
@@ -3671,6 +3730,7 @@ function saveMovie(){
   else movies.push(movie);
   save();closeAddModal();render();
   setTimeout(backfillReleaseDates,500);
+  setTimeout(backfillRtRatings,700);
   // Suppress the fadeIn re-animation on every card/row that already existed —
   // only the newly added/edited entry should animate into view.
   const savedId=movie.id;
@@ -4560,7 +4620,7 @@ function showSurprisePick(m){
     : `<div class="surprise-result-placeholder">🎬</div>`;
 
   const meta = [m.year, m.genre, formatRuntime(m.runtime)].filter(Boolean).join(' · ');
-  const rating = m.rating ? `<div class="surprise-result-rating">★ ${esc(m.rating)}</div>` : '';
+  const rating = (m.rating||m.rtRating) ? `<div class="surprise-result-rating">${[m.rating?'★ '+esc(m.rating):'',rtBadge(m)].filter(Boolean).join(' · ')}</div>` : '';
 
   // Collection position note
   let collNote = '';
