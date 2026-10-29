@@ -2,92 +2,92 @@
 // Classic scripts intentionally expose handler functions to inline HTML events.
 
 window.addEventListener('resize',()=>{
-  if(window.innerWidth<=640&&currentView!=='list'){
-    currentView='list';applyViewToggleUI();render();
+  if(window.innerWidth<=640&&state.currentView!=='list'){
+    state.currentView='list';applyViewToggleUI();render();
   }
   _checkSoonLayout();
 });
 
 function setView(v){
-  if(window.selectionMode) exitSelectMode(false);
-  currentView=v;
-  localStorage.setItem('watchlist_view',v);
+  if(state.selectionMode) exitSelectMode(false);
+  state.currentView=v;
+  writeStorage('watchlist_view',v);
   applyViewToggleUI();
   render();
 }
 
 function applyViewToggleUI(){
-  document.getElementById('viewGrid')?.classList.toggle('active',currentView==='grid');
-  document.getElementById('viewCompact')?.classList.toggle('active',currentView==='compact');
-  document.getElementById('viewList')?.classList.toggle('active',currentView==='list');
-  document.body.classList.toggle('compact-cards',currentView==='compact');
+  document.getElementById('viewGrid')?.classList.toggle('active',state.currentView==='grid');
+  document.getElementById('viewCompact')?.classList.toggle('active',state.currentView==='compact');
+  document.getElementById('viewList')?.classList.toggle('active',state.currentView==='list');
+  document.body.classList.toggle('compact-cards',state.currentView==='compact');
   // Group toggle
   const groupBtn=document.getElementById('groupToggleBtn');
   if(groupBtn){
-    const onAll=currentFilter==='all';
-    groupBtn.classList.toggle('active',currentGrouping==='grouped'&&onAll);
+    const onAll=state.currentFilter==='all';
+    groupBtn.classList.toggle('active',state.currentGrouping==='grouped'&&onAll);
     groupBtn.style.opacity=onAll?'':'0.35';
     groupBtn.style.pointerEvents=onAll?'':'none';
-    groupBtn.title=currentGrouping==='grouped'
+    groupBtn.title=state.currentGrouping==='grouped'
       ?'Switch to flat list (no service sections)'
       :'Group by streaming service';
   }
   // Hide-watched toggle
   const eyeBtn=document.getElementById('hideWatchedBtn');
   if(eyeBtn){
-    eyeBtn.classList.toggle('active',hideWatched);
-    eyeBtn.title=hideWatched?'Show watched films':'Hide watched films';
+    eyeBtn.classList.toggle('active',state.hideWatched);
+    eyeBtn.title=state.hideWatched?'Show watched films':'Hide watched films';
   }
 }
 
 function toggleGrouping(){
-  if(currentFilter!=='all')return;
-  currentGrouping=currentGrouping==='grouped'?'flat':'grouped';
-  localStorage.setItem('watchlist_grouping',currentGrouping);
+  if(state.currentFilter!=='all')return;
+  state.currentGrouping=state.currentGrouping==='grouped'?'flat':'grouped';
+  writeStorage('watchlist_grouping',state.currentGrouping);
   applyViewToggleUI();
   render();
 }
 
 function toggleHideWatched(){
-  hideWatched=!hideWatched;
-  localStorage.setItem('watchlist_hideWatched',hideWatched);
+  state.hideWatched=!state.hideWatched;
+  writeStorage('watchlist_hideWatched',state.hideWatched);
   applyViewToggleUI();
   render();
 }
 
 function setFilter(f,btn){
-  if(window.selectionMode) exitSelectMode(false);
+  if(state.selectionMode) exitSelectMode(false);
   // Clicking All is a "show me everything" reset, so drop any search query too
-  if(f==='all'&&searchQuery){
+  if(f==='all'&&state.searchQuery){
     document.getElementById('searchBar').value='';
     const mi=document.getElementById('mobileSearchBarInput');
     if(mi){ mi.value=''; document.getElementById('mobileSearchBar').classList.remove('msb-active'); }
-    searchQuery='';
-    searchIncludesDetached=false;
+    state.searchQuery='';
+    state.searchIncludesDetached=false;
     document.getElementById('searchBarWrap').classList.remove('expanded','has-query');
   }
-  if(currentFilter===f&&f!=='all'){
-    currentFilter='all';currentCategory=null;
+  if(state.currentFilter===f&&f!=='all'){
+    state.currentFilter='all';state.currentCategory=null;
     document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
     document.querySelector('.filter-btn[onclick*="\'all\'"]').classList.add('active');
   }else{
-    currentFilter=f;
-    if(f!=='categories')currentCategory=null;
+    state.currentFilter=f;
+    if(f!=='categories')state.currentCategory=null;
     document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
     btn.classList.add('active');
   }
-  document.getElementById('categoryBar').classList.toggle('visible',currentFilter==='categories');
-  document.getElementById('categoryOptions').classList.toggle('visible',currentFilter==='categories'&&!!currentCategory);
+  document.getElementById('categoryBar').classList.toggle('visible',state.currentFilter==='categories');
+  document.getElementById('categoryOptions').classList.toggle('visible',state.currentFilter==='categories'&&!!state.currentCategory);
   // If we've left the watched tab, drop dateWatched sort back to the default
-  if(currentFilter!=='watched'&&currentSort.startsWith('dateWatched')){
-    currentSort='dateAdded-asc';
-    localStorage.setItem('watchlist_sort',currentSort);
+  if(state.currentFilter!=='watched'&&state.currentSort.startsWith('dateWatched')){
+    state.currentSort='dateAdded-asc';
+    writeStorage('watchlist_sort',state.currentSort);
     updateSortBtnLabel();
   }
   // When entering the watched tab, default to date watched newest first
-  if(currentFilter==='watched'&&!currentSort.startsWith('dateWatched')){
-    currentSort='dateWatched-desc';
-    localStorage.setItem('watchlist_sort',currentSort);
+  if(state.currentFilter==='watched'&&!state.currentSort.startsWith('dateWatched')){
+    state.currentSort='dateWatched-desc';
+    writeStorage('watchlist_sort',state.currentSort);
     updateSortBtnLabel();
   }
   // Group toggle is only usable on the All tab — refresh its enabled state
@@ -101,7 +101,7 @@ function toggleSortMenu(){
   if(!menu||!btn)return;
   if(menu.classList.contains('open')){closeSortMenu();return;}
   // Show the date-watched options only on the watched tab
-  document.getElementById('watchedSortSection').style.display=currentFilter==='watched'?'block':'none';
+  document.getElementById('watchedSortSection').style.display=state.currentFilter==='watched'?'block':'none';
   // Position the menu directly below the button, aligned to its right edge
   const rect=btn.getBoundingClientRect();
   menu.style.top=(rect.bottom+window.scrollY+6)+'px';
@@ -111,7 +111,7 @@ function toggleSortMenu(){
   btn.classList.add('active');
   // Mark the currently-active option with a checkmark
   menu.querySelectorAll('.sort-menu-item').forEach(item=>{
-    item.classList.toggle('active',item.dataset.sort===currentSort);
+    item.classList.toggle('active',item.dataset.sort===state.currentSort);
   });
 }
 
@@ -121,18 +121,18 @@ function closeSortMenu(){
 }
 
 function setSort(value){
-  if(currentSort===value){closeSortMenu();return;}
-  currentSort=value;
-  localStorage.setItem('watchlist_sort',value);
+  if(state.currentSort===value){closeSortMenu();return;}
+  state.currentSort=value;
+  writeStorage('watchlist_sort',value);
   closeSortMenu();
   updateSortBtnLabel();
-  if(window.selectionMode)exitSelectMode(false);
+  if(state.selectionMode)exitSelectMode(false);
   render();
 }
 
 function updateSortBtnLabel(){
   const el=document.getElementById('sortBtnLabel');
-  if(el)el.textContent=SORT_LABELS[currentSort]||'Sort';
+  if(el)el.textContent=SORT_LABELS[state.currentSort]||'Sort';
 }
 
 // Close the sort menu on any click outside of it
@@ -160,10 +160,10 @@ function toggleSearchBar(){
 }
 
 function onSearchBarInput(v){
-  if(window.selectionMode)exitSelectMode(false);
-  searchQuery=v.trim();
-  searchIncludesDetached=false;
-  document.getElementById('searchBarWrap').classList.toggle('has-query',!!searchQuery);
+  if(state.selectionMode)exitSelectMode(false);
+  state.searchQuery=v.trim();
+  state.searchIncludesDetached=false;
+  document.getElementById('searchBarWrap').classList.toggle('has-query',!!state.searchQuery);
   render();
 }
 
@@ -172,9 +172,9 @@ function clearSearchBar(){
   i.value='';
   const mi=document.getElementById('mobileSearchBarInput');
   if(mi){ mi.value=''; document.getElementById('mobileSearchBar').classList.remove('msb-active'); }
-  if(window.selectionMode)exitSelectMode(false);
-  searchQuery='';
-  searchIncludesDetached=false;
+  if(state.selectionMode)exitSelectMode(false);
+  state.searchQuery='';
+  state.searchIncludesDetached=false;
   const w=document.getElementById('searchBarWrap');
   w.classList.remove('has-query');
   render();
@@ -189,9 +189,9 @@ function onSearchBarKeyDown(e){
     // Escape always clears and fully dismisses in one go
     const hadQuery=!!i.value;
     i.value='';
-    if(window.selectionMode)exitSelectMode(false);
-    searchQuery='';
-    searchIncludesDetached=false;
+    if(state.selectionMode)exitSelectMode(false);
+    state.searchQuery='';
+    state.searchIncludesDetached=false;
     w.classList.remove('expanded','has-query');
     if(hadQuery)render();
     const sy=window.scrollY;
@@ -224,7 +224,7 @@ document.addEventListener('keydown',e=>{
 });
 
 document.addEventListener('keydown',e=>{
-  if(e.key==='Escape'){const so=document.getElementById('shortcutsOverlay');if(so&&so.classList.contains('open')){closeShortcutsPanel();return;}if(window.selectionMode)exitSelectMode();closeSortMenu();closePillMenu();closeAddModal();closeDetail();if(typeof closePasteImportModal==='function')closePasteImportModal();if(typeof closeSurpriseModal==='function')closeSurpriseModal();if(typeof closeExportModal==='function')closeExportModal();if(typeof closeImportModal==='function')closeImportModal();return;}
+  if(e.key==='Escape'){const so=document.getElementById('shortcutsOverlay');if(so&&so.classList.contains('open')){closeShortcutsPanel();return;}if(state.selectionMode)exitSelectMode();closeSortMenu();closePillMenu();closeAddModal();closeDetail();if(typeof closePasteImportModal==='function')closePasteImportModal();if(typeof closeSurpriseModal==='function')closeSurpriseModal();if(typeof closeExportModal==='function')closeExportModal();if(typeof closeImportModal==='function')closeImportModal();return;}
   if(e.key==='Enter'&&!e.shiftKey){
     const modalOpen=document.getElementById('addModal').classList.contains('open');
     if(modalOpen){
@@ -333,12 +333,12 @@ document.addEventListener('keydown',e=>{
       }
       if(key==='E'){
         e.preventDefault();
-        if(currentDetailId) openEditFromDetail(currentDetailId);
+        if(state.currentDetailId) openEditFromDetail(state.currentDetailId);
         return;
       }
       if(e.key==='Enter'){
-        const m=currentDetailId?movies.find(x=>x.id===currentDetailId):null;
-        if(m&&!m.graveyard){e.preventDefault();toggleWatched(currentDetailId);}
+        const m=state.currentDetailId?state.movies.find(x=>x.id===state.currentDetailId):null;
+        if(m&&!m.graveyard){e.preventDefault();toggleWatched(state.currentDetailId);}
         return;
       }
     }
@@ -348,7 +348,7 @@ document.addEventListener('keydown',e=>{
   const noModal=!document.querySelector('.modal-overlay.open')&&!document.getElementById('shortcutsOverlay')?.classList.contains('open');
   if(!inField&&!e.metaKey&&!e.ctrlKey&&!e.altKey&&noModal){
     const key=e.key.toUpperCase();
-    if(key==='A'){e.preventDefault();if(currentCategory)openAddModalWithCategory(currentCategory);else openAddModal();return;}
+    if(key==='A'){e.preventDefault();if(state.currentCategory)openAddModalWithCategory(state.currentCategory);else openAddModal();return;}
     if(key==='R'||key==='S'){e.preventDefault();openSurpriseModal();return;}
     if(key==='H'){e.preventDefault();toggleHideWatched();return;}
     if(key==='L'){e.preventDefault();openImportModal();return;}
@@ -363,7 +363,7 @@ document.addEventListener('keydown',e=>{
   }
   if(e.altKey&&e.code==='KeyT'&&!inField&&!document.getElementById('addModal').classList.contains('open')){
     e.preventDefault();
-    if(currentCategory) openAddModalWithCategory(currentCategory);
+    if(state.currentCategory) openAddModalWithCategory(state.currentCategory);
     else openAddModal();
     return;
   }
@@ -371,7 +371,7 @@ document.addEventListener('keydown',e=>{
   // firing at once would also roll back an unrelated earlier deletion.
   if(e.key==='z'&&(e.metaKey||e.ctrlKey)&&!e.shiftKey&&!inField&&noModal){
     e.preventDefault();
-    if(undoStack.length){redoStack.push(JSON.parse(JSON.stringify(movies)));movies=undoStack.pop();save();render();document.querySelectorAll('.toast').forEach(t=>dismissToast(t));showInfoToast('Deletion undone.',3000);}
+    if(state.undoStack.length){state.redoStack.push(JSON.parse(JSON.stringify(state.movies)));state.movies=state.undoStack.pop();save();render();document.querySelectorAll('.toast').forEach(t=>dismissToast(t));showInfoToast('Deletion undone.',3000);}
   }
   if(e.key==='z'&&(e.metaKey||e.ctrlKey)&&e.shiftKey&&!inField&&noModal){e.preventDefault();redoDelete();}
 });
@@ -514,20 +514,17 @@ function initSheetDrag(modalId, closeFn) {
 
 // ── Bulk Selection ─────────────────────────────────────────────────────────
 
-window.selectionMode = false;
-
-window.selectedIds   = new Set();
 
 function enterSelectMode(){
-  window.selectionMode = true;
-  window.selectedIds   = new Set();
+  state.selectionMode = true;
+  state.selectedIds   = new Set();
   document.getElementById('selectModeBtn')?.classList.add('active');
   document.getElementById('movieGrid').classList.add('selection-mode');
   document.getElementById('bulkBar').classList.add('visible');
   document.body.classList.add('bulk-mode');
   // Label flips based on which list is currently active
   const xBtn = document.getElementById('bulkChristmasBtn');
-  if(xBtn) xBtn.textContent = christmasMode ? '📋 Normal List' : '🎄 Christmas';
+  if(xBtn) xBtn.textContent = state.christmasMode ? '📋 Normal List' : '🎄 Christmas';
   updateBulkBar();
 }
 
@@ -536,9 +533,9 @@ function enterSelectMode(){
 // Cancel and Escape pass no argument and get false — no re-render needed
 // since no data has changed, only visual selection state is being cleared.
 function exitSelectMode(doRender=false){
-  if(!window.selectionMode) return;
-  window.selectionMode = false;
-  window.selectedIds   = new Set();
+  if(!state.selectionMode) return;
+  state.selectionMode = false;
+  state.selectedIds   = new Set();
   document.getElementById('selectModeBtn')?.classList.remove('active');
   document.getElementById('movieGrid').classList.remove('selection-mode');
   document.querySelectorAll('.card-selected').forEach(el=>el.classList.remove('card-selected'));
@@ -550,11 +547,11 @@ function exitSelectMode(doRender=false){
 
 function toggleSelect(id){
   const els = document.querySelectorAll(`[data-id="${CSS.escape(id)}"]`);
-  if(window.selectedIds.has(id)){
-    window.selectedIds.delete(id);
+  if(state.selectedIds.has(id)){
+    state.selectedIds.delete(id);
     els.forEach(el=>el.classList.remove('card-selected'));
   } else {
-    window.selectedIds.add(id);
+    state.selectedIds.add(id);
     els.forEach(el=>el.classList.add('card-selected'));
   }
   updateBulkBar();
@@ -565,14 +562,14 @@ function bulkSelectAll(){
     [...document.querySelectorAll('#movieGrid [data-id]')].map(el=>el.dataset.id)
   )];
   const allSelected = visibleIds.length > 0 &&
-    visibleIds.every(id => window.selectedIds.has(id));
+    visibleIds.every(id => state.selectedIds.has(id));
 
   if(allSelected){
-    window.selectedIds.clear();
+    state.selectedIds.clear();
     document.querySelectorAll('#movieGrid .card-selected').forEach(el=>el.classList.remove('card-selected'));
   } else {
     visibleIds.forEach(id=>{
-      window.selectedIds.add(id);
+      state.selectedIds.add(id);
       document.querySelectorAll(`[data-id="${CSS.escape(id)}"]`).forEach(el=>el.classList.add('card-selected'));
     });
   }
@@ -580,14 +577,14 @@ function bulkSelectAll(){
 }
 
 function updateBulkBar(){
-  const n = window.selectedIds.size;
+  const n = state.selectedIds.size;
   const countEl = document.getElementById('bulkCount');
   if(countEl) countEl.textContent = n === 0 ? 'None selected' : `${n} selected`;
 
   const allBtn = document.getElementById('bulkSelectAllBtn');
   if(allBtn){
     const visEls = document.querySelectorAll('#movieGrid [data-id]');
-    const allSel = visEls.length > 0 && [...visEls].every(el=>window.selectedIds.has(el.dataset.id));
+    const allSel = visEls.length > 0 && [...visEls].every(el=>state.selectedIds.has(el.dataset.id));
     allBtn.textContent = allSel ? 'Deselect All' : 'Select All';
   }
 
@@ -595,9 +592,9 @@ function updateBulkBar(){
 }
 
 function openBulkSubpanel(type){
-  _bulkPanel = type;
+  state._bulkPanel = type;
   const sp = document.getElementById('bulkSubpanel');
-  const n  = window.selectedIds.size;
+  const n  = state.selectedIds.size;
 
   if(type === 'service'){
     sp.innerHTML = `
@@ -622,7 +619,7 @@ function openBulkSubpanel(type){
         <button class="bulk-btn" onclick="closeBulkSubpanel()">Cancel</button>
       </div>`;
   } else if(type === 'category'){
-    const existing = [...new Set(movies.map(m=>m.category).filter(Boolean))].sort();
+    const existing = [...new Set(state.movies.map(m=>m.category).filter(Boolean))].sort();
     const chips = existing.map(c =>
       `<button class="bulk-svc-chip" onclick="document.getElementById('bulkCatInput').value=${jsAttr(c)}">${esc(c)}</button>`
     ).join('');
@@ -652,7 +649,7 @@ function onBulkSvcPick(btn){
 }
 
 function closeBulkSubpanel(){
-  _bulkPanel = null;
+  state._bulkPanel = null;
   const sp = document.getElementById('bulkSubpanel');
   if(sp){ sp.classList.remove('visible'); sp.innerHTML=''; }
 }
@@ -667,9 +664,9 @@ function applyBulkService(){
   const isVpn     = document.getElementById('bulkSvcVpn')?.checked || false;
   const country   = document.getElementById('bulkSvcCountry')?.value.trim() || '';
   const otherName = document.getElementById('bulkOtherName')?.value.trim() || '';
-  const targets   = movies.filter(m=>window.selectedIds.has(m.id));
+  const targets   = state.movies.filter(m=>state.selectedIds.has(m.id));
 
-  undoStack.push(JSON.parse(JSON.stringify(movies))); redoStack=[];
+  state.undoStack.push(JSON.parse(JSON.stringify(state.movies))); state.redoStack=[];
   targets.forEach(m=>{
     m.streaming = {};
     if(svc === 'clear'){ m.otherName=''; return; }
@@ -682,8 +679,8 @@ function applyBulkService(){
 
 function applyBulkCategory(){
   const cat     = (document.getElementById('bulkCatInput')?.value||'').trim();
-  const targets = movies.filter(m=>window.selectedIds.has(m.id));
-  undoStack.push(JSON.parse(JSON.stringify(movies))); redoStack=[];
+  const targets = state.movies.filter(m=>state.selectedIds.has(m.id));
+  state.undoStack.push(JSON.parse(JSON.stringify(state.movies))); state.redoStack=[];
   targets.forEach(m=>{ m.category=cat; });
   save(); exitSelectMode(false); render();
   showInfoToast(
@@ -694,43 +691,43 @@ function applyBulkCategory(){
 }
 
 function bulkWatch(){
-  if(!window.selectedIds.size) return;
+  if(!state.selectedIds.size) return;
   const now     = new Date().toISOString();
-  const targets = movies.filter(m=>window.selectedIds.has(m.id));
-  undoStack.push(JSON.parse(JSON.stringify(movies))); redoStack=[];
+  const targets = state.movies.filter(m=>state.selectedIds.has(m.id));
+  state.undoStack.push(JSON.parse(JSON.stringify(state.movies))); state.redoStack=[];
   targets.forEach(m=>{ m.watched=true; m.watchingSoon=false; if(!m.dateWatched)m.dateWatched=now; });
   save(); exitSelectMode(false); render();
   showInfoToast(`${targets.length} film${targets.length!==1?'s':''} marked as watched.`, 3000);
 }
 
 function bulkUnwatch(){
-  if(!window.selectedIds.size) return;
-  const targets = movies.filter(m=>window.selectedIds.has(m.id));
-  undoStack.push(JSON.parse(JSON.stringify(movies))); redoStack=[];
+  if(!state.selectedIds.size) return;
+  const targets = state.movies.filter(m=>state.selectedIds.has(m.id));
+  state.undoStack.push(JSON.parse(JSON.stringify(state.movies))); state.redoStack=[];
   targets.forEach(m=>{ m.watched=false; m.dateWatched=undefined; m.rewatch=false; m.rewatchingSoon=false; });
   save(); exitSelectMode(false); render();
   showInfoToast(`${targets.length} film${targets.length!==1?'s':''} marked as unwatched.`, 3000);
 }
 
 function bulkWatchingSoon(){
-  if(!window.selectedIds.size) return;
-  const targets = movies.filter(m=>window.selectedIds.has(m.id)&&!m.watched&&!m.graveyard);
+  if(!state.selectedIds.size) return;
+  const targets = state.movies.filter(m=>state.selectedIds.has(m.id)&&!m.watched&&!m.graveyard);
   if(!targets.length){
     showInfoToast('No eligible films — watched or graveyard films are skipped.', 3000);
     return;
   }
   const allSoon = targets.every(m=>m.watchingSoon);
-  undoStack.push(JSON.parse(JSON.stringify(movies))); redoStack=[];
+  state.undoStack.push(JSON.parse(JSON.stringify(state.movies))); state.redoStack=[];
   targets.forEach(m=>{ m.watchingSoon=!allSoon; });
   save(); exitSelectMode(false); render();
   showInfoToast(`${targets.length} film${targets.length!==1?'s':''} ${allSoon?'removed from':'added to'} Watching Soon.`, 3000);
 }
 
 function bulkGraveyard(){
-  if(!window.selectedIds.size) return;
-  const targets     = movies.filter(m=>window.selectedIds.has(m.id));
+  if(!state.selectedIds.size) return;
+  const targets     = state.movies.filter(m=>state.selectedIds.has(m.id));
   const allInGrave  = targets.every(m=>m.graveyard);
-  undoStack.push(JSON.parse(JSON.stringify(movies))); redoStack=[];
+  state.undoStack.push(JSON.parse(JSON.stringify(state.movies))); state.redoStack=[];
   targets.forEach(m=>{
     m.graveyard=!allInGrave;
     if(m.graveyard){ m.watched=false; m.watchingSoon=false; m.rewatch=false; m.rewatchingSoon=false; m.dateWatched=undefined; }
@@ -740,38 +737,27 @@ function bulkGraveyard(){
 }
 
 function bulkMoveToChristmas(){
-  if(!window.selectedIds.size) return;
-  const targets = movies.filter(m=>window.selectedIds.has(m.id));
+  if(!state.selectedIds.size) return;
+  const targets = state.movies.filter(m=>state.selectedIds.has(m.id));
   const n = targets.length;
 
-  if(!christmasMode){
-    // Normal → Christmas: remove from normal list, add to christmas list
-    movies = movies.filter(m=>!window.selectedIds.has(m.id));
-    christmasMovies = [...(christmasMovies||[]), ...targets];
-    save(); // saves updated normal movies to watchlist_v2
-    localStorage.setItem('christmas_watchlist_v1', JSON.stringify(christmasMovies));
-    if(window._sbSyncNow&&!window._sbPaused) window._sbSyncNow();
-    exitSelectMode(false); render();
-    showInfoToast(`${n} film${n!==1?'s':''} moved to Christmas list. 🎄`, 3500);
-  } else {
-    // Christmas → Normal: remove from christmas list, add to normal list
-    // In christmas mode: movies = christmas list, _normalMovies = normal list
-    movies = movies.filter(m=>!window.selectedIds.has(m.id));
-    _normalMovies = [...(_normalMovies||[]), ...targets];
-    save(); // saves updated christmas movies to christmas_watchlist_v1
-    localStorage.setItem('watchlist_v2', JSON.stringify(_normalMovies));
-    if(window._sbSyncNow&&!window._sbPaused) window._sbSyncNow();
-    exitSelectMode(false); render();
-    showInfoToast(`${n} film${n!==1?'s':''} moved to Normal list.`, 3500);
-  }
+  // Normal → Christmas removes from normal and adds to Christmas; the reverse
+  // removes from Christmas and adds to normal. Neither list changes identity
+  // merely because the current mode changes.
+  state.movies = state.movies.filter(m=>!state.selectedIds.has(m.id));
+  if(state.christmasMode) setNormalList([...getNormalList(),...targets]);
+  else setChristmasList([...getChristmasList(),...targets]);
+  save('lists');
+  exitSelectMode(false); render();
+  showInfoToast(`${n} film${n!==1?'s':''} moved to ${state.christmasMode?'Normal list.':'Christmas list. 🎄'}`,3500);
 }
 
 function bulkDelete(){
-  if(!window.selectedIds.size) return;
-  const n   = window.selectedIds.size;
-  const ids = new Set(window.selectedIds); // capture before exitSelectMode clears it
-  undoStack.push(JSON.parse(JSON.stringify(movies))); redoStack=[];
-  movies = movies.filter(m=>!ids.has(m.id));
+  if(!state.selectedIds.size) return;
+  const n   = state.selectedIds.size;
+  const ids = new Set(state.selectedIds); // capture before exitSelectMode clears it
+  state.undoStack.push(JSON.parse(JSON.stringify(state.movies))); state.redoStack=[];
+  state.movies = state.movies.filter(m=>!ids.has(m.id));
   save(); exitSelectMode(false); render();
   // Undo toast (matches existing single-delete pattern)
   const DUR = 8000;
@@ -811,7 +797,7 @@ document.addEventListener('click', function(e){
   if(!card) return;
   e.stopPropagation();
   e.preventDefault();
-  if(!window.selectionMode) enterSelectMode();
+  if(!state.selectionMode) enterSelectMode();
   toggleSelect(card.dataset.id);
 }, true);
 

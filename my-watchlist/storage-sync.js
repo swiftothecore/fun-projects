@@ -2,7 +2,7 @@
 // Classic scripts intentionally expose handler functions to inline HTML events.
 
 // Remove the legacy plaintext password even when the CDN is unavailable.
-try { localStorage.removeItem('_sb_pass'); } catch(e) {}
+try { removeStorage('_sb_pass'); } catch(e) {}
 
 async function _sbRun() {
   if (window._sbInitDone) return;
@@ -16,14 +16,14 @@ async function _sbRun() {
   let _sb = null, _user = null, _pendingSync = false;
 
   // ── Safe localStorage helper ──
-  function _lsGet(k) { try { return localStorage.getItem(k); } catch(e) { return null; } }
+  function _lsGet(k) { try { return readStorage(k); } catch(e) { return null; } }
 
   // ── Custom auth storage for supabase-js ──
   const _sbMem = {};
   const _sbStore = {
-    getItem:    k => { try { return localStorage.getItem(k) ?? _sbMem[k] ?? null; } catch(e) { return _sbMem[k] ?? null; } },
-    setItem:    (k, v) => { _sbMem[k] = v; try { localStorage.setItem(k, v); } catch(e) {} },
-    removeItem: k => { delete _sbMem[k]; try { localStorage.removeItem(k); } catch(e) {} }
+    getItem:    k => { try { return readStorage(k) ?? _sbMem[k] ?? null; } catch(e) { return _sbMem[k] ?? null; } },
+    setItem:    (k, v) => { _sbMem[k] = v; try { writeStorage(k, v); } catch(e) {} },
+    removeItem: k => { delete _sbMem[k]; try { removeStorage(k); } catch(e) {} }
   };
 
   let _authClient = null, _authUrl = null, _authKey = null;
@@ -69,7 +69,7 @@ async function _sbRun() {
   const setStatus = (msg, cls) => { status.textContent = msg; status.className = cls || ''; };
 
   document.getElementById('_sb_dismiss_btn').onclick = () => {
-    try { localStorage.setItem(K.dismissed, '1'); } catch(e) {}
+    try { writeStorage(K.dismissed, '1'); } catch(e) {}
     hideBanner();
   };
 
@@ -101,9 +101,9 @@ async function _sbRun() {
         if (signedIn.error) { setStatus('Error: ' + signedIn.error.message, 'err'); return; }
         data = signedIn.data;
       }
-      try { localStorage.setItem(K.url, url); localStorage.setItem(K.key, key);
-            localStorage.setItem(K.email, email);
-            localStorage.removeItem(K.dismissed); } catch(e) {}
+      try { writeStorage(K.url, url); writeStorage(K.key, key);
+            writeStorage(K.email, email);
+            removeStorage(K.dismissed); } catch(e) {}
       _sb = client; _user = data.user;
       _passwordField();
       setStatus('Connected!', 'ok'); _btnStatus('#5a9e7a', 'Connected');
@@ -210,7 +210,7 @@ async function _sbRun() {
   // local data rather than blindly loading (potentially older) remote data.
   function _setPending(on) {
     _pendingSync = on;
-    try { on ? localStorage.setItem('_sb_pending','1') : localStorage.removeItem('_sb_pending'); } catch(e) {}
+    try { on ? writeStorage('_sb_pending','1') : removeStorage('_sb_pending'); } catch(e) {}
   }
 
   async function _upsert(table, payload) {
@@ -253,7 +253,7 @@ async function _sbRun() {
     console.log('[Sync] Done');
   };
   window._sbOpenPanel = function() {
-    try { localStorage.removeItem('_sb_dismissed'); } catch(e) {}
+    try { removeStorage('_sb_dismissed'); } catch(e) {}
     wrap.style.display = 'block';
     formRow.style.display = 'flex';
     document.getElementById('_sb_url_in').value   = _lsGet(K.url)   || '';
@@ -308,61 +308,54 @@ async function _sbRun() {
   });
 }
 
-function saveCategorySettings(){
-  localStorage.setItem('category_settings_v1',JSON.stringify(categorySettings));
-  if(window._sbSyncNow&&!window._sbPaused)window._sbSyncNow();
+// Safe storage access also covers iOS restrictions during startup/preferences.
+function readStorage(key) {
+  try { return localStorage.getItem(key); } catch(e) { return null; }
 }
 
-function save(){
-  if(christmasMode){localStorage.setItem('christmas_watchlist_v1',JSON.stringify(movies));}
-  else{localStorage.setItem('watchlist_v2',JSON.stringify(movies));}
-  // Belt-and-suspenders: also trigger sync directly in case the monkey-patch
-  // doesn't fire (e.g. if localStorage.setItem throws before reaching it).
+function writeStorage(key, value) {
+  // Wrap in try-catch: on iOS with "Block All Cookies" enabled, localStorage
+  // throws a SecurityError. We still want the Supabase sync to fire.
+  try { localStorage.setItem(key, value); }
+  catch(e) { console.warn('[Storage] localStorage write failed:', e.message); }
+}
+
+function removeStorage(key) {
+  try { localStorage.removeItem(key); } catch(e) {}
+}
+
+function saveCategorySettings(){
+  save('categories');
+}
+
+// All local data mutations use this path. Remote hydration below writes its
+// storage mirror directly: pulling must not stamp a local edit or echo a push.
+function save(target='active'){
+  if(target==='lists'||target==='active'&&!state.christmasMode){
+    writeStorage('watchlist_v2',JSON.stringify(getNormalList()));
+  }
+  if(target==='lists'||target==='active'&&state.christmasMode){
+    writeStorage('christmas_watchlist_v1',JSON.stringify(getChristmasList()));
+  }
+  if(target==='categories'){
+    writeStorage('category_settings_v1',JSON.stringify(state.categorySettings));
+  }
+  // Stamp the local modification time so the conflict resolver knows
+  // when THIS device last saved. Retained for compatibility with existing data.
+  writeStorage('_sb_local_ts',String(Date.now()));
+  // Belt-and-suspenders: trigger sync even when the storage write fails.
+  // The explicit path replaces the old localStorage.setItem monkey-patch.
   if(window._sbSyncNow&&!window._sbPaused)window._sbSyncNow();
 }
 
 window._SB_TABLE  = 'watchlist';
-
 window._SB_LS_KEY = 'watchlist_v2';
-
-const __sbOrigSet = localStorage.setItem.bind(localStorage);
-
-localStorage.setItem = function(key, value) {
-  // Wrap in try-catch: on iOS with "Block All Cookies" enabled, localStorage
-  // throws a SecurityError. We still want the Supabase sync to fire.
-  try { __sbOrigSet(key, value); } catch(e) { console.warn('[Storage] localStorage write failed:', e.message); }
-  if (key === 'watchlist_v2' || key === 'christmas_watchlist_v1') {
-    // Stamp the local modification time so the conflict resolver knows
-    // when THIS device last saved. Used by the IIFE to decide push vs. pull.
-    try { __sbOrigSet('_sb_local_ts', String(Date.now())); } catch(e) {}
-    if (window._sbSyncNow && !window._sbPaused) window._sbSyncNow();
-  }
-};
 
 // Read from live in-memory arrays rather than localStorage.
 // If localStorage writes are failing (iOS restrictions etc.), the in-memory
 // arrays still have the correct current state, so Supabase gets accurate data.
 window._sbGetData = function() {
-  let watchlist, christmas;
-  if (typeof movies !== 'undefined') {
-    if (christmasMode) {
-      // christmas mode: movies = christmas list, _normalMovies = normal list
-      watchlist = (_normalMovies !== null && _normalMovies !== undefined)
-        ? _normalMovies
-        : JSON.parse(localStorage.getItem('watchlist_v2') || '[]');
-      christmas = movies;
-    } else {
-      // normal mode: movies = normal list, christmasMovies = christmas list
-      watchlist = movies;
-      christmas = (typeof christmasMovies !== 'undefined')
-        ? christmasMovies
-        : JSON.parse(localStorage.getItem('christmas_watchlist_v1') || '[]');
-    }
-  } else {
-    watchlist = JSON.parse(localStorage.getItem('watchlist_v2') || '[]');
-    christmas = JSON.parse(localStorage.getItem('christmas_watchlist_v1') || '[]');
-  }
-  return { watchlist, christmas, categorySettings };
+  return { watchlist:getNormalList(), christmas:getChristmasList(), categorySettings:state.categorySettings };
 };
 
 window._sbOnLoad = function(data) {
@@ -371,31 +364,34 @@ window._sbOnLoad = function(data) {
     if (Array.isArray(data)) {
       const incoming = JSON.stringify(data);
       // Update in-memory state first so it's never blocked by a localStorage failure.
-      if (!christmasMode && JSON.stringify(movies) !== incoming) { movies = data; render(); setTimeout(backfillReleaseDates,300); }
-      try { __sbOrigSet('watchlist_v2', incoming); } catch(e) {}
+      if (!state.christmasMode && JSON.stringify(state.movies) !== incoming) {
+        setNormalList(data); render(); scheduleBackfills(300,[backfillReleaseDates]);
+      }
+      writeStorage('watchlist_v2', incoming);
       return;
     }
     // Handle combined object format {watchlist, christmas}
     if (data && typeof data === 'object') {
       if (data.watchlist) {
         const wIncoming = JSON.stringify(data.watchlist);
-        if (christmasMode) {
-          _normalMovies = data.watchlist; // update the stashed normal list
-        } else if (JSON.stringify(movies) !== wIncoming) {
-          movies = data.watchlist; render(); setTimeout(backfillReleaseDates,300);
+        if (state.christmasMode) {
+          setNormalList(data.watchlist); // update the normal list while Christmas is active
+        } else if (JSON.stringify(state.movies) !== wIncoming) {
+          setNormalList(data.watchlist); render(); scheduleBackfills(300,[backfillReleaseDates]);
         }
-        try { __sbOrigSet('watchlist_v2', wIncoming); } catch(e) {}
+        writeStorage('watchlist_v2', wIncoming);
       }
       if (data.christmas) {
         const cIncoming = JSON.stringify(data.christmas);
-        christmasMovies = data.christmas;
-        if (christmasMode && JSON.stringify(movies) !== cIncoming) { movies = data.christmas; render(); }
-        try { __sbOrigSet('christmas_watchlist_v1', cIncoming); } catch(e) {}
+        const changed = JSON.stringify(getChristmasList()) !== cIncoming;
+        setChristmasList(data.christmas);
+        if (state.christmasMode && changed) render();
+        writeStorage('christmas_watchlist_v1', cIncoming);
       }
       if (data.categorySettings) {
-        const changed = JSON.stringify(categorySettings) !== JSON.stringify(data.categorySettings);
-        categorySettings = data.categorySettings;
-        try { __sbOrigSet('category_settings_v1', JSON.stringify(data.categorySettings)); } catch(e) {}
+        const changed = JSON.stringify(state.categorySettings) !== JSON.stringify(data.categorySettings);
+        state.categorySettings = data.categorySettings;
+        writeStorage('category_settings_v1', JSON.stringify(data.categorySettings));
         // Detached state affects which films are visible, so redraw
         if (changed) render();
       }

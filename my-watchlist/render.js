@@ -85,7 +85,7 @@ function buildListRow(m,i){
     ?`<span class="list-status graveyard">💀 Never</span>`
     :m.watched&&m.rewatch?`<span class="list-status rewatch">Rewatch</span>`
     :m.watched?`<span class="list-status watched">✓ Watched</span>`:'';
-  const exemptTag=(currentFilter==='categories'&&m.detachExempt&&categorySettings[m.category]?.detached)?`<span class="list-status" style="background:rgba(96,165,250,0.08);color:#60a5fa;border:1px solid rgba(96,165,250,0.22);">👁 Visible</span>`:'';
+  const exemptTag=(state.currentFilter==='categories'&&m.detachExempt&&state.categorySettings[m.category]?.detached)?`<span class="list-status" style="background:rgba(96,165,250,0.08);color:#60a5fa;border:1px solid rgba(96,165,250,0.22);">👁 Visible</span>`:'';
   const dateLabel=m.watched?formatDateWatched(m.dateWatched):formatDateAdded(m.dateAdded);
   const rowClass=`list-row${m.watched?' list-row-watched':''}${m.graveyard?' list-row-graveyard':''}${staleClass?staleClass.replace('card-stale','list-stale'):''}`;
   return`<div class="${rowClass}" data-id="${esc(m.id)}" data-render-hash="${esc(_cardHash(m))}" onclick="openDetail(${jsAttr(m.id)})" style="animation-delay:${i*0.02}s">
@@ -166,45 +166,45 @@ function buildListGrouped(allMovies){
 
 // ── Render ──
 function render(){
-  const cnt=movies.filter(m=>!m.graveyard&&!isDetachedMovie(m)).length;
-  document.getElementById('headerCount').textContent=christmasMode?(cnt===1?'1 Christmas film':`${cnt} Christmas films`):(cnt===1?'1 film':`${cnt} films`);
+  const cnt=state.movies.filter(m=>!m.graveyard&&!isDetachedMovie(m)).length;
+  document.getElementById('headerCount').textContent=state.christmasMode?(cnt===1?'1 Christmas film':`${cnt} Christmas films`):(cnt===1?'1 film':`${cnt} films`);
   // Show/hide companion filter pill
   const wf=document.getElementById('watchWithFilterBar');
   if(wf){
-    if(currentWatchWith){
-      document.getElementById('watchWithFilterName').textContent=currentWatchWith;
+    if(state.currentWatchWith){
+      document.getElementById('watchWithFilterName').textContent=state.currentWatchWith;
       wf.style.display='';
     } else { wf.style.display='none'; }
   }
-  const soon=_postFilter(sortWithCollections(movies.filter(m=>m.watchingSoon&&!m.graveyard)));
+  const soon=_postFilter(sortWithCollections(state.movies.filter(m=>m.watchingSoon&&!m.graveyard)));
   const ss=document.getElementById('soonSection'),sd=document.getElementById('soonDivider'),sr=document.getElementById('soonStrip');
-  if(soon.length&&currentFilter==='all'&&!searchQuery){ss.classList.add('visible');sd.style.display='none';sr.innerHTML=soon.map((m,i)=>buildSoonCard(m,i)).join('');}
+  if(soon.length&&state.currentFilter==='all'&&!state.searchQuery){ss.classList.add('visible');sd.style.display='none';sr.innerHTML=soon.map((m,i)=>buildSoonCard(m,i)).join('');}
   else{ss.classList.remove('visible');sd.style.display='none';}
-  const rewatchSoon=_postFilter(sortWithCollections(movies.filter(m=>m.rewatchingSoon&&m.rewatch&&m.watched&&!m.graveyard)));
+  const rewatchSoon=_postFilter(sortWithCollections(state.movies.filter(m=>m.rewatchingSoon&&m.rewatch&&m.watched&&!m.graveyard)));
   const rss=document.getElementById('rewatchSoonSection'),rsr=document.getElementById('rewatchSoonStrip');
-  if(rewatchSoon.length&&currentFilter==='all'&&!searchQuery){rss.classList.add('visible');rsr.innerHTML=rewatchSoon.map((m,i)=>buildRewatchSoonCard(m,i)).join('');}
+  if(rewatchSoon.length&&state.currentFilter==='all'&&!state.searchQuery){rss.classList.add('visible');rsr.innerHTML=rewatchSoon.map((m,i)=>buildRewatchSoonCard(m,i)).join('');}
   else{rss.classList.remove('visible');}
   requestAnimationFrame(_checkSoonLayout);
 
-  if(currentFilter==='categories'){renderCategoriesView();return;}
+  if(state.currentFilter==='categories'){renderCategoriesView();return;}
 
   const g=document.getElementById('movieGrid');
-  const emptyIcon=christmasMode?'🎄':'🎬';
-  const emptyMainMsg=christmasMode?(cnt===0?'Your Christmas watchlist is empty.<br>Click <strong>Add Film</strong> to get started.':'No Christmas films to display.'):(cnt===0?'Your watchlist is empty.<br>Click <strong>Add Film</strong> to get started.':'No films to display.');
-  const emptyFilterMsg=christmasMode?(cnt===0?'Your Christmas watchlist is empty.<br>Click <strong>Add Film</strong> to get started.':'No Christmas films match this filter.'):(cnt===0?'Your watchlist is empty.<br>Click <strong>Add Film</strong> to get started.':'No films match this filter.');
+  const emptyIcon=state.christmasMode?'🎄':'🎬';
+  const emptyMainMsg=state.christmasMode?(cnt===0?'Your Christmas watchlist is empty.<br>Click <strong>Add Film</strong> to get started.':'No Christmas films to display.'):(cnt===0?'Your watchlist is empty.<br>Click <strong>Add Film</strong> to get started.':'No films to display.');
+  const emptyFilterMsg=state.christmasMode?(cnt===0?'Your Christmas watchlist is empty.<br>Click <strong>Add Film</strong> to get started.':'No Christmas films match this filter.'):(cnt===0?'Your watchlist is empty.<br>Click <strong>Add Film</strong> to get started.':'No films match this filter.');
   const emptyAll=`<div style="text-align:center;padding:80px 0;color:var(--text-muted)"><span style="font-size:3rem;display:block;margin-bottom:16px;opacity:0.4">${emptyIcon}</span><p style="font-size:0.9rem;line-height:1.6">${emptyMainMsg}</p></div>`;
   const emptyFilter=`<div class="empty-state"><span class="empty-icon">${emptyIcon}</span><p>${emptyFilterMsg}</p></div>`;
 
-  if(currentView==='list'){
+  if(state.currentView==='list'){
     g.className='list-container';
-    if(currentFilter==='all'){
-      const base=searchQuery
-        ?_postFilter(movies.filter(m=>!m.graveyard&&(searchIncludesDetached||!isDetachedMovie(m))))
-        :_postFilter(movies.filter(m=>!m.watchingSoon&&!m.rewatchingSoon&&!m.graveyard&&!isArchivedWatched(m)&&!isDetachedMovie(m)));
-      if(searchQuery){
+    if(state.currentFilter==='all'){
+      const base=state.searchQuery
+        ?_postFilter(state.movies.filter(m=>!m.graveyard&&(state.searchIncludesDetached||!isDetachedMovie(m))))
+        :_postFilter(state.movies.filter(m=>!m.watchingSoon&&!m.rewatchingSoon&&!m.graveyard&&!isArchivedWatched(m)&&!isDetachedMovie(m)));
+      if(state.searchQuery){
         if(!base.length){_setHTML(g,_searchEmptyHTML(emptyFilter,emptyIcon));}
         else{_reconcileListRows(g,base.map((m,i)=>buildListRow(m,i)).join(''));}
-      }else if(currentGrouping==='flat'){
+      }else if(state.currentGrouping==='flat'){
         const _cdm=collectionDateMap();const _flatSorted=[...sortWithCollections(base.filter(m=>!m.watched),_cdm),...sortWithCollections(base.filter(m=>m.watched&&m.rewatch),_cdm),...sortWithCollections(base.filter(m=>m.watched&&!m.rewatch),_cdm)];
         _setHTML(g,base.length?`<div class="list-rows">${buildListItems(groupIntoRenderItems(_flatSorted))}</div>`:emptyAll);
       }else{
@@ -213,7 +213,7 @@ function render(){
     }else{
       const f=getFiltered();
       if(!f.length){_setHTML(g,emptyFilter);return;}
-      if(searchQuery){
+      if(state.searchQuery){
         _reconcileListRows(g,f.map((m,i)=>buildListRow(m,i)).join(''));
       }else{
         _setHTML(g,`<div class="list-rows">${buildListItems(groupIntoRenderItems(f))}</div>`);
@@ -222,15 +222,15 @@ function render(){
     return;
   }
 
-  if(currentFilter==='all'){
-    const base=searchQuery
-      ?_postFilter(movies.filter(m=>!m.graveyard&&(searchIncludesDetached||!isDetachedMovie(m))))
-      :_postFilter(movies.filter(m=>!m.watchingSoon&&!m.rewatchingSoon&&!m.graveyard&&!isArchivedWatched(m)&&!isDetachedMovie(m)));
-    if(searchQuery){
+  if(state.currentFilter==='all'){
+    const base=state.searchQuery
+      ?_postFilter(state.movies.filter(m=>!m.graveyard&&(state.searchIncludesDetached||!isDetachedMovie(m))))
+      :_postFilter(state.movies.filter(m=>!m.watchingSoon&&!m.rewatchingSoon&&!m.graveyard&&!isArchivedWatched(m)&&!isDetachedMovie(m)));
+    if(state.searchQuery){
       g.className='grid';
       if(base.length)_reconcile(g,base.map((m,i)=>buildCard(m,i)).join(''));
       else _setHTML(g,_searchEmptyHTML(emptyFilter,emptyIcon));
-    }else if(currentGrouping==='flat'){
+    }else if(state.currentGrouping==='flat'){
       g.className='grid';
       const _cdm2=collectionDateMap();const _gridSorted=[...sortWithCollections(base.filter(m=>!m.watched),_cdm2),...sortWithCollections(base.filter(m=>m.watched&&m.rewatch),_cdm2),...sortWithCollections(base.filter(m=>m.watched&&!m.rewatch),_cdm2)];
       if(base.length)_reconcile(g,renderItems(groupIntoRenderItems(_gridSorted)));
@@ -244,7 +244,7 @@ function render(){
     g.className='grid';
     const f=getFiltered();
     if(!f.length){_setHTML(g,emptyFilter);return;}
-    if(searchQuery){
+    if(state.searchQuery){
       _reconcile(g,f.map((m,i)=>buildCard(m,i)).join(''));
     }else{
       _setHTML(g,renderItems(groupIntoRenderItems(f)));
@@ -257,7 +257,7 @@ function render(){
 function getCategoryNames(){
   // Returns category names sorted by the earliest dateAdded of any movie in each category
   const map={};
-  for(const m of movies){
+  for(const m of state.movies){
     if(!m.category)continue;
     const t=m.dateAdded?new Date(m.dateAdded).getTime():Infinity;
     if(!(m.category in map)||t<map[m.category])map[m.category]=t;
@@ -272,11 +272,11 @@ function renderCategoriesView(){
   const cats=getCategoryNames();
 
   // Render pill strip — active pill gets a ⋯ menu button; all pills support right-click
-  const addPill=`<button class="category-pill" style="border-color:var(--text-muted);gap:5px;" onclick="openAddModalWithCategory(${jsAttr(currentCategory||'')})">&#43; Add Film</button>`;
+  const addPill=`<button class="category-pill" style="border-color:var(--text-muted);gap:5px;" onclick="openAddModalWithCategory(${jsAttr(state.currentCategory||'')})">&#43; Add Film</button>`;
   strip.innerHTML=addPill+cats.map(c=>{
-    const count=movies.filter(m=>m.category===c).length;
-    const active=currentCategory===c?'active':'';
-    const detached=categorySettings[c]?.detached;
+    const count=state.movies.filter(m=>m.category===c).length;
+    const active=state.currentCategory===c?'active':'';
+    const detached=state.categorySettings[c]?.detached;
     const detachedCls=detached?'detached':'';
     const lockPrefix=detached?'🔒 ':'';
     const menuBtn=active?`<span class="pill-menu-btn" onclick="openPillMenu(event,this,${jsAttr(c)})" title="Category options">&middot;&middot;&middot;</span>`:'';
@@ -290,7 +290,7 @@ function renderCategoriesView(){
     return;
   }
 
-  if(!currentCategory){
+  if(!state.currentCategory){
     opts.classList.remove('visible');opts.innerHTML='';
     g.className='grid';
     g.innerHTML=`<div class="category-empty-state"><span class="empty-icon">👆</span><p>Select a category above to browse its films.</p></div>`;
@@ -298,9 +298,9 @@ function renderCategoriesView(){
   }
 
   // Options area — detached row shown unless dismissed
-  const isDetached=!!(categorySettings[currentCategory]?.detached);
-  const catEsc=currentCategory.replace(/'/g,"\\'");
-  if(!categoryOptionsDismissed){
+  const isDetached=!!(state.categorySettings[state.currentCategory]?.detached);
+  const catEsc=state.currentCategory.replace(/'/g,"\\'");
+  if(!state.categoryOptionsDismissed){
     opts.innerHTML=`<div class="category-options-row">
       <div style="display:flex;align-items:center;gap:12px;flex:1;min-width:0;">
         <div>
@@ -320,7 +320,7 @@ function renderCategoriesView(){
   }
 
   // Show movies in the selected category, sorted by the user's chosen sort
-  const inCat=movies.filter(m=>m.category===currentCategory);
+  const inCat=state.movies.filter(m=>m.category===state.currentCategory);
   const sorted=sortWithCollections(inCat);
 
   if(!sorted.length){
@@ -329,7 +329,7 @@ function renderCategoriesView(){
     return;
   }
 
-  if(currentView==='list'){
+  if(state.currentView==='list'){
     g.className='list-container';
     g.innerHTML=`<div class="list-rows">${buildListItems(groupIntoRenderItems(sorted))}</div>`;
   }else{
@@ -340,7 +340,7 @@ function renderCategoriesView(){
 }
 
 function selectCategory(name){
-  currentCategory=(currentCategory===name)?null:name;
+  state.currentCategory=(state.currentCategory===name)?null:name;
   render();
 }
 
@@ -354,7 +354,7 @@ function sortOldestFirst(a,b){
 // Build a map of collection name → earliest dateAdded timestamp across ALL movies
 function collectionDateMap(){
   const map={};
-  for(const m of movies){
+  for(const m of state.movies){
     if(!m.collection)continue;
     const t=m.dateAdded?new Date(m.dateAdded).getTime():Infinity;
     if(!(m.collection in map)||t<map[m.collection])map[m.collection]=t;
@@ -406,7 +406,7 @@ function _collectionAnchorMap(arr,field){
 // The cdMap parameter is kept for backward compatibility but no longer used —
 // each call computes its own field-appropriate anchor map.
 function sortWithCollections(arr,cdMap){
-  const [field,dir]=(currentSort||'dateAdded-desc').split('-');
+  const [field,dir]=(state.currentSort||'dateAdded-desc').split('-');
   const mult=dir==='asc'?1:-1;
   const collMap=_collectionAnchorMap(arr,field);
   return arr.slice().sort((a,b)=>{
@@ -520,16 +520,16 @@ function _postFilter(arr){
   let r=arr;
   // Hide all watched films globally when the eye toggle is active.
   // The Watched and Graveyard filter views are exempt — they explicitly surface those films.
-  if(hideWatched&&currentFilter!=='watched'&&currentFilter!=='graveyard'&&currentFilter!=='rewatch'){
+  if(state.hideWatched&&state.currentFilter!=='watched'&&state.currentFilter!=='graveyard'&&state.currentFilter!=='rewatch'){
     r=r.filter(m=>!m.watched||m.rewatch);
   }
-  if(currentWatchWith){
-    const w=currentWatchWith.toLowerCase();
+  if(state.currentWatchWith){
+    const w=state.currentWatchWith.toLowerCase();
     r=r.filter(m=>(m.watchWith||'').toLowerCase()===w);
   }
-  if(!searchQuery) return r;
+  if(!state.searchQuery) return r;
 
-  const q=searchQuery.toLowerCase();
+  const q=state.searchQuery.toLowerCase();
 
   const scored=r.map(m=>{
     const title=(m.title||'').toLowerCase();
@@ -566,30 +566,30 @@ function getFiltered(){
 function _getFilteredCore(){
   const cdMap=collectionDateMap();
   let result;
-  if(currentFilter==='all')result=movies.filter(m=>!m.watchingSoon&&!m.rewatchingSoon&&!m.graveyard&&!isArchivedWatched(m)&&!isDetachedMovie(m));
-  else if(currentFilter==='soon')result=movies.filter(m=>m.watchingSoon&&!m.graveyard); // detached movies CAN appear in watching soon
-  else if(currentFilter==='watched')result=movies.filter(m=>m.watched&&!m.graveyard&&!isDetachedMovie(m));
-  else if(currentFilter==='rewatch'){result=movies.filter(m=>m.watched&&m.rewatch&&!m.graveyard&&!isDetachedMovie(m));return sortWithCollections(result,cdMap);}
-  else if(currentFilter==='unwatched')result=movies.filter(m=>!m.watched&&!m.graveyard&&!isDetachedMovie(m));
-  else if(currentFilter==='graveyard'){result=movies.filter(m=>m.graveyard&&!isDetachedMovie(m));return sortWithCollections(result,cdMap);}
-  else if(currentFilter==='vpn')result=movies.filter(m=>!m.graveyard&&!isDetachedMovie(m)&&SERVICES.some(s=>m.streaming?.[s]?.vpn));
-  else if(currentFilter==='cinema'){
-    result=movies.filter(m=>!m.graveyard&&!isDetachedMovie(m)&&(m.streaming?.cinema?.direct||m.streaming?.cinema?.coming));
+  if(state.currentFilter==='all')result=state.movies.filter(m=>!m.watchingSoon&&!m.rewatchingSoon&&!m.graveyard&&!isArchivedWatched(m)&&!isDetachedMovie(m));
+  else if(state.currentFilter==='soon')result=state.movies.filter(m=>m.watchingSoon&&!m.graveyard); // detached movies CAN appear in watching soon
+  else if(state.currentFilter==='watched')result=state.movies.filter(m=>m.watched&&!m.graveyard&&!isDetachedMovie(m));
+  else if(state.currentFilter==='rewatch'){result=state.movies.filter(m=>m.watched&&m.rewatch&&!m.graveyard&&!isDetachedMovie(m));return sortWithCollections(result,cdMap);}
+  else if(state.currentFilter==='unwatched')result=state.movies.filter(m=>!m.watched&&!m.graveyard&&!isDetachedMovie(m));
+  else if(state.currentFilter==='graveyard'){result=state.movies.filter(m=>m.graveyard&&!isDetachedMovie(m));return sortWithCollections(result,cdMap);}
+  else if(state.currentFilter==='vpn')result=state.movies.filter(m=>!m.graveyard&&!isDetachedMovie(m)&&SERVICES.some(s=>m.streaming?.[s]?.vpn));
+  else if(state.currentFilter==='cinema'){
+    result=state.movies.filter(m=>!m.graveyard&&!isDetachedMovie(m)&&(m.streaming?.cinema?.direct||m.streaming?.cinema?.coming));
     const unwatched=sortWithCollections(result.filter(m=>!m.watched),cdMap);
     const watched=sortWithCollections(result.filter(m=>m.watched),cdMap);
     return[...unwatched,...watched];
-  } else if(currentFilter==='other'){
+  } else if(state.currentFilter==='other'){
     // Include both explicit Other and implicit Other (no service set at all)
-    result=movies.filter(m=>!m.graveyard&&!isDetachedMovie(m)&&(m.streaming?.other?.direct||m.streaming?.other?.vpn||hasNoStreaming(m)));
+    result=state.movies.filter(m=>!m.graveyard&&!isDetachedMovie(m)&&(m.streaming?.other?.direct||m.streaming?.other?.vpn||hasNoStreaming(m)));
     const directUnwatched=sortWithCollections(result.filter(m=>!m.watched&&m.streaming?.other?.direct),cdMap);
     const vpnUnwatched=sortWithCollections(result.filter(m=>!m.watched&&!m.streaming?.other?.direct&&m.streaming?.other?.vpn),cdMap);
     const implicitUnwatched=sortWithCollections(result.filter(m=>!m.watched&&hasNoStreaming(m)),cdMap);
     const watched=sortWithCollections(result.filter(m=>m.watched),cdMap);
     return[...directUnwatched,...vpnUnwatched,...implicitUnwatched,...watched];
   } else {
-    result=movies.filter(m=>!m.graveyard&&!isDetachedMovie(m)&&(m.streaming?.[currentFilter]?.direct||m.streaming?.[currentFilter]?.vpn));
-    const directUnwatched=sortWithCollections(result.filter(m=>!m.watched&&m.streaming?.[currentFilter]?.direct),cdMap);
-    const vpnUnwatched=sortWithCollections(result.filter(m=>!m.watched&&!m.streaming?.[currentFilter]?.direct&&m.streaming?.[currentFilter]?.vpn),cdMap);
+    result=state.movies.filter(m=>!m.graveyard&&!isDetachedMovie(m)&&(m.streaming?.[state.currentFilter]?.direct||m.streaming?.[state.currentFilter]?.vpn));
+    const directUnwatched=sortWithCollections(result.filter(m=>!m.watched&&m.streaming?.[state.currentFilter]?.direct),cdMap);
+    const vpnUnwatched=sortWithCollections(result.filter(m=>!m.watched&&!m.streaming?.[state.currentFilter]?.direct&&m.streaming?.[state.currentFilter]?.vpn),cdMap);
     const watched=sortWithCollections(result.filter(m=>m.watched),cdMap);
     return[...directUnwatched,...vpnUnwatched,...watched];
   }
@@ -614,7 +614,7 @@ function buildCard(m,i){
   const cardSrc=m.poster?m.poster.replace('/t/p/w500/','/t/p/w342/'):'';
   const ph=cardSrc?`<img class="card-poster" data-src="${esc(cardSrc)}" alt="${esc(m.title)}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="card-poster-placeholder" style="display:none">&#127917;<span>No poster</span></div>`:`<div class="card-poster-placeholder">&#127917;<span>No poster</span></div>`;
   const ov=m.graveyard?`<div class="card-graveyard-overlay"><span class="graveyard-stamp">💀 Never</span></div>`:m.watched&&m.rewatch?`<div class="card-rewatch-overlay"><span class="rewatch-stamp">Rewatch</span></div>`:m.watched?`<div class="card-watched-overlay"><span class="watched-stamp">Watched</span></div>`:'';
-  const exemptPip=(currentFilter==='categories'&&m.detachExempt&&categorySettings[m.category]?.detached)?`<div class="detach-exempt-pip">Visible</div>`:'';
+  const exemptPip=(state.currentFilter==='categories'&&m.detachExempt&&state.categorySettings[m.category]?.detached)?`<div class="detach-exempt-pip">Visible</div>`:'';
   return`<div class="card${stale}${graveyardCls}" data-id="${esc(m.id)}" data-render-hash="${esc(_cardHash(m))}" onclick="openDetail(${jsAttr(m.id)})" style="animation-delay:${i*0.03}s">${ph}${ov}${exemptPip}<div class="card-body"><div class="card-title">${esc(m.title)}</div><div class="card-meta" data-year="${esc(m.year||'')}" data-genre="${esc(m.genre||'')}" data-runtime="${esc(formatRuntime(m.runtime)||'')}">${[m.year,m.genre,formatRuntime(m.runtime)].filter(Boolean).map(esc).join(' &middot; ')}</div><div class="card-services">${buildBadges(m,true)}</div></div></div>`;
 }
 
@@ -689,7 +689,7 @@ function _cardHash(m){
     m.rewatchingSoon?1:0,m.watchingSoon?1:0,m.rating||'',m.genre||'',m.director||'',
     m.runtime||'',m.category||'',m.graveyard?1:0,m.collection||'',m.watchWith||'',
     JSON.stringify(m.streaming||{}),m.otherName||'',m.dateWatched||'',m.dateAdded||'',m.detachExempt?1:0,
-    m._animateIn?1:0,currentFilter,m.releaseDate||'',m.rtRating||''].join('\0');
+    m._animateIn?1:0,state.currentFilter,m.releaseDate||'',m.rtRating||''].join('\0');
 }
 
 // djb2 hash — cheap fingerprint for long HTML strings
@@ -698,8 +698,8 @@ function _htmlHash(s){let h=5381;for(let i=0;i<s.length;i++)h=((h<<5)+h)^s.charC
 // innerHTML with hash guard — skips the write when content hasn't changed
 function _setHTML(el,html){
   const h=_htmlHash(html);
-  if(_htmlCache.get(el)===h)return;
-  _htmlCache.set(el,h);
+  if(state.htmlCache.get(el)===h)return;
+  state.htmlCache.set(el,h);
   el.innerHTML=html;
 }
 
@@ -755,24 +755,23 @@ function _reconcileListRows(g,rowsHTML){
 }
 
 function _allMoviesPool(){
-  if(christmasMode)return[...movies,...(_normalMovies||[])];
-  return[...movies,...(christmasMovies||[])];
+  return [...getNormalList(),...getChristmasList()];
 }
 
 function isDetachedMovie(m){
   if(!m.category)return false;
   if(m.detachExempt)return false;
-  return!!(categorySettings[m.category]?.detached);
+  return!!(state.categorySettings[m.category]?.detached);
 }
 
 function includeDetachedInSearch(){
-  searchIncludesDetached=true;
+  state.searchIncludesDetached=true;
   render();
 }
 
 function _searchEmptyHTML(fallback,icon){
-  if(!searchIncludesDetached){
-    const detachedHits=_postFilter(movies.filter(m=>!m.graveyard&&isDetachedMovie(m)));
+  if(!state.searchIncludesDetached){
+    const detachedHits=_postFilter(state.movies.filter(m=>!m.graveyard&&isDetachedMovie(m)));
     if(detachedHits.length){
       return`<div class="empty-state"><span class="empty-icon">${icon}</span><p>No results in your main watchlist.</p><button class="btn btn-ghost btn-sm" style="margin-top:14px" onclick="includeDetachedInSearch()">Search detached categories too</button></div>`;
     }

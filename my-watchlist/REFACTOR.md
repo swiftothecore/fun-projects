@@ -39,3 +39,20 @@ Manual checklist:
 - [ ] Open Add, Detail, Surprise, Letterboxd import/export, Paste, Shortcuts, and Cloud Save.
 - [ ] Use filters, sort, categories, grid/list/compact, bulk selection and keyboard shortcuts.
 - [ ] At a width below 640px, confirm list view, bottom search and bottom-sheet modals.
+
+## Phase 3 — state and persistence
+
+- Mutable list, preference, history, form/search/import, selection and effect state now lives in documented `state`. `getNormalList()`/`getChristmasList()` always return their own list; the `state.movies` accessor reads/replaces the active list. Switching modes no longer swaps/stashes array globals.
+- Removed the `localStorage.setItem` patch. `save()` explicitly writes the active list, both lists for bulk moves, or category settings, stamps `_sb_local_ts`, and immediately requests cloud sync. Remote hydration uses guarded mirror writes without timestamps or echoed uploads. Original keys, row/table format, legacy-array support, paused-load handling, two-second retry/five-second pending retry, and snapshot/pending conflict checks remain.
+- All app storage reads/writes are guarded; the SDK's in-memory auth adapter is preserved. Startup, key entry, remote hydration and film-save backfill requests now join one sequential async queue, scheduled after rendering. The empty release-date backfill is still called in sequence.
+- Extended browser tests passed for stable list ownership, serialized backfills, stale search responses, retryable TMDB/OMDb failures, native storage methods, timestamping, storage exceptions, failed upload retries, pending edits across reload, edits during the cloud fetch, and the real SDK's in-memory auth fallback.
+- Live service and native iOS limitations from Phase 1 still apply.
+
+Manual checklist:
+
+- [ ] Add/edit/delete/undo in each list; switch modes repeatedly and reload in Christmas mode.
+- [ ] Move films in both directions with bulk selection; confirm both stored lists and cloud payloads.
+- [ ] Toggle detached categories and confirm their settings persist/sync.
+- [ ] Save offline, reload, reconnect, and confirm pending local edits win over older cloud data.
+- [ ] Enter API keys; confirm the first render is immediate and runtime/RT fills run sequentially.
+- [ ] Check a storage-restricted iOS session can still edit and sync while open.

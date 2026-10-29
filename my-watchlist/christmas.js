@@ -2,49 +2,40 @@
 // Classic scripts intentionally expose handler functions to inline HTML events.
 
 function toggleChristmasMode(){
-  if(christmasMode){
-    // Exit — restore the normal watchlist
-    christmasMovies=movies;
-    movies=_normalMovies||[];
-    _normalMovies=null;
-    christmasMode=false;
-  }else{
-    // Enter — swap to the Christmas list
-    _normalMovies=movies;
-    movies=christmasMovies;
-    christmasMode=true;
-  }
+  // Exit restores the normal watchlist; entering selects the Christmas list.
+  // Both lists keep stable owners in state instead of swapping array globals.
+  state.christmasMode=!state.christmasMode;
   // Clear ephemeral undo history when switching modes
-  undoStack=[];redoStack=[];
-  localStorage.setItem('christmas_mode_active',christmasMode?'true':'false');
-  document.body.classList.toggle('christmas-mode',christmasMode);
-  document.getElementById('christmasToggleBtn').classList.toggle('active',christmasMode);
-  document.getElementById('christmasBanner').classList.toggle('visible',christmasMode);
-  if(christmasMode)startChristmasEffects();else stopChristmasEffects();
+  state.undoStack=[];state.redoStack=[];
+  writeStorage('christmas_mode_active',state.christmasMode?'true':'false');
+  document.body.classList.toggle('christmas-mode',state.christmasMode);
+  document.getElementById('christmasToggleBtn').classList.toggle('active',state.christmasMode);
+  document.getElementById('christmasBanner').classList.toggle('visible',state.christmasMode);
+  if(state.christmasMode)startChristmasEffects();else stopChristmasEffects();
   // Reset filter to All
-  currentFilter='all';currentCategory=null;
+  state.currentFilter='all';state.currentCategory=null;
   document.getElementById('categoryBar').classList.remove('visible');
   document.getElementById('categoryOptions').classList.remove('visible');
   document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
   document.querySelector('.filter-btn[onclick*="\'all\'"]')?.classList.add('active');
   applyViewToggleUI();
   render();
-  showInfoToast(christmasMode?'🎄 Christmas Mode — films here are completely separate from your main watchlist.':'Returned to your main watchlist.',4000);
+  showInfoToast(state.christmasMode?'🎄 Christmas Mode — films here are completely separate from your main watchlist.':'Returned to your main watchlist.',4000);
 }
 
 function _initSnowCanvas(){
-  if(_snowCvs)return;
-  _snowCvs=document.createElement('canvas');
-  _snowCvs.style.cssText='position:fixed;top:0;left:0;pointer-events:none;z-index:9990;';
-  document.body.appendChild(_snowCvs);
-  _snowCtx=_snowCvs.getContext('2d');
+  if(state._snowCvs)return;
+  state._snowCvs=document.createElement('canvas');
+  state._snowCvs.style.cssText='position:fixed;top:0;left:0;pointer-events:none;z-index:9990;';
+  document.body.appendChild(state._snowCvs);
+  state._snowCtx=state._snowCvs.getContext('2d');
   _resizeSnowCanvas();
   window.addEventListener('resize',_resizeSnowCanvas);
 }
 
 function _resizeSnowCanvas(){
-  if(!_snowCvs)return;
-  _snowCvs.width=window.innerWidth;_snowCvs.height=window.innerHeight;
+  if(!state._snowCvs)return;
+  state._snowCvs.width=window.innerWidth;state._snowCvs.height=window.innerHeight;
 }
 
 function _newFlake(){
@@ -52,28 +43,28 @@ function _newFlake(){
 }
 
 function _tickSnow(){
-  if(!_snowCvs)return;
-  _snowCtx.clearRect(0,0,_snowCvs.width,_snowCvs.height);
-  if(_snowFlakes.length<55&&Math.random()<0.25)_snowFlakes.push(_newFlake());
-  for(let i=_snowFlakes.length-1;i>=0;i--){
-    const f=_snowFlakes[i];
-    _snowCtx.save();
-    _snowCtx.globalAlpha=f.op;
-    _snowCtx.font=`${f.sz}px serif`;
-    _snowCtx.fillStyle='#fff';
-    _snowCtx.translate(f.x,f.y);
-    _snowCtx.rotate(f.rot);
-    _snowCtx.fillText('❄',-(f.sz*0.44),(f.sz*0.4));
-    _snowCtx.restore();
+  if(!state._snowCvs)return;
+  state._snowCtx.clearRect(0,0,state._snowCvs.width,state._snowCvs.height);
+  if(state._snowFlakes.length<55&&Math.random()<0.25)state._snowFlakes.push(_newFlake());
+  for(let i=state._snowFlakes.length-1;i>=0;i--){
+    const f=state._snowFlakes[i];
+    state._snowCtx.save();
+    state._snowCtx.globalAlpha=f.op;
+    state._snowCtx.font=`${f.sz}px serif`;
+    state._snowCtx.fillStyle='#fff';
+    state._snowCtx.translate(f.x,f.y);
+    state._snowCtx.rotate(f.rot);
+    state._snowCtx.fillText('❄',-(f.sz*0.44),(f.sz*0.4));
+    state._snowCtx.restore();
     f.y+=f.vy;f.x+=f.vx;f.rot+=f.vrot;
-    if(f.y>_snowCvs.height+40)_snowFlakes.splice(i,1);
+    if(f.y>state._snowCvs.height+40)state._snowFlakes.splice(i,1);
   }
-  _snowRaf=requestAnimationFrame(_tickSnow);
+  state._snowRaf=requestAnimationFrame(_tickSnow);
 }
 
-function _startSnow(){_initSnowCanvas();_snowFlakes=[];if(_snowRaf)cancelAnimationFrame(_snowRaf);_snowCvs.style.display='';_tickSnow();}
+function _startSnow(){_initSnowCanvas();state._snowFlakes=[];if(state._snowRaf)cancelAnimationFrame(state._snowRaf);state._snowCvs.style.display='';_tickSnow();}
 
-function _stopSnow(){if(_snowRaf){cancelAnimationFrame(_snowRaf);_snowRaf=null;}if(_snowCvs){_snowCtx.clearRect(0,0,_snowCvs.width,_snowCvs.height);_snowCvs.style.display='none';}_snowFlakes=[];}
+function _stopSnow(){if(state._snowRaf){cancelAnimationFrame(state._snowRaf);state._snowRaf=null;}if(state._snowCvs){state._snowCtx.clearRect(0,0,state._snowCvs.width,state._snowCvs.height);state._snowCvs.style.display='none';}state._snowFlakes=[];}
 
 function buildChristmasLights(){
   const el=document.getElementById('christmasLights');
@@ -111,8 +102,8 @@ function buildChristmasLights(){
 }
 
 function _onLightsResize(){
-  clearTimeout(_lightsResizeTimer);
-  _lightsResizeTimer=setTimeout(buildChristmasLights,120);
+  clearTimeout(state._lightsResizeTimer);
+  state._lightsResizeTimer=setTimeout(buildChristmasLights,120);
 }
 
 function startChristmasEffects(){

@@ -1,20 +1,20 @@
 // TMDB search/details, OMDb scores, API settings, and background metadata fills.
 // Classic scripts intentionally expose handler functions to inline HTML events.
 
-function updateBanner(){document.getElementById('apiBanner').classList.toggle('hidden',!!tmdbKey);}
+function updateBanner(){document.getElementById('apiBanner').classList.toggle('hidden',!!state.tmdbKey);}
 
-function updateSearchSection(){const h=!!tmdbKey;document.getElementById('searchOrNotice').style.display=h?'block':'none';document.getElementById('noApiNotice').style.display=h?'none':'block';}
+function updateSearchSection(){const h=!!state.tmdbKey;document.getElementById('searchOrNotice').style.display=h?'block':'none';document.getElementById('noApiNotice').style.display=h?'none':'block';}
 
-function saveApiKey(){const v=document.getElementById('apiKeyInput').value.trim();if(!v)return;tmdbKey=v;localStorage.setItem('tmdb_api_key',tmdbKey);updateBanner();updateSearchSection();setTimeout(backfillRuntimes,500);setTimeout(backfillReleaseDates,800);setTimeout(backfillRtRatings,1100);}
+function saveApiKey(){const v=document.getElementById('apiKeyInput').value.trim();if(!v)return;state.tmdbKey=v;writeStorage('tmdb_api_key',state.tmdbKey);updateBanner();updateSearchSection();scheduleBackfills(500);}
 
-function saveOmdbKey(){const v=document.getElementById('omdbKeyInput').value.trim();if(!v)return;omdbKey=v;localStorage.setItem('omdb_api_key',omdbKey);document.getElementById('apiBanner').classList.toggle('hidden',!!tmdbKey);setTimeout(backfillRtRatings,300);}
+function saveOmdbKey(){const v=document.getElementById('omdbKeyInput').value.trim();if(!v)return;state.omdbKey=v;writeStorage('omdb_api_key',state.omdbKey);document.getElementById('apiBanner').classList.toggle('hidden',!!state.tmdbKey);scheduleBackfills(300,[backfillRtRatings]);}
 
 function showApiSettings(){
   const banner=document.getElementById('apiBanner');
   if(!banner.classList.contains('hidden')){banner.classList.add('hidden');return;}
   banner.classList.remove('hidden');
-  document.getElementById('apiKeyInput').value=tmdbKey;
-  document.getElementById('omdbKeyInput').value=omdbKey;
+  document.getElementById('apiKeyInput').value=state.tmdbKey;
+  document.getElementById('omdbKeyInput').value=state.omdbKey;
   document.getElementById('apiKeyInput').focus();
   window.scrollTo({top:0,behavior:'smooth'});
 }
@@ -26,40 +26,40 @@ function onSearchKeyDown(e){
   if(!items.length)return;
   if(e.key==='ArrowDown'){
     e.preventDefault();
-    searchHighlightIndex=Math.min(searchHighlightIndex+1,items.length-1);
+    state.searchHighlightIndex=Math.min(state.searchHighlightIndex+1,items.length-1);
     updateSearchHighlight(items);
   }else if(e.key==='ArrowUp'){
     e.preventDefault();
-    searchHighlightIndex=Math.max(searchHighlightIndex-1,-1);
+    state.searchHighlightIndex=Math.max(state.searchHighlightIndex-1,-1);
     updateSearchHighlight(items);
   }else if(e.key==='Enter'){
     e.preventDefault();
     e.stopPropagation();
-    const idx=searchHighlightIndex>=0?searchHighlightIndex:0;
+    const idx=state.searchHighlightIndex>=0?state.searchHighlightIndex:0;
     if(items[idx])selectMovie(parseInt(items[idx].dataset.movieId));
   }
 }
 
 function updateSearchHighlight(items){
   items.forEach((el,i)=>{
-    el.classList.toggle('keyboard-active',i===searchHighlightIndex);
-    if(i===searchHighlightIndex){el.scrollIntoView({block:'nearest'});preloadMovie(parseInt(el.dataset.movieId));}
+    el.classList.toggle('keyboard-active',i===state.searchHighlightIndex);
+    if(i===state.searchHighlightIndex){el.scrollIntoView({block:'nearest'});preloadMovie(parseInt(el.dataset.movieId));}
   });
 }
 
 function onSearchInput(val){
-  clearTimeout(searchTimer);
-  _preloadId=null;_preloadPromise=null;
+  clearTimeout(state.searchTimer);
+  state._preloadId=null;state._preloadPromise=null;
   const r=document.getElementById('searchResults'),h=document.getElementById('searchHint');
-  if(!val.trim()){_searchSeq++;r.classList.remove('open');h.classList.remove('visible');document.getElementById('searchSpinner').classList.remove('active');searchHighlightIndex=-1;return;}
+  if(!val.trim()){state._searchSeq++;r.classList.remove('open');h.classList.remove('visible');document.getElementById('searchSpinner').classList.remove('active');state.searchHighlightIndex=-1;return;}
   document.getElementById('searchSpinner').classList.add('active');
-  searchTimer=setTimeout(()=>searchTMDB(val.trim()),400);
+  state.searchTimer=setTimeout(()=>searchTMDB(val.trim()),400);
 }
 
 async function searchTMDB(q){
   const sp=document.getElementById('searchSpinner'),r=document.getElementById('searchResults');
   // Drop responses that arrive after a newer search has started
-  const seq=++_searchSeq;
+  const seq=++state._searchSeq;
   // TMDB's search tokeniser treats hyphens as separators and some titles use
   // a middle-dot (e.g. WALL·E) rather than a hyphen, so normalise to a space
   // before querying — otherwise hyphenated queries return irrelevant results.
@@ -70,10 +70,10 @@ async function searchTMDB(q){
   const aliasKeyStripped=aliasKey.replace(/\s+/g,'');
   const aliasId=TMDB_SEARCH_ALIASES[aliasKey]||TMDB_SEARCH_ALIASES[aliasKeyStripped]||null;
   try{
-    const fetches=[fetch(`https://api.themoviedb.org/3/search/movie?api_key=${encodeURIComponent(tmdbKey)}&query=${encodeURIComponent(normalisedQ)}&include_adult=false`)];
-    if(aliasId)fetches.push(fetch(`https://api.themoviedb.org/3/movie/${aliasId}?api_key=${encodeURIComponent(tmdbKey)}`));
+    const fetches=[fetch(`https://api.themoviedb.org/3/search/movie?api_key=${encodeURIComponent(state.tmdbKey)}&query=${encodeURIComponent(normalisedQ)}&include_adult=false`)];
+    if(aliasId)fetches.push(fetch(`https://api.themoviedb.org/3/movie/${aliasId}?api_key=${encodeURIComponent(state.tmdbKey)}`));
     const [res,aliasRes]=await Promise.all(fetches);
-    if(seq!==_searchSeq||!document.getElementById('searchInput').value.trim())return;
+    if(seq!==state._searchSeq||!document.getElementById('searchInput').value.trim())return;
     if(!res.ok){r.innerHTML=res.status===401?`<div class="search-no-results">Invalid API key. <a href="#" onclick="showApiSettings();return false;" style="color:var(--gold)">Update it here.</a></div>`:`<div class="search-no-results">Search failed (${res.status}).</div>`;r.classList.add('open');sp.classList.remove('active');return;}
     const d=await res.json();
     let results=d.results||[];
@@ -83,7 +83,7 @@ async function searchTMDB(q){
       const aliasMovie=await aliasRes.json();
       results=[aliasMovie,...results.filter(m=>m.id!==aliasMovie.id)];
     }
-    if(seq!==_searchSeq)return;
+    if(seq!==state._searchSeq)return;
     sp.classList.remove('active');
     if(!results.length){r.innerHTML=`<div class="search-no-results">No results for "${esc(q)}"</div>`;r.classList.add('open');return;}
     r.innerHTML=results.slice(0,8).map(m=>{
@@ -96,20 +96,20 @@ async function searchTMDB(q){
       const inListBadge=inList?`<div class="result-in-list">&#10003; In your list</div>`:'';
       return`<div class="search-result-item${alreadyCls}" data-movie-id="${esc(m.id)}" onclick="selectMovie(${jsAttr(m.id)})" onmouseenter="preloadMovie(${jsAttr(m.id)})">${th}<div class="result-info"><div class="result-title">${esc(m.title)}</div><div class="result-meta">${esc(yr)}${m.vote_average?' &middot; &#9733; '+m.vote_average.toFixed(1):''}</div>${ov}${inListBadge}</div></div>`;
     }).join('');
-    searchHighlightIndex=-1;
+    state.searchHighlightIndex=-1;
     r.classList.add('open');
     if(results.length)preloadMovie(results[0].id);
-  }catch{if(seq!==_searchSeq)return;sp.classList.remove('active');r.innerHTML=`<div class="search-no-results">Search failed.</div>`;r.classList.add('open');}
+  }catch{if(seq!==state._searchSeq)return;sp.classList.remove('active');r.innerHTML=`<div class="search-no-results">Search failed.</div>`;r.classList.add('open');}
 }
 
 function preloadMovie(id){
-  if(_preloadId===id)return; // already preloading/preloaded this one
-  _preloadId=id;
-  _preloadPromise=(async()=>{
+  if(state._preloadId===id)return; // already preloading/preloaded this one
+  state._preloadId=id;
+  state._preloadPromise=(async()=>{
     try{
       const[dr,cr]=await Promise.all([
-        fetch(`https://api.themoviedb.org/3/movie/${id}?api_key=${encodeURIComponent(tmdbKey)}`),
-        fetch(`https://api.themoviedb.org/3/movie/${id}/credits?api_key=${encodeURIComponent(tmdbKey)}`)
+        fetch(`https://api.themoviedb.org/3/movie/${id}?api_key=${encodeURIComponent(state.tmdbKey)}`),
+        fetch(`https://api.themoviedb.org/3/movie/${id}/credits?api_key=${encodeURIComponent(state.tmdbKey)}`)
       ]);
       if(!dr.ok)return null;
       const d=await dr.json(),c=cr.ok?await cr.json():null;
@@ -126,9 +126,9 @@ async function selectMovie(id){
 
   let d,c;
   // Use preloaded data if available (may still be in-flight — awaiting is still faster than a cold fetch)
-  if(_preloadId===id&&_preloadPromise){
-    const cached=await _preloadPromise;
-    _preloadId=null;_preloadPromise=null;
+  if(state._preloadId===id&&state._preloadPromise){
+    const cached=await state._preloadPromise;
+    state._preloadId=null;state._preloadPromise=null;
     if(cached&&cached.id===id){d=cached.d;c=cached.c;}
   }
 
@@ -137,8 +137,8 @@ async function selectMovie(id){
     document.getElementById('searchSpinner').classList.add('active');
     try{
       const[dr,cr]=await Promise.all([
-        fetch(`https://api.themoviedb.org/3/movie/${id}?api_key=${encodeURIComponent(tmdbKey)}`),
-        fetch(`https://api.themoviedb.org/3/movie/${id}/credits?api_key=${encodeURIComponent(tmdbKey)}`)
+        fetch(`https://api.themoviedb.org/3/movie/${id}?api_key=${encodeURIComponent(state.tmdbKey)}`),
+        fetch(`https://api.themoviedb.org/3/movie/${id}/credits?api_key=${encodeURIComponent(state.tmdbKey)}`)
       ]);
       if(!dr.ok)throw new Error('TMDB '+dr.status);
       d=await dr.json();c=cr.ok?await cr.json():null;
@@ -163,8 +163,8 @@ async function selectMovie(id){
   document.getElementById('fPoster').value=p;updatePosterPreview(p);
   if(!document.getElementById('fNotes').value)document.getElementById('fNotes').value=d.overview||'';
   document.getElementById('searchInput').value='';
-  _pendingTmdbId=id;
-  _pendingReleaseDate=d.release_date||null;
+  state._pendingTmdbId=id;
+  state._pendingReleaseDate=d.release_date||null;
   h.textContent=`Filled from TMDB: "${d.title}". Edit details below.`;h.classList.add('visible');
   updateModalJustWatch();updateModalLetterboxd();
   // Remove focus from the search input after selection
@@ -182,8 +182,8 @@ async function selectMovie(id){
 }
 
 async function backfillRuntimes(){
-  if(!tmdbKey)return;
-  const needsFill=movies.filter(m=>m.runtime===undefined||m.runtime===null);
+  if(!state.tmdbKey)return;
+  const needsFill=state.movies.filter(m=>m.runtime===undefined||m.runtime===null);
   if(!needsFill.length)return;
   let changed=false;
   for(const m of needsFill){
@@ -192,18 +192,18 @@ async function backfillRuntimes(){
       // next backfill instead of being permanently stamped with runtime 0.
       let runtime=0;
       if(m.tmdbId){
-        const res=await fetch(`https://api.themoviedb.org/3/movie/${m.tmdbId}?api_key=${encodeURIComponent(tmdbKey)}`);
+        const res=await fetch(`https://api.themoviedb.org/3/movie/${m.tmdbId}?api_key=${encodeURIComponent(state.tmdbKey)}`);
         if(!res.ok)throw new Error('TMDB '+res.status);
         const d=await res.json();runtime=d.runtime||0;
       } else if(m.title){
         const q=encodeURIComponent(m.title.replace(/[-\u2010-\u2015]/g,' ').replace(/\s+/g,' ').trim());
         const yr=m.year?`&year=${m.year}`:'';
-        const res=await fetch(`https://api.themoviedb.org/3/search/movie?api_key=${encodeURIComponent(tmdbKey)}&query=${q}${yr}&include_adult=false`);
+        const res=await fetch(`https://api.themoviedb.org/3/search/movie?api_key=${encodeURIComponent(state.tmdbKey)}&query=${q}${yr}&include_adult=false`);
         if(!res.ok)throw new Error('TMDB '+res.status);
         const d=await res.json();
         if(d.results&&d.results.length){
           const best=d.results[0];
-          const dr=await fetch(`https://api.themoviedb.org/3/movie/${best.id}?api_key=${encodeURIComponent(tmdbKey)}`);
+          const dr=await fetch(`https://api.themoviedb.org/3/movie/${best.id}?api_key=${encodeURIComponent(state.tmdbKey)}`);
           if(!dr.ok)throw new Error('TMDB '+dr.status);
           const dd=await dr.json();runtime=dd.runtime||0;if(!m.tmdbId)m.tmdbId=best.id;
         }
@@ -224,13 +224,13 @@ function rtNeedsFill(m){
 
 async function fetchRtRating(m){
   let imdbId=m.imdbId||null;
-  if(!imdbId&&m.tmdbId&&tmdbKey){
-    const res=await fetch(`https://api.themoviedb.org/3/movie/${encodeURIComponent(m.tmdbId)}/external_ids?api_key=${encodeURIComponent(tmdbKey)}`);
+  if(!imdbId&&m.tmdbId&&state.tmdbKey){
+    const res=await fetch(`https://api.themoviedb.org/3/movie/${encodeURIComponent(m.tmdbId)}/external_ids?api_key=${encodeURIComponent(state.tmdbKey)}`);
     if(res.ok){const d=await res.json();imdbId=d.imdb_id||null;}
   }
   const q=imdbId?`i=${encodeURIComponent(imdbId)}`
     :`t=${encodeURIComponent(m.title)}&type=movie${m.year?`&y=${encodeURIComponent(m.year)}`:''}`;
-  const res=await fetch(`https://www.omdbapi.com/?${q}&apikey=${encodeURIComponent(omdbKey)}`);
+  const res=await fetch(`https://www.omdbapi.com/?${q}&apikey=${encodeURIComponent(state.omdbKey)}`);
   if(!res.ok)throw new Error('OMDb '+res.status);
   const d=await res.json();
   // Invalid key / daily limit hit — stop rather than marking films as "no score"
@@ -240,9 +240,9 @@ async function fetchRtRating(m){
 }
 
 async function backfillRtRatings(){
-  if(!omdbKey||_rtBackfillRunning)return;
-  _rtBackfillRunning=true;
-  const list=movies;
+  if(!state.omdbKey||state._rtBackfillRunning)return;
+  state._rtBackfillRunning=true;
+  const list=state.movies;
   let changed=false;
   try{
     for(const m of list.filter(rtNeedsFill)){
@@ -256,8 +256,8 @@ async function backfillRtRatings(){
       await new Promise(r=>setTimeout(r,200));
     }
   }finally{
-    _rtBackfillRunning=false;
-    if(changed&&list===movies){save();render();}
+    state._rtBackfillRunning=false;
+    if(changed&&list===state.movies){save();render();}
   }
 }
 
@@ -266,7 +266,7 @@ async function backfillReleaseDates(){}
 // ── Trailer button: fetch TMDB videos and open the best YouTube match ─────
 async function openTrailer(tmdbId,btnEl){
   if(!tmdbId)return;
-  if(!tmdbKey){
+  if(!state.tmdbKey){
     showInfoToast('TMDB API key required to load trailers.',3000);
     return;
   }
@@ -276,7 +276,7 @@ async function openTrailer(tmdbId,btnEl){
     btnEl.disabled=true;
   }
   try{
-    const res=await fetch(`https://api.themoviedb.org/3/movie/${tmdbId}/videos?api_key=${encodeURIComponent(tmdbKey)}`);
+    const res=await fetch(`https://api.themoviedb.org/3/movie/${tmdbId}/videos?api_key=${encodeURIComponent(state.tmdbKey)}`);
     if(!res.ok)throw new Error('TMDB videos request failed');
     const data=await res.json();
     const yt=(data.results||[]).filter(v=>v.site==='YouTube');
@@ -297,4 +297,14 @@ async function openTrailer(tmdbId,btnEl){
   }finally{
     if(btnEl){btnEl.innerHTML=original;btnEl.disabled=false;}
   }
+}
+
+// Run after the first render, and serialize jobs across startup, key entry,
+// remote hydration, and film saves. Backfill functions keep their retry guards.
+function scheduleBackfills(delay=1000,tasks=[backfillRuntimes,backfillReleaseDates,backfillRtRatings]){
+  setTimeout(()=>{
+    state.backfillQueue=state.backfillQueue.then(async()=>{
+      for(const task of tasks) await task();
+    }).catch(error=>console.warn('[Backfill] Metadata update failed:',error));
+  },delay);
 }

@@ -39,8 +39,8 @@ function updateModalLetterboxd(){
   const t=document.getElementById('fTitle').value.trim(),el=document.getElementById('modalLetterboxd');
   if(!el)return;
   if(t){
-    const m=editingId?movies.find(x=>x.id===editingId):null;
-    const url=(m?.tmdbId||_pendingTmdbId)?`https://letterboxd.com/tmdb/${m?.tmdbId||_pendingTmdbId}/`:`https://letterboxd.com/search/films/${encodeURIComponent(t)}/`;
+    const m=state.editingId?state.movies.find(x=>x.id===state.editingId):null;
+    const url=(m?.tmdbId||state._pendingTmdbId)?`https://letterboxd.com/tmdb/${m?.tmdbId||state._pendingTmdbId}/`:`https://letterboxd.com/search/films/${encodeURIComponent(t)}/`;
     el.href=url;el.style.opacity='1';el.style.pointerEvents='';
   }else{el.href='#';el.style.opacity='0.35';el.style.pointerEvents='none';}
 }
@@ -52,7 +52,7 @@ function updatePosterPreview(url){
 }
 
 function editDateWatched(id){
-  const m=movies.find(x=>x.id===id);if(!m)return;
+  const m=state.movies.find(x=>x.id===id);if(!m)return;
   const el=document.getElementById('detailDateWatched');if(!el)return;
   const cur=m.dateWatched?localDateStr(new Date(m.dateWatched)):localDateStr(new Date());
   const today=localDateStr(new Date());
@@ -65,14 +65,14 @@ function editDateWatched(id){
 }
 
 function saveDateWatched(id){
-  const m=movies.find(x=>x.id===id);if(!m)return;
+  const m=state.movies.find(x=>x.id===id);if(!m)return;
   const val=document.getElementById('dateWatchedPicker')?.value;
   if(val){m.dateWatched=new Date(val+'T12:00:00').toISOString();save();render();}
   openDetail(id);
 }
 
 function editDateAdded(id){
-  const m=movies.find(x=>x.id===id);if(!m)return;
+  const m=state.movies.find(x=>x.id===id);if(!m)return;
   const el=document.getElementById('detailDateAdded');if(!el)return;
   const cur=m.dateAdded?localDateStr(new Date(m.dateAdded)):localDateStr(new Date());
   const today=localDateStr(new Date());
@@ -85,15 +85,15 @@ function editDateAdded(id){
 }
 
 function saveDateAdded(id){
-  const m=movies.find(x=>x.id===id);if(!m)return;
+  const m=state.movies.find(x=>x.id===id);if(!m)return;
   const val=document.getElementById('dateAddedPicker')?.value;
   if(val){m.dateAdded=new Date(val+'T12:00:00').toISOString();save();render();}
   openDetail(id);
 }
 
 function openDetail(id){
-  if(window.selectionMode){ toggleSelect(id); return; }
-  const m=movies.find(x=>x.id===id);if(!m)return;
+  if(state.selectionMode){ toggleSelect(id); return; }
+  const m=state.movies.find(x=>x.id===id);if(!m)return;
   const soonAllowed=!m.graveyard&&!m.watched;
   const posterInner=m.poster?`<img class="detail-poster" src="${esc(m.poster)}" alt="${esc(m.title)}" onerror="this.outerHTML='<div class=\\'detail-poster-placeholder\\'>&#127917;</div>'">`:`<div class="detail-poster-placeholder">&#127917;</div>`;
   const ph=m.graveyard
@@ -124,7 +124,7 @@ function openDetail(id){
       ${m.watchWith?`<div class="detail-watch-with"><span class="detail-watch-with-chip" onclick="filterByWatchWith(${esc(JSON.stringify(m.watchWith))})" title="Show all films tagged ${esc(m.watchWith)}">👥 ${esc(m.watchWith)}</span></div>`:''}
     </div></div>
     <div class="detail-services-section"><div class="detail-services-title">Where to Watch</div><div class="detail-services-grid">${svc}</div></div>
-    ${categorySettings[m.category]?.detached?`<div style="margin-top:12px;display:flex;align-items:center;gap:12px;padding:9px 14px;background:rgba(201,168,76,0.04);border:1px solid rgba(201,168,76,0.12);border-radius:var(--radius);"><div style="flex:1;"><div style="font-size:0.68rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-dim);">Show in main list</div><div style="font-size:0.62rem;color:var(--text-muted);margin-top:1px;">Exception to detached category</div></div><label class="toggle-row" style="margin:0;flex-shrink:0;"><input type="checkbox" ${m.detachExempt?'checked':''} onchange="toggleDetachExempt(${jsAttr(m.id)})"><span class="track"></span></label></div>`:''}
+    ${state.categorySettings[m.category]?.detached?`<div style="margin-top:12px;display:flex;align-items:center;gap:12px;padding:9px 14px;background:rgba(201,168,76,0.04);border:1px solid rgba(201,168,76,0.12);border-radius:var(--radius);"><div style="flex:1;"><div style="font-size:0.68rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-dim);">Show in main list</div><div style="font-size:0.62rem;color:var(--text-muted);margin-top:1px;">Exception to detached category</div></div><label class="toggle-row" style="margin:0;flex-shrink:0;"><input type="checkbox" ${m.detachExempt?'checked':''} onchange="toggleDetachExempt(${jsAttr(m.id)})"><span class="track"></span></label></div>`:''}
     <div style="margin-top:20px;display:flex;gap:10px;justify-content:space-between;align-items:center;flex-wrap:wrap;">
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
         ${m.tmdbId?`<button class="btn-trailer" onclick="openTrailer(${jsAttr(m.tmdbId)},this)" title="Watch trailer on YouTube"><span class="trailer-dot"></span>Trailer</button>`:''}
@@ -142,7 +142,7 @@ function openDetail(id){
     </div>`;
   const _detailWasOpen=document.getElementById('detailModal').classList.contains('open');
   document.getElementById('detailModal').classList.add('open');
-  currentDetailId=id;
+  state.currentDetailId=id;
   if(!_detailWasOpen)lockScroll();
   const dn=document.getElementById('detailNotes');
   const dw=document.getElementById('detailNotesWrap');
@@ -165,12 +165,12 @@ function buildDetailSvc(m){
   return o||`<span class="detail-service-pill other">Other</span>`;
 }
 
-function closeDetail(){if(!document.getElementById('detailModal').classList.contains('open'))return;document.getElementById('detailModal').classList.remove('open');currentDetailId=null;unlockScroll();}
+function closeDetail(){if(!document.getElementById('detailModal').classList.contains('open'))return;document.getElementById('detailModal').classList.remove('open');state.currentDetailId=null;unlockScroll();}
 
 function handleDetailOverlay(e){if(e.target===document.getElementById('detailModal'))closeDetail();}
 
 function toggleWatched(id){
-  const m=movies.find(x=>x.id===id);
+  const m=state.movies.find(x=>x.id===id);
   if(m){
     m.watched=!m.watched;
     if(m.watched){m.watchingSoon=false;m.dateWatched=new Date().toISOString();m.rewatch=false;m.rewatchingSoon=false;}
@@ -182,7 +182,7 @@ function toggleWatched(id){
 function openEditFromDetail(id){closeDetail();setTimeout(()=>openEditModal(id),100);}
 
 function toggleGraveyard(id){
-  const m=movies.find(x=>x.id===id);
+  const m=state.movies.find(x=>x.id===id);
   if(m){
     m.graveyard=!m.graveyard;
     // Moving to graveyard clears watched and watchingSoon flags
@@ -192,7 +192,7 @@ function toggleGraveyard(id){
 }
 
 function toggleRewatch(id){
-  const m=movies.find(x=>x.id===id);
+  const m=state.movies.find(x=>x.id===id);
   if(m&&m.watched){
     m.rewatch=!m.rewatch;
     if(!m.rewatch)m.rewatchingSoon=false;
@@ -201,7 +201,7 @@ function toggleRewatch(id){
 }
 
 function toggleWatchingSoon(id){
-  const m=movies.find(x=>x.id===id);
+  const m=state.movies.find(x=>x.id===id);
   if(m){
     m.watchingSoon=!m.watchingSoon;
     if(m.watchingSoon&&m.streaming?.cinema?.coming){
@@ -212,7 +212,7 @@ function toggleWatchingSoon(id){
 }
 
 function toggleRewatchingSoon(id){
-  const m=movies.find(x=>x.id===id);
+  const m=state.movies.find(x=>x.id===id);
   if(m&&m.watched&&m.rewatch){
     m.rewatchingSoon=!m.rewatchingSoon;
     save();render();openDetail(id);
@@ -220,54 +220,54 @@ function toggleRewatchingSoon(id){
 }
 
 function lockScroll() {
-  if (_scrollLockCount === 0) {
-    _scrollLockY = window.scrollY;
-    document.body.style.setProperty('--scroll-y', `-${_scrollLockY}px`);
+  if (state._scrollLockCount === 0) {
+    state._scrollLockY = window.scrollY;
+    document.body.style.setProperty('--scroll-y', `-${state._scrollLockY}px`);
     document.body.classList.add('modal-open');
   }
-  _scrollLockCount++;
+  state._scrollLockCount++;
 }
 
 function unlockScroll() {
-  _scrollLockCount = Math.max(0, _scrollLockCount - 1);
-  if (_scrollLockCount === 0) {
+  state._scrollLockCount = Math.max(0, state._scrollLockCount - 1);
+  if (state._scrollLockCount === 0) {
     document.body.classList.remove('modal-open');
     document.body.style.removeProperty('--scroll-y');
-    window.scrollTo({ top: _scrollLockY, behavior: 'instant' });
+    window.scrollTo({ top: state._scrollLockY, behavior: 'instant' });
   }
 }
 
 function openAddModal(){
-  editingId=null;document.getElementById('modalTitle').textContent=christmasMode?'🎄 Add Christmas Film':'Add Film';clearForm();
+  state.editingId=null;document.getElementById('modalTitle').textContent=state.christmasMode?'🎄 Add Christmas Film':'Add Film';clearForm();
   document.getElementById('deleteRow').style.display='none';
   document.getElementById('addModal').classList.add('open');
   lockScroll();
   updateModalJustWatch();updateModalLetterboxd();populateCollectionSuggestions();populateCategorySuggestions();populateWatchWithSuggestions();
   expandMovieDetails();
-  if(tmdbKey)setTimeout(()=>document.getElementById('searchInput').focus(),80);
+  if(state.tmdbKey)setTimeout(()=>document.getElementById('searchInput').focus(),80);
   else document.getElementById('fTitle').focus();
 }
 
 function populateCollectionSuggestions(){
-  _collectionNames=[...new Set(movies.map(m=>m.collection).filter(Boolean))].sort();
+  state._collectionNames=[...new Set(state.movies.map(m=>m.collection).filter(Boolean))].sort();
 }
 
 function populateCategorySuggestions(){
-  _categoryNames=[...new Set(movies.map(m=>m.category).filter(Boolean))].sort();
+  state._categoryNames=[...new Set(state.movies.map(m=>m.category).filter(Boolean))].sort();
 }
 
 function filterCollectionSuggestions(){
   const dd=document.getElementById('collectionDropdown');
   const q=document.getElementById('fCollection').value.trim().toLowerCase();
-  const matches=q?_collectionNames.filter(n=>n.toLowerCase().includes(q)):_collectionNames;
-  collectionHighlightIndex=-1;
+  const matches=q?state._collectionNames.filter(n=>n.toLowerCase().includes(q)):state._collectionNames;
+  state.collectionHighlightIndex=-1;
   if(!matches.length){dd.style.display='none';return;}
   dd.innerHTML=matches.map(n=>`<div class="col-suggestion" data-name="${esc(n)}" onmousedown="pickCollection(${jsAttr(n)})"><span class="col-icon">&#127916;</span>${esc(n)}</div>`).join('');
   dd.style.display='';
 }
 
 function hideCollectionSuggestions(){
-  collectionHighlightIndex=-1;
+  state.collectionHighlightIndex=-1;
   document.getElementById('collectionDropdown').style.display='none';
 }
 
@@ -283,35 +283,35 @@ function onCollectionKeyDown(e){
   if(!items.length)return;
   if(e.key==='ArrowDown'){
     e.preventDefault();
-    collectionHighlightIndex=Math.min(collectionHighlightIndex+1,items.length-1);
+    state.collectionHighlightIndex=Math.min(state.collectionHighlightIndex+1,items.length-1);
     updateCollectionHighlight(items);
   }else if(e.key==='ArrowUp'){
     e.preventDefault();
-    collectionHighlightIndex=Math.max(collectionHighlightIndex-1,-1);
+    state.collectionHighlightIndex=Math.max(state.collectionHighlightIndex-1,-1);
     updateCollectionHighlight(items);
   }else if(e.key==='Enter'){
-    const target=collectionHighlightIndex>=0?items[collectionHighlightIndex]:items[0];
+    const target=state.collectionHighlightIndex>=0?items[state.collectionHighlightIndex]:items[0];
     if(target){e.preventDefault();e.stopPropagation();pickCollection(target.dataset.name);}
   }
 }
 
 function updateCollectionHighlight(items){
-  items.forEach((el,i)=>el.classList.toggle('active',i===collectionHighlightIndex));
-  if(collectionHighlightIndex>=0)items[collectionHighlightIndex].scrollIntoView({block:'nearest'});
+  items.forEach((el,i)=>el.classList.toggle('active',i===state.collectionHighlightIndex));
+  if(state.collectionHighlightIndex>=0)items[state.collectionHighlightIndex].scrollIntoView({block:'nearest'});
 }
 
 function filterCategorySuggestions(){
   const dd=document.getElementById('categoryDropdown');
   const q=document.getElementById('fCategory').value.trim().toLowerCase();
-  const matches=q?_categoryNames.filter(n=>n.toLowerCase().includes(q)):_categoryNames;
-  categoryHighlightIndex=-1;
+  const matches=q?state._categoryNames.filter(n=>n.toLowerCase().includes(q)):state._categoryNames;
+  state.categoryHighlightIndex=-1;
   if(!matches.length){dd.style.display='none';return;}
   dd.innerHTML=matches.map(n=>`<div class="cat-suggestion" data-name="${esc(n)}" onmousedown="pickCategory(${jsAttr(n)})"><span class="cat-icon">&#128196;</span>${esc(n)}</div>`).join('');
   dd.style.display='';
 }
 
 function hideCategorySuggestions(){
-  categoryHighlightIndex=-1;
+  state.categoryHighlightIndex=-1;
   document.getElementById('categoryDropdown').style.display='none';
 }
 
@@ -327,42 +327,42 @@ function onCategoryKeyDown(e){
   if(!items.length)return;
   if(e.key==='ArrowDown'){
     e.preventDefault();
-    categoryHighlightIndex=Math.min(categoryHighlightIndex+1,items.length-1);
+    state.categoryHighlightIndex=Math.min(state.categoryHighlightIndex+1,items.length-1);
     updateCategoryHighlight(items);
   }else if(e.key==='ArrowUp'){
     e.preventDefault();
-    categoryHighlightIndex=Math.max(categoryHighlightIndex-1,-1);
+    state.categoryHighlightIndex=Math.max(state.categoryHighlightIndex-1,-1);
     updateCategoryHighlight(items);
   }else if(e.key==='Enter'){
-    const target=categoryHighlightIndex>=0?items[categoryHighlightIndex]:items[0];
+    const target=state.categoryHighlightIndex>=0?items[state.categoryHighlightIndex]:items[0];
     if(target){e.preventDefault();e.stopPropagation();pickCategory(target.dataset.name);}
   }
 }
 
 function updateCategoryHighlight(items){
-  items.forEach((el,i)=>el.classList.toggle('active',i===categoryHighlightIndex));
-  if(categoryHighlightIndex>=0)items[categoryHighlightIndex].scrollIntoView({block:'nearest'});
+  items.forEach((el,i)=>el.classList.toggle('active',i===state.categoryHighlightIndex));
+  if(state.categoryHighlightIndex>=0)items[state.categoryHighlightIndex].scrollIntoView({block:'nearest'});
 }
 
 // ── Watching-With (companion) suggestions ─────────────────────────────────
 // Mirrors the category suggestion pattern: cached list, filtered dropdown,
 // arrow-key + Enter navigation.
 function populateWatchWithSuggestions(){
-  _watchWithNames=[...new Set(movies.map(m=>m.watchWith).filter(Boolean))].sort();
+  state._watchWithNames=[...new Set(state.movies.map(m=>m.watchWith).filter(Boolean))].sort();
 }
 
 function filterWatchWithSuggestions(){
   const dd=document.getElementById('watchWithDropdown');
   const q=document.getElementById('fWatchWith').value.trim().toLowerCase();
-  const matches=q?_watchWithNames.filter(n=>n.toLowerCase().includes(q)):_watchWithNames;
-  watchWithHighlightIndex=-1;
+  const matches=q?state._watchWithNames.filter(n=>n.toLowerCase().includes(q)):state._watchWithNames;
+  state.watchWithHighlightIndex=-1;
   if(!matches.length){dd.style.display='none';return;}
   dd.innerHTML=matches.map(n=>`<div class="cat-suggestion" data-name="${esc(n)}" onmousedown="pickWatchWith(${jsAttr(n)})"><span class="cat-icon">👥</span>${esc(n)}</div>`).join('');
   dd.style.display='';
 }
 
 function hideWatchWithSuggestions(){
-  watchWithHighlightIndex=-1;
+  state.watchWithHighlightIndex=-1;
   document.getElementById('watchWithDropdown').style.display='none';
 }
 
@@ -378,27 +378,27 @@ function onWatchWithKeyDown(e){
   if(!items.length)return;
   if(e.key==='ArrowDown'){
     e.preventDefault();
-    watchWithHighlightIndex=Math.min(watchWithHighlightIndex+1,items.length-1);
+    state.watchWithHighlightIndex=Math.min(state.watchWithHighlightIndex+1,items.length-1);
     updateWatchWithHighlight(items);
   }else if(e.key==='ArrowUp'){
     e.preventDefault();
-    watchWithHighlightIndex=Math.max(watchWithHighlightIndex-1,-1);
+    state.watchWithHighlightIndex=Math.max(state.watchWithHighlightIndex-1,-1);
     updateWatchWithHighlight(items);
   }else if(e.key==='Enter'){
-    const target=watchWithHighlightIndex>=0?items[watchWithHighlightIndex]:items[0];
+    const target=state.watchWithHighlightIndex>=0?items[state.watchWithHighlightIndex]:items[0];
     if(target){e.preventDefault();e.stopPropagation();pickWatchWith(target.dataset.name);}
   }
 }
 
 function updateWatchWithHighlight(items){
-  items.forEach((el,i)=>el.classList.toggle('active',i===watchWithHighlightIndex));
-  if(watchWithHighlightIndex>=0)items[watchWithHighlightIndex].scrollIntoView({block:'nearest'});
+  items.forEach((el,i)=>el.classList.toggle('active',i===state.watchWithHighlightIndex));
+  if(state.watchWithHighlightIndex>=0)items[state.watchWithHighlightIndex].scrollIntoView({block:'nearest'});
 }
 
 // ── Watching-With filter (set from detail modal chip) ─────────────────────
 function filterByWatchWith(name){
   if(!name)return;
-  currentWatchWith=name;
+  state.currentWatchWith=name;
   closeDetail();
   // Scroll the grid into view so the filtered result is immediately visible
   window.scrollTo({top:0,behavior:'smooth'});
@@ -406,13 +406,13 @@ function filterByWatchWith(name){
 }
 
 function clearWatchWithFilter(){
-  currentWatchWith=null;
+  state.currentWatchWith=null;
   render();
 }
 
 function openEditModal(id){
-  const m=movies.find(x=>x.id===id);if(!m)return;
-  editingId=id;document.getElementById('modalTitle').textContent=christmasMode?'🎄 Edit Christmas Film':'Edit Film';
+  const m=state.movies.find(x=>x.id===id);if(!m)return;
+  state.editingId=id;document.getElementById('modalTitle').textContent=state.christmasMode?'🎄 Edit Christmas Film':'Edit Film';
   document.getElementById('deleteRow').style.display='flex';
   populateForm(m);document.getElementById('addModal').classList.add('open');lockScroll();updateModalJustWatch();updateModalLetterboxd();populateCollectionSuggestions();populateCategorySuggestions();populateWatchWithSuggestions();
   expandMovieDetails();
@@ -424,8 +424,8 @@ function closeAddModal(){
   document.getElementById('addModal').classList.remove('open');
   document.getElementById('searchResults').classList.remove('open');
   document.getElementById('searchHint').classList.remove('visible');
-  editingId=null;
-  _pendingTmdbId=null;_pendingReleaseDate=null;
+  state.editingId=null;
+  state._pendingTmdbId=null;state._pendingReleaseDate=null;
   unlockScroll();
 }
 
@@ -442,7 +442,7 @@ function clearForm(){
   document.getElementById('posterThumb').innerHTML='&#127917;';
   document.getElementById('searchResults').classList.remove('open');
   document.getElementById('searchHint').classList.remove('visible');
-  _pendingTmdbId=null;_pendingReleaseDate=null;
+  state._pendingTmdbId=null;state._pendingReleaseDate=null;
 }
 
 function populateForm(m){
@@ -498,7 +498,7 @@ function saveMovie(){
     if(d||v)streaming[k]={direct:!!d,vpn:!!v,vpnCountry:v?vc:''};
   }
   // Handle cinema "coming soon" as a separate toggle
-  const existing=editingId?movies.find(m=>m.id===editingId):null;
+  const existing=state.editingId?state.movies.find(m=>m.id===state.editingId):null;
   const comingSoon=document.querySelector('.toggle-chip[data-service="cinema"][data-type="coming"]')?.classList.contains('active');
   if(comingSoon){
     if(!streaming.cinema)streaming.cinema={direct:false,vpn:false,vpnCountry:''};
@@ -506,7 +506,7 @@ function saveMovie(){
   }
   const watched=document.getElementById('fWatched').checked;
   const movie={
-    id:editingId||crypto.randomUUID(),
+    id:state.editingId||crypto.randomUUID(),
     title,
     year:document.getElementById('fYear').value.trim(),
     releaseDate:document.getElementById('fReleaseDate').value.trim()||existing?.releaseDate,
@@ -520,8 +520,8 @@ function saveMovie(){
     collection:document.getElementById('fCollection').value.trim(),
     category:document.getElementById('fCategory').value.trim(),
     watchWith:document.getElementById('fWatchWith').value.trim(),
-    tmdbId:_pendingTmdbId||existing?.tmdbId||null,
-    ...(existing&&(!_pendingTmdbId||_pendingTmdbId===existing.tmdbId)&&existing.title===title&&(existing.year||'')===document.getElementById('fYear').value.trim()
+    tmdbId:state._pendingTmdbId||existing?.tmdbId||null,
+    ...(existing&&(!state._pendingTmdbId||state._pendingTmdbId===existing.tmdbId)&&existing.title===title&&(existing.year||'')===document.getElementById('fYear').value.trim()
       ?{rtRating:existing.rtRating,rtCheckedAt:existing.rtCheckedAt,imdbId:existing.imdbId}:{}),
     detachExempt:existing?.detachExempt||false,
     graveyard:existing?.graveyard||false,
@@ -534,11 +534,10 @@ function saveMovie(){
     dateAdded:existing?.dateAdded||new Date().toISOString(),
     dateWatched:watched?(existing?.dateWatched||(existing?.watched?undefined:new Date().toISOString())):undefined,
   };
-  if(editingId){const i=movies.findIndex(m=>m.id===editingId);if(i!==-1)movies[i]=movie;}
-  else movies.push(movie);
+  if(state.editingId){const i=state.movies.findIndex(m=>m.id===state.editingId);if(i!==-1)state.movies[i]=movie;}
+  else state.movies.push(movie);
   save();closeAddModal();render();
-  setTimeout(backfillReleaseDates,500);
-  setTimeout(backfillRtRatings,700);
+  scheduleBackfills(500,[backfillReleaseDates,backfillRtRatings]);
   // Suppress the fadeIn re-animation on every card/row that already existed —
   // only the newly added/edited entry should animate into view.
   const savedId=movie.id;
@@ -550,11 +549,11 @@ function saveMovie(){
 }
 
 function deleteCurrentMovie(){
-  if(!editingId)return;
-  const m=movies.find(x=>x.id===editingId);if(!m)return;
-  undoStack.push(JSON.parse(JSON.stringify(movies)));
-  redoStack=[];
-  movies=movies.filter(x=>x.id!==editingId);
+  if(!state.editingId)return;
+  const m=state.movies.find(x=>x.id===state.editingId);if(!m)return;
+  state.undoStack.push(JSON.parse(JSON.stringify(state.movies)));
+  state.redoStack=[];
+  state.movies=state.movies.filter(x=>x.id!==state.editingId);
   save();closeAddModal();render();
   showDeleteToast(m.title);
 }
@@ -570,16 +569,16 @@ function showDeleteToast(title){
 function dismissToast(t){clearTimeout(t._timer);t.classList.add('out');setTimeout(()=>t.remove(),220);}
 
 function undoDelete(toast){
-  if(!undoStack.length)return;
-  redoStack.push(JSON.parse(JSON.stringify(movies)));
-  movies=undoStack.pop();save();render();dismissToast(toast);
+  if(!state.undoStack.length)return;
+  state.redoStack.push(JSON.parse(JSON.stringify(state.movies)));
+  state.movies=state.undoStack.pop();save();render();dismissToast(toast);
   showInfoToast('Deletion undone.',3000);
 }
 
 function redoDelete(){
-  if(!redoStack.length)return;
-  undoStack.push(JSON.parse(JSON.stringify(movies)));
-  movies=redoStack.pop();save();render();
+  if(!state.redoStack.length)return;
+  state.undoStack.push(JSON.parse(JSON.stringify(state.movies)));
+  state.movies=state.redoStack.pop();save();render();
   showInfoToast('Deletion redone.',3000);
 }
 
@@ -591,9 +590,9 @@ function showInfoToast(msg,dur=3000){
 }
 
 function toggleCategoryDetached(){
-  if(!currentCategory)return;
-  if(!categorySettings[currentCategory])categorySettings[currentCategory]={};
-  categorySettings[currentCategory].detached=!categorySettings[currentCategory].detached;
+  if(!state.currentCategory)return;
+  if(!state.categorySettings[state.currentCategory])state.categorySettings[state.currentCategory]={};
+  state.categorySettings[state.currentCategory].detached=!state.categorySettings[state.currentCategory].detached;
   saveCategorySettings();
   render();
 }
@@ -604,15 +603,15 @@ function openAddModalWithCategory(cat){
 }
 
 function dismissCategoryOptions(){
-  categoryOptionsDismissed=true;
-  localStorage.setItem('category_options_dismissed','1');
+  state.categoryOptionsDismissed=true;
+  writeStorage('category_options_dismissed','1');
   document.getElementById('categoryOptions').classList.remove('visible');
   document.getElementById('categoryOptions').innerHTML='';
 }
 
 function openPillMenu(e,btn,name){
   e.stopPropagation();e.preventDefault();
-  const isDetached=!!(categorySettings[name]?.detached);
+  const isDetached=!!(state.categorySettings[name]?.detached);
   const pop=document.getElementById('categoryPillPopover');
   pop.innerHTML=`<div class="popover-label">Category options</div>
     <label class="toggle-row" style="gap:10px;cursor:pointer;">
@@ -635,19 +634,19 @@ function closePillMenu(){
 }
 
 function toggleCategoryDetachedByName(name){
-  if(!categorySettings[name])categorySettings[name]={};
-  categorySettings[name].detached=!categorySettings[name].detached;
+  if(!state.categorySettings[name])state.categorySettings[name]={};
+  state.categorySettings[name].detached=!state.categorySettings[name].detached;
   saveCategorySettings();
   render();
   // Keep popover open so the user can see the new state
   // Re-open with fresh state
   const pop=document.getElementById('categoryPillPopover');
   const toggle=pop.querySelector('input[type=checkbox]');
-  if(toggle)toggle.checked=!!(categorySettings[name]?.detached);
+  if(toggle)toggle.checked=!!(state.categorySettings[name]?.detached);
 }
 
 function toggleDetachExempt(id){
-  const m=movies.find(x=>x.id===id);if(!m)return;
+  const m=state.movies.find(x=>x.id===id);if(!m)return;
   m.detachExempt=!m.detachExempt;
   save();render();openDetail(id);
 }
@@ -659,7 +658,7 @@ function openSurpriseModal(){
   ra.classList.remove('revealed');
   document.getElementById('surpriseActionRow').innerHTML =
     `<button class="btn btn-primary" style="flex:1;justify-content:center;" onclick="runSurprise()">🎲 Surprise Me</button>`;
-  _surpriseSeenIds = new Set();
+  state._surpriseSeenIds = new Set();
   updateSurprisePoolCount();
   document.getElementById('surpriseModal').classList.add('open');
   lockScroll();
@@ -668,7 +667,7 @@ function openSurpriseModal(){
 function closeSurpriseModal(){
   if(!document.getElementById('surpriseModal').classList.contains('open')) return;
   document.getElementById('surpriseModal').classList.remove('open');
-  _surpriseSeenIds = new Set();
+  state._surpriseSeenIds = new Set();
   unlockScroll();
 }
 
@@ -682,7 +681,7 @@ function toggleSurpriseChip(btn){
 }
 
 function onSurpriseOptionChange(){
-  _surpriseSeenIds = new Set(); // pool may have changed; reset suggestion history
+  state._surpriseSeenIds = new Set(); // pool may have changed; reset suggestion history
   updateSurprisePoolCount();
   // Clear any existing result since filters changed
   const ra = document.getElementById('surpriseResultArea');
@@ -729,7 +728,7 @@ function getSurprisePool(){
   const anyService = active.length === 0;
 
   // Base pool: unwatched, non-graveyard, non-detached
-  let pool = movies.filter(m => !m.watched && !m.graveyard && !isDetachedMovie(m));
+  let pool = state.movies.filter(m => !m.watched && !m.graveyard && !isDetachedMovie(m));
 
   // Service filter
   if(!anyService){
@@ -758,7 +757,7 @@ function getSurprisePool(){
     if(!m.collection) return true;
 
     // Sort all films in this collection by year (films without a year go last)
-    const siblings = movies
+    const siblings = state.movies
       .filter(x => x.collection === m.collection)
       .sort((a,b)=>{const va=a.releaseDate?new Date(a.releaseDate+'T00:00:00').getTime():a.year?new Date(a.year+'-01-01T00:00:00').getTime():9e15;const vb=b.releaseDate?new Date(b.releaseDate+'T00:00:00').getTime():b.year?new Date(b.year+'-01-01T00:00:00').getTime():9e15;return va-vb;});
 
@@ -819,14 +818,14 @@ function runSurprise(){
 
   // Exclude every film already suggested this session.
   // If the entire pool has been exhausted, reset and start fresh.
-  let candidates = pool.filter(m => !_surpriseSeenIds.has(m.id));
+  let candidates = pool.filter(m => !state._surpriseSeenIds.has(m.id));
   if(!candidates.length){
-    _surpriseSeenIds = new Set();
+    state._surpriseSeenIds = new Set();
     candidates = pool;
   }
 
   const m = candidates[Math.floor(Math.random() * candidates.length)];
-  _surpriseSeenIds.add(m.id);
+  state._surpriseSeenIds.add(m.id);
 
   showSurprisePick(m);
 }
@@ -842,7 +841,7 @@ function showSurprisePick(m){
   // Collection position note
   let collNote = '';
   if(m.collection){
-    const siblings = movies
+    const siblings = state.movies
       .filter(x => x.collection === m.collection)
       .sort((a,b)=>{const va=a.releaseDate?new Date(a.releaseDate+'T00:00:00').getTime():a.year?new Date(a.year+'-01-01T00:00:00').getTime():9e15;const vb=b.releaseDate?new Date(b.releaseDate+'T00:00:00').getTime():b.year?new Date(b.year+'-01-01T00:00:00').getTime():9e15;return va-vb;});
     const idx = siblings.findIndex(x => x.id === m.id);

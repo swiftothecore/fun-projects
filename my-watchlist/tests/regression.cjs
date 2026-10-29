@@ -63,7 +63,7 @@ async function visual(html, prefix) {
       ['detail', "openDetail('one')"],
       ['edit', "closeDetail();openEditModal('one')"],
       ['categories', "closeAddModal();setFilter('categories',document.getElementById('filterCategories'));selectCategory('Weekend')"],
-      ['surprise', "openSurpriseModal();showSurprisePick(movies[0])"],
+      ['surprise', "openSurpriseModal();showSurprisePick(typeof state==='undefined'?movies[0]:getNormalList()[0])"],
       ['import', "closeSurpriseModal();openImportModal();_renderImportPreview([{Name:'First Film',Year:'2024','Watched Date':'2026-10-15'}],'diary.csv')"],
       ['paste', "closeImportModal();openPasteImportModal()"],
       ['footer', "closePasteImportModal();window.scrollTo(0,document.body.scrollHeight)"],
@@ -114,7 +114,7 @@ async function behaviour() {
   await p.evaluate(() => toggleChristmasMode());
   data = await getData(p); assert.equal(data.watchlist.length, fixtures.length); assert.equal(data.christmas.length, 2);
   // Manual paste input, markdown stripping, duplicate skipping and undo.
-  await p.evaluate(() => { omdbKey=''; tmdbKey=''; openPasteImportModal(); document.getElementById('pasteTitlesInput').value='- [ ] Paste One\n2) Paste Two'; _startPasteSearch(); });
+  await p.evaluate(() => { state.omdbKey=''; state.tmdbKey=''; openPasteImportModal(); document.getElementById('pasteTitlesInput').value='- [ ] Paste One\n2) Paste Two'; _startPasteSearch(); });
   await p.locator('#pasteConfirmBtn').waitFor();
   await p.evaluate(() => _pasteConfirmAll());
   assert.equal((await getData(p)).watchlist.length, fixtures.length + 2);
@@ -134,6 +134,64 @@ async function behaviour() {
   await mobile.dispose();
   console.log('PASS search/add/edit/watched/delete/undo/redo, categories/search/views, Christmas separation, paste import/undo, legacy/combined sync payloads, mobile');
 }
+async function stateAndBackfills() {
+  const p = await makePage(); await load(p);
+  const result = await p.evaluate(async () => {
+    const normal = getNormalList(), xmas = getChristmasList();
+    toggleChristmasMode();
+    const stable = normal===getNormalList() && xmas===getChristmasList() && state.movies===xmas;
+    toggleChristmasMode();
+    const nativeStorage = Storage.prototype.setItem.toString().includes('[native code]');
+    save(); const timestamp = Number(localStorage.getItem('_sb_local_ts'));
+    const originals = [backfillRuntimes,backfillReleaseDates,backfillRtRatings];
+    const trace = [];
+    const task = name => async () => { trace.push(name+' start'); await new Promise(r=>setTimeout(r,2)); trace.push(name+' end'); };
+    backfillRuntimes=task('runtime'); backfillReleaseDates=task('release'); backfillRtRatings=task('rt');
+    scheduleBackfills(0); scheduleBackfills(0);
+    await new Promise(r=>setTimeout(r,20)); await state.backfillQueue;
+    [backfillRuntimes,backfillReleaseDates,backfillRtRatings]=originals;
+    const actualFetch = window.fetch;
+    try {
+      state.tmdbKey='fixture'; openAddModal(); document.getElementById('searchInput').value='New';
+      window.fetch=async url=>{
+        const query=new URL(url).searchParams.get('query');
+        if(query==='Old') await new Promise(r=>setTimeout(r,40));
+        return {ok:true,json:async()=>query?{results:[{id:42,title:query,release_date:'2024-01-01'}]}:{id:42,title:'New',crew:[]}};
+      };
+      await Promise.all([searchTMDB('Old'),searchTMDB('New')]);
+      const latest = document.querySelector('.result-title').textContent;
+      closeAddModal();
+      const movie={id:'fill',title:'Fill',tmdbId:42,streaming:{}};
+      setNormalList([movie]);
+      window.fetch=async()=>({ok:false,status:429});
+      await backfillRuntimes(); const retryable=movie.runtime===undefined;
+      window.fetch=async()=>({ok:true,json:async()=>({runtime:123})});
+      await backfillRuntimes(); const runtime=movie.runtime;
+      state.omdbKey='fixture';
+      window.fetch=async url=>({ok:true,json:async()=>url.includes('external_ids')?{imdb_id:'tt42'}:{Response:'False',Error:'Request limit reached!'}});
+      await backfillRtRatings(); const rtRetryable=movie.rtRating===undefined;
+      window.fetch=async url=>({ok:true,json:async()=>url.includes('external_ids')?{imdb_id:'tt42'}:{Ratings:[{Source:'Rotten Tomatoes',Value:'97%'}]}});
+      await backfillRtRatings();
+      return {stable,nativeStorage,timestamp,trace,latest,retryable,runtime,rtRetryable,rt:movie.rtRating};
+    } finally { window.fetch=actualFetch; }
+  });
+  assert(result.stable && result.nativeStorage && result.timestamp>0);
+  assert.deepEqual(result.trace,['runtime start','runtime end','release start','release end','rt start','rt end','runtime start','runtime end','release start','release end','rt start','rt end']);
+  assert.equal(result.latest,'New'); assert(result.retryable && result.rtRetryable); assert.equal(result.runtime,123); assert.equal(result.rt,'97%');
+  assert.deepEqual(p.errors,[]); await p.dispose();
+  const blocked = await makePage();
+  await blocked.addInitScript(() => {
+    Storage.prototype.getItem = () => { throw new DOMException('Blocked','SecurityError'); };
+    Storage.prototype.setItem = () => { throw new DOMException('Blocked','SecurityError'); };
+  });
+  await blocked.goto(base);
+  await blocked.waitForFunction(() => typeof render==='function' && document.getElementById('movieGrid').children.length>0);
+  await blocked.evaluate(() => { openAddModal(); document.getElementById('fTitle').value='Memory only'; saveMovie(); });
+  assert.equal((await getData(blocked)).watchlist[0].title,'Memory only');
+  assert.deepEqual(blocked.errors,[]); await blocked.dispose();
+  console.log('PASS stable list ownership, native storage untouched, save timestamps, serialized backfills, stale search response rejection, TMDB/OMDb retry guards, blocked storage');
+}
+
 async function security() {
   const evil = `O'Neil "quoted" \\ & <img src=x onerror=window.__injected=1>\nline`;
   const evilId = `id'"\\\n);window.__injected=1;//`;
@@ -166,21 +224,29 @@ async function auth() {
   if (!process.env.WATCHLIST_SUPABASE_SDK) return console.log('SKIP real SDK auth tests (set WATCHLIST_SUPABASE_SDK)');
   const p = await makePage({ sdk: true });
   let row = null, signins = 0, refreshes = 0, writes = 0;
+  let failNextWrite=false, holdNextGet=false, releaseGet;
   function token() {
     const user = { id: '11111111-1111-4111-8111-111111111111', email: 'test@example.com', aud:'authenticated', role:'authenticated' };
     const expires = Math.floor(Date.now()/1000)+3600;
     const jwt = [Buffer.from('{"alg":"HS256","typ":"JWT"}').toString('base64url'), Buffer.from(JSON.stringify({sub:user.id,exp:expires,aud:'authenticated'})).toString('base64url'), 'signature'].join('.');
     return { access_token: jwt, refresh_token:'test-refresh-token', token_type:'bearer', expires_in:3600, expires_at:expires, user };
   }
-  await p.route('https://abcdefghijk.supabase.co/**', async route => {
+  const cloudRoute = async route => {
     const req = route.request(), u = new URL(req.url());
     if (u.pathname.includes('/auth/v1/token')) {
       if (u.searchParams.get('grant_type')==='password') signins++; else refreshes++;
       return route.fulfill({ json: token() });
     }
-    if (req.method()==='POST') { row = req.postDataJSON(); writes++; return route.fulfill({ status:201, body:'' }); }
-    return route.fulfill({ json: row ? [{data:row.data}] : [] });
-  });
+    if (req.method()==='POST') {
+      writes++;
+      if (failNextWrite) { failNextWrite=false; return route.fulfill({status:503,json:{message:'Offline fixture'}}); }
+      row=req.postDataJSON(); return route.fulfill({status:201,body:''});
+    }
+    const response=row ? [{data:structuredClone(row.data)}] : [];
+    if (holdNextGet) { holdNextGet=false; await new Promise(resolve=>{releaseGet=resolve;}); }
+    return route.fulfill({json:response});
+  };
+  await p.route('https://abcdefghijk.supabase.co/**',cloudRoute);
   await load(p);
   await p.evaluate(() => window._sbOpenPanel());
   await p.locator('#_sb_url_in').fill('https://abcdefghijk.supabase.co');
@@ -218,9 +284,55 @@ async function auth() {
   await p.reload();
   await p.waitForFunction(() => document.getElementById('_sb_cloud_btn').title.includes('Loaded'));
   assert.equal(signins,1); assert(refreshes>0);
+  // A failed write is retried at the existing two-second interval.
+  failNextWrite=true;
+  await p.evaluate(() => { getNormalList()[0].notes='Retry this edit'; save(); });
+  await p.waitForFunction(() => localStorage.getItem('_sb_pending')==='1');
+  await p.waitForFunction(() => localStorage.getItem('_sb_pending')===null);
+  assert.equal(row.data.watchlist[0].notes,'Retry this edit');
+  // Persisted pending data wins over the older remote row on reload.
+  failNextWrite=true;
+  await p.evaluate(() => { getNormalList()[0].notes='Pending across reload'; save(); });
+  await p.waitForFunction(() => localStorage.getItem('_sb_pending')==='1');
+  await p.reload();
+  await p.waitForFunction(() => document.getElementById('_sb_cloud_btn').title.includes('Saved'));
+  assert.equal((await getData(p)).watchlist[0].notes,'Pending across reload');
+  assert.equal(row.data.watchlist[0].notes,'Pending across reload');
+  // Edits made during the initial GET are kept even if that GET returns stale data.
+  holdNextGet=true;
+  await p.reload();
+  await p.waitForFunction(() => document.getElementById('_sb_cloud_btn').title==='Loading...');
+  await p.evaluate(() => { getNormalList()[0].notes='Edited during fetch'; save(); });
+  assert(releaseGet); releaseGet();
+  await p.waitForFunction(() => document.getElementById('_sb_cloud_btn').title.includes('Saved'));
+  assert.equal((await getData(p)).watchlist[0].notes,'Edited during fetch');
+  assert.equal(row.data.watchlist[0].notes,'Edited during fetch');
+
   assert.deepEqual(p.errors,[]);
   await p.dispose();
-  console.log('PASS real pinned Supabase SDK sign-in, persisted reload, expired session refresh, config copy/paste, unchanged table/payload');
+  // The auth adapter must retain a session in memory when iOS blocks storage.
+  row=null;
+  const memory=await makePage({sdk:true});
+  await memory.route('https://abcdefghijk.supabase.co/**',cloudRoute);
+  await memory.addInitScript(()=>{
+    Storage.prototype.getItem=()=>{throw new DOMException('Blocked','SecurityError');};
+    Storage.prototype.setItem=()=>{throw new DOMException('Blocked','SecurityError');};
+  });
+  await memory.goto(base);
+  await memory.waitForFunction(()=>typeof window._sbOpenPanel==='function');
+  await memory.evaluate(async()=>{
+    openAddModal();document.getElementById('fTitle').value='Cloud from memory';saveMovie();
+    window._sbOpenPanel();
+    document.getElementById('_sb_url_in').value='https://abcdefghijk.supabase.co';
+    document.getElementById('_sb_key_in').value='test-anon-key';
+    document.getElementById('_sb_email_in').value='test@example.com';
+    document.getElementById('_sb_pass_in').value='type-once-password';
+    await document.getElementById('_sb_save_btn').onclick();
+    await window._sbForceSync();
+  });
+  assert.equal(row.data.watchlist[0].title,'Cloud from memory');
+  assert.deepEqual(memory.errors,[]); await memory.dispose();
+  console.log('PASS real pinned Supabase SDK sign-in, reload/refresh, config copy/paste, retry/pending/conflict handling, unchanged table/payload, in-memory auth fallback');
 }
 (async () => {
   fs.mkdirSync(out,{recursive:true});
@@ -228,6 +340,6 @@ async function auth() {
   try {
     if (process.env.WATCHLIST_BASELINE_HTML) await visual(fs.readFileSync(process.env.WATCHLIST_BASELINE_HTML,'utf8'),'baseline');
     if (!process.env.WATCHLIST_SKIP_VISUAL) await visual(undefined,'current');
-    await behaviour(); await security(); await auth();
+    await behaviour(); await stateAndBackfills(); await security(); await auth();
   } finally { await browser.close(); }
 })().catch(e=>{ console.error(e); process.exitCode=1; });

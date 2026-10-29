@@ -1,10 +1,9 @@
 // Letterboxd CSV import/export, service categorisation, and paste-list review/import.
 // Classic scripts intentionally expose handler functions to inline HTML events.
 
-// 'unwatched' | 'all'
 
 function openExportModal(){
-  _exportScope = 'unwatched';
+  state._exportScope = 'unwatched';
   _renderExportSelect();
   document.getElementById('exportModal').classList.add('open');
   lockScroll();
@@ -23,11 +22,11 @@ function handleExportOverlay(e){
 function _exportPool(){
   // Respects Christmas Mode context — exports whichever list is currently active,
   // and never includes graveyarded films (already given up on, not "to watch").
-  return movies.filter(m=>!m.graveyard);
+  return state.movies.filter(m=>!m.graveyard);
 }
 
 function setExportScope(scope){
-  _exportScope = scope;
+  state._exportScope = scope;
   _renderExportSelect();
 }
 
@@ -35,10 +34,10 @@ function _renderExportSelect(){
   const pool = _exportPool();
   const unwatchedCount = pool.filter(m=>!m.watched).length;
   const allCount = pool.length;
-  const listLabel = christmasMode ? 'Christmas films' : 'films';
+  const listLabel = state.christmasMode ? 'Christmas films' : 'films';
   document.getElementById('exportBody').innerHTML = `
     <div class="import-step-instructions">
-      <p>Generate a CSV file of your${christmasMode?' Christmas':''} watchlist that Letterboxd can import.</p>
+      <p>Generate a CSV file of your${state.christmasMode?' Christmas':''} watchlist that Letterboxd can import.</p>
       <ol>
         <li>Pick which films to include below and click <strong>Download CSV</strong></li>
         <li>On Letterboxd, open your <a href="https://letterboxd.com/watchlist/" target="_blank" rel="noopener" style="color:var(--gold)">Watchlist</a>, then find the <strong>Import</strong> option</li>
@@ -46,10 +45,10 @@ function _renderExportSelect(){
       </ol>
     </div>
     <div style="display:flex;flex-direction:column;gap:10px;">
-      <button class="export-scope-btn${_exportScope==='unwatched'?' active':''}" onclick="setExportScope('unwatched')">
+      <button class="export-scope-btn${state._exportScope==='unwatched'?' active':''}" onclick="setExportScope('unwatched')">
         <span>Unwatched ${listLabel}</span><span class="export-scope-count">${unwatchedCount}</span>
       </button>
-      <button class="export-scope-btn${_exportScope==='all'?' active':''}" onclick="setExportScope('all')">
+      <button class="export-scope-btn${state._exportScope==='all'?' active':''}" onclick="setExportScope('all')">
         <span>All ${listLabel}</span><span class="export-scope-count">${allCount}</span>
       </button>
     </div>
@@ -68,7 +67,7 @@ function _lbCsvField(v){
 
 function runLetterboxdExport(){
   const pool = _exportPool();
-  const list = _exportScope==='unwatched' ? pool.filter(m=>!m.watched) : pool;
+  const list = state._exportScope==='unwatched' ? pool.filter(m=>!m.watched) : pool;
   if(!list.length){ showInfoToast('Nothing to export.',2500); return; }
   const header = 'tmdbID,Title,Year,Directors';
   const rows = list.map(m=>[m.tmdbId||'', m.title||'', m.year||'', m.director||''].map(_lbCsvField).join(','));
@@ -79,7 +78,7 @@ function runLetterboxdExport(){
   const stamp = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
   const a = document.createElement('a');
   a.href = url;
-  a.download = `${christmasMode?'christmas-':''}watchlist-letterboxd-${stamp}.csv`;
+  a.download = `${state.christmasMode?'christmas-':''}watchlist-letterboxd-${stamp}.csv`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
@@ -89,17 +88,17 @@ function runLetterboxdExport(){
 }
 
 function openImportModal(){
-  _importRows   = [];
-  _importSnap   = null;
-  _importActive = false;
-  _importCategoriseSkipped = new Set();
+  state._importRows   = [];
+  state._importSnap   = null;
+  state._importActive = false;
+  state._importCategoriseSkipped = new Set();
   _renderImportSelect();
   document.getElementById('importModal').classList.add('open');
   lockScroll();
 }
 
 function closeImportModal(){
-  if(_importActive || !document.getElementById('importModal').classList.contains('open')) return;
+  if(state._importActive || !document.getElementById('importModal').classList.contains('open')) return;
   document.getElementById('importModal').classList.remove('open');
   unlockScroll();
 }
@@ -141,8 +140,8 @@ function _parseLetterboxdCSV(text){
 
 // ── Step 1: file selection UI ──
 function _renderImportSelect(){
-  const hasKey = !!tmdbKey;
-  const uncatCount = movies.filter(m=>hasNoStreaming(m)&&!m.graveyard).length;
+  const hasKey = !!state.tmdbKey;
+  const uncatCount = state.movies.filter(m=>hasNoStreaming(m)&&!m.graveyard).length;
   document.getElementById('importBody').innerHTML = `
     <div class="import-step-instructions">
       <p>Import your watch history from Letterboxd. Films already in your list will have their watched date updated with the Letterboxd date.</p>
@@ -213,8 +212,8 @@ function _readImportFile(file){
       const d = row['Watched Date'] || '';
       if(!existing || d > (existing['Watched Date']||'')) seen.set(key, row);
     }
-    _importRows = [...seen.values()];
-    _renderImportPreview(_importRows, file.name);
+    state._importRows = [...seen.values()];
+    _renderImportPreview(state._importRows, file.name);
   };
   reader.readAsText(file);
 }
@@ -223,7 +222,7 @@ function _readImportFile(file){
 function _renderImportPreview(rows, filename){
   const alreadyIn = rows.filter(r => _findExistingForImport(null, r.Name, r.Year)).length;
   const newCount  = rows.length - alreadyIn;
-  const hasKey    = !!tmdbKey;
+  const hasKey    = !!state.tmdbKey;
   const preview   = rows.slice(0,6).map(r =>
     `<li>${esc(r.Name||'')}${r.Year?' ('+esc(r.Year)+')':''}${r['Watched Date']?' · '+esc(r['Watched Date']):''}</li>`
   ).join('');
@@ -256,7 +255,7 @@ function _renderImportPreview(rows, filename){
 function _findExistingForImport(tmdbId, title, year){
   // Match against the active list — that's the list new films are pushed into,
   // saved by save(), and snapshotted for undo.
-  const pool = movies;
+  const pool = state.movies;
   if(tmdbId){
     const m = pool.find(x => x.tmdbId && x.tmdbId === tmdbId);
     if(m) return m;
@@ -270,10 +269,10 @@ function _findExistingForImport(tmdbId, title, year){
 
 // ── TMDB helpers ──
 async function _tmdbSearchForImport(title, year){
-  if(!tmdbKey) return null;
+  if(!state.tmdbKey) return null;
   try {
     const q = title.replace(/[-\u2010-\u2015]/g,' ').replace(/\s+/g,' ').trim();
-    const base = `https://api.themoviedb.org/3/search/movie?api_key=${encodeURIComponent(tmdbKey)}&query=${encodeURIComponent(q)}&include_adult=false`;
+    const base = `https://api.themoviedb.org/3/search/movie?api_key=${encodeURIComponent(state.tmdbKey)}&query=${encodeURIComponent(q)}&include_adult=false`;
     const res = await fetch(year ? base+'&year='+encodeURIComponent(year) : base);
     if(!res.ok) return null;
     const data = await res.json();
@@ -288,11 +287,11 @@ async function _tmdbSearchForImport(title, year){
 }
 
 async function _tmdbDetailsForImport(id){
-  if(!tmdbKey || !id) return null;
+  if(!state.tmdbKey || !id) return null;
   try {
     const [dr, cr] = await Promise.all([
-      fetch(`https://api.themoviedb.org/3/movie/${id}?api_key=${encodeURIComponent(tmdbKey)}`),
-      fetch(`https://api.themoviedb.org/3/movie/${id}/credits?api_key=${encodeURIComponent(tmdbKey)}`)
+      fetch(`https://api.themoviedb.org/3/movie/${id}?api_key=${encodeURIComponent(state.tmdbKey)}`),
+      fetch(`https://api.themoviedb.org/3/movie/${id}/credits?api_key=${encodeURIComponent(state.tmdbKey)}`)
     ]);
     if(!dr.ok) return null;
     const d = await dr.json();
@@ -303,13 +302,13 @@ async function _tmdbDetailsForImport(id){
 
 // ── Main import runner ──
 async function runLetterboxdImport(){
-  if(!_importRows.length || _importActive) return;
-  _importActive = true;
+  if(!state._importRows.length || state._importActive) return;
+  state._importActive = true;
 
   // Snapshot for undo
-  _importSnap = JSON.parse(JSON.stringify(movies));
+  state._importSnap = JSON.parse(JSON.stringify(state.movies));
 
-  const total = _importRows.length;
+  const total = state._importRows.length;
   let added = 0, updated = 0, noTmdb = 0;
 
   // Render progress UI
@@ -317,7 +316,7 @@ async function runLetterboxdImport(){
     <div style="padding:8px 0;">
       <div style="font-size:0.82rem;color:var(--text-dim);margin-bottom:14px;">
         Importing ${total} film${total!==1?'s':''}…
-        ${!tmdbKey?'<span style="color:var(--text-muted);font-size:0.72rem;"> (no TMDB key — title and date only)</span>':''}
+        ${!state.tmdbKey?'<span style="color:var(--text-muted);font-size:0.72rem;"> (no TMDB key — title and date only)</span>':''}
       </div>
       <div class="import-progress-bar"><div class="import-progress-fill" id="impFill"></div></div>
       <div style="display:flex;justify-content:space-between;font-size:0.7rem;color:var(--text-muted);margin-top:4px;">
@@ -326,8 +325,8 @@ async function runLetterboxdImport(){
       </div>
     </div>`;
 
-  for(let i = 0; i < _importRows.length; i++){
-    const row     = _importRows[i];
+  for(let i = 0; i < state._importRows.length; i++){
+    const row     = state._importRows[i];
     const title   = row.Name  || '';
     const year    = row.Year  || '';
     // Letterboxd diary has both "Date" (log date) and "Watched Date" (actual viewing date)
@@ -382,7 +381,7 @@ async function runLetterboxdImport(){
         updated++;
       } else {
         // Add as new watched film
-        movies.push({
+        state.movies.push({
           id:          crypto.randomUUID(),
           title:       d?.title || title,
           year:        d?.release_date ? d.release_date.slice(0,4) : year,
@@ -421,7 +420,7 @@ async function runLetterboxdImport(){
 
   save();
   render();
-  _importActive = false;
+  state._importActive = false;
   _renderImportResults(added, updated, noTmdb, total);
 }
 
@@ -449,31 +448,30 @@ function _renderImportResults(added, updated, noTmdb, total){
     </div>
     <div style="display:flex;gap:8px;">
       <button class="btn btn-primary" style="flex:1;justify-content:center;" onclick="closeImportModal()">Done</button>
-      ${_importSnap ? `<button class="btn btn-ghost" onclick="_undoLetterboxdImport()">Undo Import</button>` : ''}
+      ${state._importSnap ? `<button class="btn btn-ghost" onclick="_undoLetterboxdImport()">Undo Import</button>` : ''}
     </div>`;
 }
 
 function _undoLetterboxdImport(){
-  if(!_importSnap) return;
-  movies = _importSnap;
-  _importSnap = null;
+  if(!state._importSnap) return;
+  state.movies = state._importSnap;
+  state._importSnap = null;
   save();
   render();
   closeImportModal();
   showInfoToast('Letterboxd import undone.', 3500);
 }
 
-// { id, streaming, otherName } — for Cmd+Z undo
 
 // Cmd/Ctrl+Z undoes the last service assignment while the categorise panel is open
 document.addEventListener('keydown', e=>{
   if(!(e.metaKey||e.ctrlKey)||e.key!=='z') return;
   const list = document.getElementById('categoriseList');
-  if(!list||!_lastCategoriseAction) return;
+  if(!list||!state._lastCategoriseAction) return;
   e.preventDefault();
-  const {id, streaming, otherName} = _lastCategoriseAction;
-  _lastCategoriseAction = null;
-  const m = movies.find(x=>x.id===id);
+  const {id, streaming, otherName} = state._lastCategoriseAction;
+  state._lastCategoriseAction = null;
+  const m = state.movies.find(x=>x.id===id);
   if(!m) return;
   m.streaming = streaming;
   m.otherName  = otherName;
@@ -488,8 +486,8 @@ document.addEventListener('keydown', e=>{
 });
 
 function renderImportCategorise(){
-  const all     = movies.filter(m=>hasNoStreaming(m)&&!m.graveyard);
-  const visible = all.filter(m=>!_importCategoriseSkipped.has(m.id));
+  const all     = state.movies.filter(m=>hasNoStreaming(m)&&!m.graveyard);
+  const visible = all.filter(m=>!state._importCategoriseSkipped.has(m.id));
   document.getElementById('importBody').innerHTML = `
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
       <button class="btn btn-ghost btn-sm" onclick="_renderImportSelect()" style="flex-shrink:0;">← Back</button>
@@ -573,10 +571,10 @@ function restoreCategoriseChips(id){
 }
 
 function assignServiceFromCategorise(id, svc, name){
-  const m = movies.find(x=>x.id===id);
+  const m = state.movies.find(x=>x.id===id);
   if(!m) return;
   // Snapshot for Cmd+Z undo
-  _lastCategoriseAction = { id, streaming:{...m.streaming}, otherName:m.otherName };
+  state._lastCategoriseAction = { id, streaming:{...m.streaming}, otherName:m.otherName };
   m.streaming = {};
   m.streaming[svc] = { direct:true, vpn:false, vpnCountry:'' };
   if(svc==='other'&&name) m.otherName = name;
@@ -585,7 +583,7 @@ function assignServiceFromCategorise(id, svc, name){
 }
 
 function skipFromCategorise(id){
-  _importCategoriseSkipped.add(id);
+  state._importCategoriseSkipped.add(id);
   _removeCategoriseRow(id);
 }
 
@@ -609,20 +607,19 @@ function _removeCategoriseRow(id){
   }, 310);
 }
 
-// keyboard highlight in category dropdown
 
 // ── Open / close ──────────────────────────────────────────────────────────
 function openPasteImportModal(){
-  _pasteItems = []; _pasteCategory = ''; _pasteWatched = false;
-  _pasteSearchActive = false; _pasteConfirmActive = false; _pasteSnap = null;
-  _openAltsIdx = -1; _altHighlightIdx = -1; _pasteCatHighlight = -1;
+  state._pasteItems = []; state._pasteCategory = ''; state._pasteWatched = false;
+  state._pasteSearchActive = false; state._pasteConfirmActive = false; state._pasteSnap = null;
+  state._openAltsIdx = -1; state._altHighlightIdx = -1; state._pasteCatHighlight = -1;
   _renderPasteStep1();
   document.getElementById('pasteImportModal').classList.add('open');
   lockScroll();
 }
 
 function closePasteImportModal(){
-  if(_pasteSearchActive || _pasteConfirmActive) return;
+  if(state._pasteSearchActive || state._pasteConfirmActive) return;
   if(!document.getElementById('pasteImportModal').classList.contains('open')) return;
   document.getElementById('pasteImportModal').classList.remove('open');
   unlockScroll();
@@ -634,7 +631,7 @@ function handlePasteImportOverlay(e){
 
 // ── Step 1: input ─────────────────────────────────────────────────────────
 function _renderPasteStep1(){
-  const hasKey = !!tmdbKey;
+  const hasKey = !!state.tmdbKey;
   document.getElementById('pasteImportBody').innerHTML = `
     <div style="font-size:0.8rem;color:var(--text-dim);line-height:1.65;margin-bottom:18px;">
       Paste a list of film titles — one per line. The best TMDB match for each title is chosen automatically, and you can review and swap results before saving.
@@ -652,7 +649,7 @@ Paddington 2
       <div style="font-size:0.68rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-muted);margin-bottom:7px;">Add to Category <span style="font-weight:300;text-transform:none;letter-spacing:0;">(optional)</span></div>
       <div class="paste-cat-field">
         <input class="paste-cat-input" id="pasteCatInput" type="text" placeholder="e.g. Pixar, Horror Classics…" autocomplete="off"
-          value="${esc(_pasteCategory)}"
+          value="${esc(state._pasteCategory)}"
           oninput="_filterPasteCatSuggestions()"
           onfocus="_filterPasteCatSuggestions()"
           onblur="setTimeout(_hidePasteCatSuggestions,150)"
@@ -662,7 +659,7 @@ Paddington 2
     </div>
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:22px;">
       <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:0.8rem;color:var(--text-dim);user-select:none;">
-        <input type="checkbox" id="pasteWatchedToggle" style="accent-color:var(--gold);width:14px;height:14px;" ${_pasteWatched?'checked':''}>
+        <input type="checkbox" id="pasteWatchedToggle" style="accent-color:var(--gold);width:14px;height:14px;" ${state._pasteWatched?'checked':''}>
         Mark all as watched
       </label>
     </div>
@@ -675,8 +672,8 @@ Paddington 2
 function _startPasteSearch(){
   const raw = (document.getElementById('pasteTitlesInput').value || '').trim();
   const catInp = document.getElementById('pasteCatInput');
-  if(catInp) _pasteCategory = catInp.value.trim();
-  _pasteWatched = document.getElementById('pasteWatchedToggle').checked;
+  if(catInp) state._pasteCategory = catInp.value.trim();
+  state._pasteWatched = document.getElementById('pasteWatchedToggle').checked;
   const titles = raw.split('\n')
     .map(t => {
       t = t.trim();
@@ -700,10 +697,10 @@ function _startPasteSearch(){
 
 // ── Step 2: search ────────────────────────────────────────────────────────
 async function _runPasteSearch(titles){
-  if(_pasteSearchActive) return;
-  _pasteSearchActive = true;
+  if(state._pasteSearchActive) return;
+  state._pasteSearchActive = true;
   const total = titles.length;
-  const hasKey = !!tmdbKey;
+  const hasKey = !!state.tmdbKey;
 
   document.getElementById('pasteImportBody').innerHTML = `
     <div style="padding:8px 0;">
@@ -718,7 +715,7 @@ async function _runPasteSearch(titles){
       </div>
     </div>`;
 
-  _pasteItems = [];
+  state._pasteItems = [];
 
   for(let i = 0; i < titles.length; i++){
     const title = titles[i];
@@ -737,9 +734,9 @@ async function _runPasteSearch(titles){
         const aliasKey    = q.toLowerCase();
         const aliasKeyStr = aliasKey.replace(/\s+/g,'');
         const aliasId     = TMDB_SEARCH_ALIASES[aliasKey] || TMDB_SEARCH_ALIASES[aliasKeyStr] || null;
-        const base        = `https://api.themoviedb.org/3/search/movie?api_key=${encodeURIComponent(tmdbKey)}&query=${encodeURIComponent(q)}&include_adult=false`;
+        const base        = `https://api.themoviedb.org/3/search/movie?api_key=${encodeURIComponent(state.tmdbKey)}&query=${encodeURIComponent(q)}&include_adult=false`;
         const fetches     = [fetch(base)];
-        if(aliasId) fetches.push(fetch(`https://api.themoviedb.org/3/movie/${aliasId}?api_key=${encodeURIComponent(tmdbKey)}`));
+        if(aliasId) fetches.push(fetch(`https://api.themoviedb.org/3/movie/${aliasId}?api_key=${encodeURIComponent(state.tmdbKey)}`));
         const [res, aliasRes] = await Promise.all(fetches);
         if(res.ok){
           const data = await res.json();
@@ -754,23 +751,23 @@ async function _runPasteSearch(titles){
       // No TMDB key: keep the typed title as a manual entry so it can still be saved
       results = [{ id:null, title, release_date:'', _manual:true }];
     }
-    _pasteItems.push({ inputTitle:title, results, selectedIdx:0, removed:false, showingAlts:false });
+    state._pasteItems.push({ inputTitle:title, results, selectedIdx:0, removed:false, showingAlts:false });
     await new Promise(r => setTimeout(r, 160));
   }
 
   const fill = document.getElementById('pasteFill');
   if(fill) fill.style.width = '100%';
   await new Promise(r => setTimeout(r, 80));
-  _pasteSearchActive = false;
-  _openAltsIdx = -1; _altHighlightIdx = -1;
+  state._pasteSearchActive = false;
+  state._openAltsIdx = -1; state._altHighlightIdx = -1;
   _renderPasteReview();
 }
 
 // ── Step 3: review ────────────────────────────────────────────────────────
 function _renderPasteReview(){
   const adding = _pasteAddingCount();
-  const catLine = _pasteCategory
-    ? `<span style="color:var(--gold);font-weight:500;">${esc(_pasteCategory)}</span>`
+  const catLine = state._pasteCategory
+    ? `<span style="color:var(--gold);font-weight:500;">${esc(state._pasteCategory)}</span>`
     : `<span style="color:var(--text-muted);font-style:italic;">none set</span>`;
   document.getElementById('pasteImportBody').innerHTML = `
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
@@ -780,13 +777,13 @@ function _renderPasteReview(){
         <div style="font-size:0.7rem;color:var(--text-muted);margin-top:2px;" id="pasteReviewMeta">${_pasteReviewMeta()}</div>
       </div>
     </div>
-    ${_pasteCategory ? `<div style="display:flex;align-items:center;gap:6px;margin-bottom:12px;padding:8px 12px;background:rgba(201,168,76,0.06);border:1px solid rgba(201,168,76,0.18);border-radius:var(--radius);font-size:0.75rem;">
+    ${state._pasteCategory ? `<div style="display:flex;align-items:center;gap:6px;margin-bottom:12px;padding:8px 12px;background:rgba(201,168,76,0.06);border:1px solid rgba(201,168,76,0.18);border-radius:var(--radius);font-size:0.75rem;">
       <span style="color:var(--text-muted);">Category:</span>
       ${catLine}
       <button onclick="_renderPasteStep1()" style="margin-left:auto;background:none;border:none;color:var(--text-muted);font-size:0.68rem;cursor:pointer;font-family:'DM Sans',sans-serif;text-decoration:underline;padding:0;" onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color=''">Change</button>
     </div>` : ''}
     <div id="pasteResultsList">
-      ${_pasteItems.map((item,idx) => _buildPasteCard(item, idx)).join('')}
+      ${state._pasteItems.map((item,idx) => _buildPasteCard(item, idx)).join('')}
     </div>
     <div style="padding-top:16px;border-top:1px solid var(--border);display:flex;gap:8px;">
       <button class="btn btn-primary" id="pasteConfirmBtn" style="flex:1;justify-content:center;"
@@ -804,7 +801,7 @@ function _filterPasteCatSuggestions(){
   const q   = inp.value.trim().toLowerCase();
   const cats = getCategoryNames();
   const matches = q ? cats.filter(n => n.toLowerCase().includes(q)) : cats;
-  _pasteCatHighlight = -1;
+  state._pasteCatHighlight = -1;
   if(!matches.length){ dd.style.display = 'none'; return; }
   dd.innerHTML = matches.map(n =>
     `<div class="cat-suggestion" data-name="${esc(n)}" onmousedown="_pickPasteCategory(${jsAttr(n)})">
@@ -819,13 +816,13 @@ function _filterPasteCatSuggestions(){
 }
 
 function _hidePasteCatSuggestions(){
-  _pasteCatHighlight = -1;
+  state._pasteCatHighlight = -1;
   const dd = document.getElementById('pasteCategoryDropdown');
   if(dd) dd.style.display = 'none';
 }
 
 function _pickPasteCategory(name){
-  _pasteCategory = name;
+  state._pasteCategory = name;
   const inp = document.getElementById('pasteCatInput');
   if(inp) inp.value = name;
   _hidePasteCatSuggestions();
@@ -838,14 +835,14 @@ function _onPasteCatKeyDown(e){
   if(!items.length) return;
   if(e.key === 'ArrowDown'){
     e.preventDefault();
-    _pasteCatHighlight = Math.min(_pasteCatHighlight + 1, items.length - 1);
+    state._pasteCatHighlight = Math.min(state._pasteCatHighlight + 1, items.length - 1);
     _updatePasteCatHighlight(items);
   } else if(e.key === 'ArrowUp'){
     e.preventDefault();
-    _pasteCatHighlight = Math.max(_pasteCatHighlight - 1, -1);
+    state._pasteCatHighlight = Math.max(state._pasteCatHighlight - 1, -1);
     _updatePasteCatHighlight(items);
   } else if(e.key === 'Enter'){
-    const target = _pasteCatHighlight >= 0 ? items[_pasteCatHighlight] : items[0];
+    const target = state._pasteCatHighlight >= 0 ? items[state._pasteCatHighlight] : items[0];
     if(target){ e.preventDefault(); e.stopPropagation(); _pickPasteCategory(target.dataset.name); }
   } else if(e.key === 'Escape'){
     _hidePasteCatSuggestions();
@@ -853,16 +850,16 @@ function _onPasteCatKeyDown(e){
 }
 
 function _updatePasteCatHighlight(items){
-  items.forEach((el,i) => el.classList.toggle('active', i === _pasteCatHighlight));
-  if(_pasteCatHighlight >= 0) items[_pasteCatHighlight].scrollIntoView({block:'nearest'});
+  items.forEach((el,i) => el.classList.toggle('active', i === state._pasteCatHighlight));
+  if(state._pasteCatHighlight >= 0) items[state._pasteCatHighlight].scrollIntoView({block:'nearest'});
 }
 
 // ── Review helpers ────────────────────────────────────────────────────────
 function _pasteReviewMeta(){
-  const total   = _pasteItems.length;
-  const found   = _pasteItems.filter(i => i.results.length > 0).length;
+  const total   = state._pasteItems.length;
+  const found   = state._pasteItems.filter(i => i.results.length > 0).length;
   const missing = total - found;
-  const removed = _pasteItems.filter(i => i.removed && i.results.length > 0).length;
+  const removed = state._pasteItems.filter(i => i.removed && i.results.length > 0).length;
   const adding  = _pasteAddingCount();
   const parts   = [`${adding} of ${total} will be added`];
   if(missing) parts.push(`${missing} not found`);
@@ -871,7 +868,7 @@ function _pasteReviewMeta(){
 }
 
 function _pasteAddingCount(){
-  return _pasteItems.filter(i => !i.removed && i.results.length > 0).length;
+  return state._pasteItems.filter(i => !i.removed && i.results.length > 0).length;
 }
 
 function _buildPasteCard(item, idx){
@@ -921,7 +918,7 @@ function _buildPasteCard(item, idx){
 function _buildPasteAltsPanel(item, idx){
   const altRows = item.results.slice(0, 7).map((r, i) => {
     const isSel  = i === item.selectedIdx;
-    const isHigh = i === _altHighlightIdx && _openAltsIdx === idx;
+    const isHigh = i === state._altHighlightIdx && state._openAltsIdx === idx;
     const yr     = (r.release_date||'').slice(0,4) || '?';
     const thumb  = r.poster_path
       ? `<img class="paste-alt-thumb" src="${TMDB_SM}${esc(r.poster_path)}" alt="" loading="lazy">`
@@ -956,8 +953,8 @@ function _onPasteAltSearchKey(e, idx){
     const list = document.getElementById(`paste-alts-list-${idx}`);
     if(!list) return;
     const items = list.querySelectorAll('.paste-alt-item');
-    if(e.key === 'ArrowDown')      _altHighlightIdx = Math.min(_altHighlightIdx + 1, items.length - 1);
-    else if(e.key === 'ArrowUp')   _altHighlightIdx = Math.max(_altHighlightIdx - 1, 0);
+    if(e.key === 'ArrowDown')      state._altHighlightIdx = Math.min(state._altHighlightIdx + 1, items.length - 1);
+    else if(e.key === 'ArrowUp')   state._altHighlightIdx = Math.max(state._altHighlightIdx - 1, 0);
     _updateAltHighlight(list);
   } else if(e.key === 'Enter'){
     e.preventDefault(); e.stopPropagation(); // stop global handler from seeing this
@@ -975,49 +972,49 @@ function _onPasteAltSearchKey(e, idx){
 
 // ── Global keydown for alt panel navigation (arrow keys / Enter) ──────────
 document.addEventListener('keydown', e => {
-  if(_openAltsIdx < 0) return;
+  if(state._openAltsIdx < 0) return;
   // Only intercept if we're NOT focused in the search input (that's handled separately)
-  const searchInp = document.getElementById(`pasteAltSearch-${_openAltsIdx}`);
+  const searchInp = document.getElementById(`pasteAltSearch-${state._openAltsIdx}`);
   if(document.activeElement === searchInp) return;
   // Don't fire if a text field is active (category input etc.)
   if(document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA') return;
 
-  const list = document.getElementById(`paste-alts-list-${_openAltsIdx}`);
+  const list = document.getElementById(`paste-alts-list-${state._openAltsIdx}`);
   if(!list) return;
 
   if(e.key === 'ArrowDown'){
     e.preventDefault();
     const items = list.querySelectorAll('.paste-alt-item');
-    _altHighlightIdx = Math.min(_altHighlightIdx + 1, items.length - 1);
+    state._altHighlightIdx = Math.min(state._altHighlightIdx + 1, items.length - 1);
     _updateAltHighlight(list);
   } else if(e.key === 'ArrowUp'){
     e.preventDefault();
     const items = list.querySelectorAll('.paste-alt-item');
-    _altHighlightIdx = Math.max(_altHighlightIdx - 1, 0);
+    state._altHighlightIdx = Math.max(state._altHighlightIdx - 1, 0);
     _updateAltHighlight(list);
   } else if(e.key === 'Enter'){
     // Commit the keyboard-highlighted item (if any), then close the panel
     e.preventDefault();
     const items = list.querySelectorAll('.paste-alt-item');
-    if(_altHighlightIdx >= 0 && items[_altHighlightIdx]){
-      const ai = parseInt(items[_altHighlightIdx].dataset.altidx);
-      _pasteItems[_openAltsIdx].selectedIdx = ai;
+    if(state._altHighlightIdx >= 0 && items[state._altHighlightIdx]){
+      const ai = parseInt(items[state._altHighlightIdx].dataset.altidx);
+      state._pasteItems[state._openAltsIdx].selectedIdx = ai;
     }
-    _pasteItems[_openAltsIdx].showingAlts = false;
-    const closedIdx = _openAltsIdx;
-    _openAltsIdx = -1; _altHighlightIdx = -1;
+    state._pasteItems[state._openAltsIdx].showingAlts = false;
+    const closedIdx = state._openAltsIdx;
+    state._openAltsIdx = -1; state._altHighlightIdx = -1;
     _pasteReplaceCard(closedIdx);
     _pasteRefreshCounters();
   } else if(e.key === 'Escape'){
     e.preventDefault();
-    _pasteToggleAlts(_openAltsIdx);
+    _pasteToggleAlts(state._openAltsIdx);
   }
 });
 
 function _updateAltHighlight(list){
   const items = list.querySelectorAll('.paste-alt-item');
-  items.forEach((el, i) => el.classList.toggle('pai-highlighted', i === _altHighlightIdx));
-  if(_altHighlightIdx >= 0) items[_altHighlightIdx].scrollIntoView({block:'nearest'});
+  items.forEach((el, i) => el.classList.toggle('pai-highlighted', i === state._altHighlightIdx));
+  if(state._altHighlightIdx >= 0) items[state._altHighlightIdx].scrollIntoView({block:'nearest'});
 }
 
 // ── Card update helpers ───────────────────────────────────────────────────
@@ -1025,7 +1022,7 @@ function _pasteReplaceCard(idx){
   const card = document.getElementById(`paste-card-${idx}`);
   if(!card) return;
   const tmp = document.createElement('div');
-  tmp.innerHTML = _buildPasteCard(_pasteItems[idx], idx);
+  tmp.innerHTML = _buildPasteCard(state._pasteItems[idx], idx);
   card.replaceWith(tmp.firstElementChild);
 }
 
@@ -1038,43 +1035,43 @@ function _pasteRefreshCounters(){
 }
 
 function _pasteToggleAlts(idx){
-  const wasOpen = _pasteItems[idx].showingAlts;
+  const wasOpen = state._pasteItems[idx].showingAlts;
   // Close any other open panel first
-  if(_openAltsIdx >= 0 && _openAltsIdx !== idx && _pasteItems[_openAltsIdx]){
-    _pasteItems[_openAltsIdx].showingAlts = false;
-    _pasteReplaceCard(_openAltsIdx);
+  if(state._openAltsIdx >= 0 && state._openAltsIdx !== idx && state._pasteItems[state._openAltsIdx]){
+    state._pasteItems[state._openAltsIdx].showingAlts = false;
+    _pasteReplaceCard(state._openAltsIdx);
   }
-  _pasteItems[idx].showingAlts = !wasOpen;
-  if(_pasteItems[idx].showingAlts){
-    _openAltsIdx     = idx;
-    _altHighlightIdx = _pasteItems[idx].selectedIdx; // start keyboard highlight at current pick
+  state._pasteItems[idx].showingAlts = !wasOpen;
+  if(state._pasteItems[idx].showingAlts){
+    state._openAltsIdx     = idx;
+    state._altHighlightIdx = state._pasteItems[idx].selectedIdx; // start keyboard highlight at current pick
   } else {
-    _openAltsIdx = -1; _altHighlightIdx = -1;
+    state._openAltsIdx = -1; state._altHighlightIdx = -1;
   }
   _pasteReplaceCard(idx);
 }
 
 function _pastePickAlt(idx, altIdx){
-  _pasteItems[idx].selectedIdx = altIdx;
-  _altHighlightIdx = altIdx;
+  state._pasteItems[idx].selectedIdx = altIdx;
+  state._altHighlightIdx = altIdx;
   _pasteReplaceCard(idx);
   _pasteRefreshCounters();
 }
 
 function _pasteRemove(idx){
-  if(_openAltsIdx === idx){ _openAltsIdx = -1; _altHighlightIdx = -1; }
-  _pasteItems[idx].removed = true; _pasteItems[idx].showingAlts = false;
+  if(state._openAltsIdx === idx){ state._openAltsIdx = -1; state._altHighlightIdx = -1; }
+  state._pasteItems[idx].removed = true; state._pasteItems[idx].showingAlts = false;
   _pasteReplaceCard(idx); _pasteRefreshCounters();
 }
 
 function _pasteRestore(idx){
-  _pasteItems[idx].removed = false;
+  state._pasteItems[idx].removed = false;
   _pasteReplaceCard(idx); _pasteRefreshCounters();
 }
 
 async function _pasteCustomSearch(idx){
   const input = document.getElementById(`pasteAltSearch-${idx}`);
-  if(!input || !tmdbKey) return;
+  if(!input || !state.tmdbKey) return;
   const q = input.value.trim();
   if(!q) return;
   input.disabled = true;
@@ -1082,11 +1079,11 @@ async function _pasteCustomSearch(idx){
   if(btn) btn.disabled = true;
   try {
     const norm = q.replace(/[-\u2010-\u2015]/g,' ').replace(/\s+/g,' ').trim();
-    const res  = await fetch(`https://api.themoviedb.org/3/search/movie?api_key=${encodeURIComponent(tmdbKey)}&query=${encodeURIComponent(norm)}&include_adult=false`);
+    const res  = await fetch(`https://api.themoviedb.org/3/search/movie?api_key=${encodeURIComponent(state.tmdbKey)}&query=${encodeURIComponent(norm)}&include_adult=false`);
     if(res.ok){
       const data = await res.json();
       const nr   = (data.results||[]).slice(0, 8);
-      if(nr.length){ _pasteItems[idx].results = nr; _pasteItems[idx].selectedIdx = 0; _altHighlightIdx = 0; }
+      if(nr.length){ state._pasteItems[idx].results = nr; state._pasteItems[idx].selectedIdx = 0; state._altHighlightIdx = 0; }
     }
   } catch(e){ /* skip */ }
   input.disabled = false;
@@ -1096,14 +1093,14 @@ async function _pasteCustomSearch(idx){
 
 // ── Step 4: confirm ───────────────────────────────────────────────────────
 async function _pasteConfirmAll(){
-  if(_pasteConfirmActive) return;
-  const toAdd = _pasteItems.filter(i => !i.removed && i.results.length > 0);
+  if(state._pasteConfirmActive) return;
+  const toAdd = state._pasteItems.filter(i => !i.removed && i.results.length > 0);
   if(!toAdd.length) return;
-  _pasteConfirmActive = true;
+  state._pasteConfirmActive = true;
   const btn = document.getElementById('pasteConfirmBtn');
   if(btn){ btn.disabled = true; btn.textContent = 'Saving…'; }
 
-  _pasteSnap = JSON.parse(JSON.stringify(movies));
+  state._pasteSnap = JSON.parse(JSON.stringify(state.movies));
   let added = 0, skipped = 0;
   const now = new Date().toISOString();
 
@@ -1113,18 +1110,18 @@ async function _pasteConfirmAll(){
     const yr = (hit.release_date||'').slice(0,4);
     if(_findExistingForImport(hit.id, hit.title, yr)){ skipped++; continue; }
     let d = null, crew = null;
-    if(tmdbKey && hit.id){
+    if(state.tmdbKey && hit.id){
       try {
         const [dr, cr] = await Promise.all([
-          fetch(`https://api.themoviedb.org/3/movie/${hit.id}?api_key=${encodeURIComponent(tmdbKey)}`),
-          fetch(`https://api.themoviedb.org/3/movie/${hit.id}/credits?api_key=${encodeURIComponent(tmdbKey)}`)
+          fetch(`https://api.themoviedb.org/3/movie/${hit.id}?api_key=${encodeURIComponent(state.tmdbKey)}`),
+          fetch(`https://api.themoviedb.org/3/movie/${hit.id}/credits?api_key=${encodeURIComponent(state.tmdbKey)}`)
         ]);
         if(dr.ok) d    = await dr.json();
         if(cr.ok) crew = await cr.json();
       } catch(e){ /* fallback to search result */ }
     }
     const dir = crew ? (crew.crew||[]).find(x => x.job==='Director') : null;
-    movies.push({
+    state.movies.push({
       id:           crypto.randomUUID(),
       title:        d?.title        || hit.title,
       year:         (d?.release_date||hit.release_date||'').slice(0,4),
@@ -1137,40 +1134,40 @@ async function _pasteConfirmAll(){
       notes:        d?.overview     || '',
       otherName:    '',
       collection:   '',
-      category:     _pasteCategory,
+      category:     state._pasteCategory,
       watchWith:    '',
       tmdbId:       hit.id || null,
       detachExempt: false,
-      watched:      _pasteWatched,
+      watched:      state._pasteWatched,
       watchingSoon: false,
       streaming:    {},
       dateAdded:    now,
-      dateWatched:  _pasteWatched ? now : undefined,
+      dateWatched:  state._pasteWatched ? now : undefined,
     });
     added++;
     await new Promise(r => setTimeout(r, 40));
   }
 
-  save(); render(); _pasteConfirmActive = false;
+  save(); render(); state._pasteConfirmActive = false;
   document.getElementById('pasteImportBody').innerHTML = `
     <div style="text-align:center;padding:10px 0 24px;">
       <div style="font-size:2.2rem;margin-bottom:8px;">✓</div>
       <div style="font-family:'Playfair Display',serif;font-size:1.1rem;margin-bottom:4px;">Done</div>
       <div style="font-size:0.72rem;color:var(--text-muted);">
         ${added} film${added!==1?'s':''} added
-        ${_pasteCategory?` to <strong style="color:var(--text-dim);">${esc(_pasteCategory)}</strong>`:''}
+        ${state._pasteCategory?` to <strong style="color:var(--text-dim);">${esc(state._pasteCategory)}</strong>`:''}
         ${skipped?` · ${skipped} already in your list`:''}
       </div>
     </div>
     <div style="display:flex;gap:8px;">
       <button class="btn btn-primary" style="flex:1;justify-content:center;" onclick="closePasteImportModal()">Done</button>
-      ${_pasteSnap?`<button class="btn btn-ghost" onclick="_undoPasteImport()">Undo</button>`:''}
+      ${state._pasteSnap?`<button class="btn btn-ghost" onclick="_undoPasteImport()">Undo</button>`:''}
     </div>`;
 }
 
 function _undoPasteImport(){
-  if(!_pasteSnap) return;
-  movies = _pasteSnap; _pasteSnap = null;
+  if(!state._pasteSnap) return;
+  state.movies = state._pasteSnap; state._pasteSnap = null;
   save(); render(); closePasteImportModal();
   showInfoToast('Paste import undone.', 3500);
 }

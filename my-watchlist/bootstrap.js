@@ -3,22 +3,18 @@
 
 function init(){
   updateBanner();updateSearchSection();
-  if(window.innerWidth<=640){currentView='list';}
+  if(window.innerWidth<=640){state.currentView='list';}
   applyViewToggleUI();
-  if(christmasMode){
-    _normalMovies=movies;
-    movies=christmasMovies;
+  if(state.christmasMode){
     document.body.classList.add('christmas-mode');
     document.getElementById('christmasToggleBtn').classList.add('active');
     document.getElementById('christmasBanner').classList.add('visible');
   }
   render();
   updateSortBtnLabel();
-  if(christmasMode)requestAnimationFrame(startChristmasEffects);
+  if(state.christmasMode)requestAnimationFrame(startChristmasEffects);
   // Backfill runtimes for any existing movies that don't have one yet
-  setTimeout(backfillRuntimes,1000);
-  setTimeout(backfillReleaseDates,1500);
-  setTimeout(backfillRtRatings,2000);
+  scheduleBackfills(1000);
 }
 
 init();
