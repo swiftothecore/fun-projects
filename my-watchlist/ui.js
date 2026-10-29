@@ -182,6 +182,9 @@ function toggleSearchBar() {
 function onSearchBarInput(v) {
   if (state.selectionMode) exitSelectMode(false);
   state.searchQuery = v.trim();
+  document.getElementById('searchBar').value = v;
+  document.getElementById('mobileSearchBarInput').value = v;
+  document.getElementById('mobileSearchBar').classList.toggle('msb-active', !!state.searchQuery);
   state.searchIncludesDetached = false;
   document.getElementById('searchBarWrap').classList.toggle('has-query', !!state.searchQuery);
   render();
@@ -493,7 +496,7 @@ document.addEventListener('keydown', (e) => {
     if (state.undoStack.length) {
       state.redoStack.push(JSON.parse(JSON.stringify(state.movies)));
       state.movies = state.undoStack.pop();
-      save();
+      save('active', true);
       render();
       document.querySelectorAll('.toast').forEach((t) => dismissToast(t));
       showInfoToast('Deletion undone.', 3000);
@@ -660,6 +663,20 @@ function initSheetDrag(modalId, closeFn) {
 
 // ── Bulk Selection ─────────────────────────────────────────────────────────
 
+function syncSelectionUI() {
+  const grid = document.getElementById('movieGrid');
+  grid.classList.toggle('selection-mode', state.selectionMode);
+  if (!state.selectionMode) return;
+  const available = new Set(state.movies.map((m) => m.id));
+  state.selectedIds.forEach((id) => {
+    if (!available.has(id)) state.selectedIds.delete(id);
+  });
+  document
+    .querySelectorAll('[data-id]')
+    .forEach((el) => el.classList.toggle('card-selected', state.selectedIds.has(el.dataset.id)));
+  updateBulkBar();
+}
+
 function enterSelectMode() {
   state.selectionMode = true;
   state.selectedIds = new Set();
@@ -820,7 +837,10 @@ function applyBulkService() {
   if (!chip) return;
   // Read all values before any DOM teardown
   const svc = chip.dataset.svc;
-  const isVpn = document.getElementById('bulkSvcVpn')?.checked || false;
+  const isVpn =
+    svc !== 'cinema' &&
+    svc !== 'clear' &&
+    (document.getElementById('bulkSvcVpn')?.checked || false);
   const country = document.getElementById('bulkSvcCountry')?.value.trim() || '';
   const otherName = document.getElementById('bulkOtherName')?.value.trim() || '';
   const targets = state.movies.filter((m) => state.selectedIds.has(m.id));
@@ -872,6 +892,7 @@ function bulkWatch() {
   state.redoStack = [];
   targets.forEach((m) => {
     m.watched = true;
+    m.graveyard = false;
     m.watchingSoon = false;
     if (!m.dateWatched) m.dateWatched = now;
   });
@@ -918,6 +939,7 @@ function bulkWatchingSoon() {
   state.redoStack = [];
   targets.forEach((m) => {
     m.watchingSoon = !allSoon;
+    if (m.watchingSoon && m.streaming?.cinema?.coming) m.streaming.cinema.coming = false;
   });
   save();
   exitSelectMode(false);
@@ -962,8 +984,21 @@ function bulkMoveToChristmas() {
   // removes from Christmas and adds to normal. Neither list changes identity
   // merely because the current mode changes.
   state.movies = state.movies.filter((m) => !state.selectedIds.has(m.id));
-  if (state.christmasMode) setNormalList([...getNormalList(), ...targets]);
-  else setChristmasList([...getChristmasList(), ...targets]);
+  const destination = state.christmasMode ? getNormalList() : getChristmasList();
+  const destinationById = new Map(destination.map((m) => [m.id, m]));
+  const moved = [];
+  for (const movie of targets) {
+    const existing = destinationById.get(movie.id);
+    if (existing && JSON.stringify(existing) === JSON.stringify(movie)) continue;
+    // Preserve both versions if two lists have different edits under the same ID.
+    const entry = existing ? { ...movie, id: crypto.randomUUID() } : movie;
+    destinationById.set(entry.id, entry);
+    moved.push(entry);
+  }
+  if (state.christmasMode) setNormalList([...destination, ...moved]);
+  else setChristmasList([...destination, ...moved]);
+  state.undoStack = [];
+  state.redoStack = [];
   save('lists');
   exitSelectMode(false);
   render();

@@ -2,6 +2,28 @@
 // Classic scripts intentionally expose handler functions to inline HTML events.
 
 function toggleChristmasMode() {
+  if (state._importActive || state._pasteSearchActive || state._pasteConfirmActive) return;
+  exitSelectMode();
+  closeAddModal();
+  closeDetail();
+  closeImportModal();
+  closePasteImportModal();
+  closeSurpriseModal();
+  closeExportModal();
+  closePillMenu();
+  document.querySelectorAll('.toast').forEach((t) => dismissToast(t));
+  state.currentWatchWith = null;
+  state.searchQuery = '';
+  state.searchIncludesDetached = false;
+  document.getElementById('searchBar').value = '';
+  document.getElementById('mobileSearchBarInput').value = '';
+  document.getElementById('mobileSearchBar').classList.remove('msb-active');
+  document.getElementById('searchBarWrap').classList.remove('expanded', 'has-query');
+  if (state.currentSort.startsWith('dateWatched')) {
+    state.currentSort = 'dateAdded-asc';
+    writeStorage('watchlist_sort', state.currentSort);
+    updateSortBtnLabel();
+  }
   // Exit restores the normal watchlist; entering selects the Christmas list.
   // Both lists keep stable owners in state instead of swapping array globals.
   state.christmasMode = !state.christmasMode;

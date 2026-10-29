@@ -129,8 +129,8 @@ const TMDB_SEARCH_ALIASES = {
  */
 const state = {
   lists: {
-    normal: JSON.parse(readStorage('watchlist_v2') || '[]'),
-    christmas: JSON.parse(readStorage('christmas_watchlist_v1') || '[]'),
+    normal: readStoredJSON('watchlist_v2', [], isMovieList),
+    christmas: readStoredJSON('christmas_watchlist_v1', [], isMovieList),
   },
   christmasMode: readStorage('christmas_mode_active') === 'true',
   get movies() {
@@ -166,9 +166,15 @@ const state = {
   // Active-list history; cleared on a Christmas mode switch.
   undoStack: [],
   redoStack: [],
-  categorySettings: JSON.parse(readStorage('category_settings_v1') || '{}'),
+  categorySettings: Object.assign(
+    Object.create(null),
+    readStoredJSON('category_settings_v1', {}, isSettingsObject)
+  ),
   categoryOptionsDismissed: readStorage('category_options_dismissed') === '1',
   _searchSeq: 0,
+  _selectionSeq: 0,
+  _pasteSession: 0,
+  _pasteTitles: '',
   _rtBackfillRunning: false,
   // ── Scroll lock (prevents background scroll while any modal is open) ──────
   _scrollLockY: 0,

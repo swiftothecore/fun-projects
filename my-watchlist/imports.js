@@ -95,6 +95,7 @@ function runLetterboxdExport() {
 }
 
 function openImportModal() {
+  if (document.getElementById('importModal').classList.contains('open')) return;
   state._importRows = [];
   state._importSnap = null;
   state._importActive = false;
@@ -139,20 +140,36 @@ function _parseCSVLine(line) {
 }
 
 function _parseLetterboxdCSV(text) {
-  const lines = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').trim().split('\n');
-  if (lines.length < 2) return [];
-  const headers = _parseCSVLine(lines[0]);
-  return lines
-    .slice(1)
-    .filter((l) => l.trim())
-    .map((l) => {
-      const vals = _parseCSVLine(l);
-      const obj = {};
-      headers.forEach((h, i) => {
-        obj[h] = vals[i] || '';
-      });
-      return obj;
-    });
+  // Split records only outside quoted fields. A title may span physical lines.
+  const input = text.replace(/^\uFEFF/, '').replace(/\r\n?/g, '\n');
+  const records = [];
+  let record = '',
+    quoted = false;
+  for (let i = 0; i < input.length; i++) {
+    const ch = input[i];
+    if (ch === '"') {
+      record += ch;
+      if (quoted && input[i + 1] === '"') record += input[++i];
+      else quoted = !quoted;
+    } else if (ch === '\n' && !quoted) {
+      if (record.trim()) records.push(record);
+      record = '';
+    } else record += ch;
+  }
+  if (record.trim()) records.push(record);
+  if (quoted || records.length < 2) return [];
+  const headers = _parseCSVLine(records[0]);
+  return records.slice(1).map((line) => {
+    const values = _parseCSVLine(line);
+    return Object.fromEntries(headers.map((header, i) => [header, values[i] || '']));
+  });
+}
+
+function diaryDateISO(value) {
+  const date = /^\d{4}-\d{2}-\d{2}$/.test(value) ? new Date(value + 'T12:00:00') : null;
+  return date && Number.isFinite(date.getTime()) && localDateStr(date) === value
+    ? date.toISOString()
+    : new Date().toISOString();
 }
 
 // ── Step 1: file selection UI ──
@@ -217,7 +234,7 @@ function importFileChosen(input) {
 function _readImportFile(file) {
   const reader = new FileReader();
   reader.onload = (e) => {
-    const rows = _parseLetterboxdCSV(e.target.result);
+    const rows = _parseLetterboxdCSV(e.target.result).filter((row) => row.Name?.trim());
     if (!rows.length || !('Name' in (rows[0] || {}))) {
       const dz = document.getElementById('importDropzone');
       if (dz)
@@ -376,9 +393,7 @@ async function runLetterboxdImport() {
     const year = row.Year || '';
     // Letterboxd diary has both "Date" (log date) and "Watched Date" (actual viewing date)
     const watchedStr = row['Watched Date'] || row['Date'] || '';
-    const watchedISO = watchedStr
-      ? new Date(watchedStr + 'T12:00:00').toISOString()
-      : new Date().toISOString();
+    const watchedISO = diaryDateISO(watchedStr);
 
     // Update progress bar
     const pct = Math.round((i / total) * 100);
@@ -437,6 +452,7 @@ async function runLetterboxdImport() {
           collection: '',
           category: '',
           tmdbId: tmdbId,
+          releaseDate: d?.release_date || undefined,
           watched: true,
           watchingSoon: false,
           graveyard: false,
@@ -510,7 +526,9 @@ function _undoLetterboxdImport() {
 
 // Cmd/Ctrl+Z undoes the last service assignment while the categorise panel is open
 document.addEventListener('keydown', (e) => {
-  if (!(e.metaKey || e.ctrlKey) || e.key !== 'z') return;
+  if (!(e.metaKey || e.ctrlKey) || e.key.toLowerCase() !== 'z' || e.shiftKey) return;
+  if (!document.getElementById('importModal').classList.contains('open')) return;
+  if (e.target.closest?.('input, textarea, [contenteditable="true"]')) return;
   const list = document.getElementById('categoriseList');
   if (!list || !state._lastCategoriseAction) return;
   e.preventDefault();
@@ -658,6 +676,9 @@ function _removeCategoriseRow(id) {
 
 // ── Open / close ──────────────────────────────────────────────────────────
 function openPasteImportModal() {
+  if (document.getElementById('pasteImportModal').classList.contains('open')) return;
+  state._pasteSession++;
+  state._pasteTitles = '';
   state._pasteItems = [];
   state._pasteCategory = '';
   state._pasteWatched = false;
@@ -676,6 +697,7 @@ function closePasteImportModal() {
   if (state._pasteSearchActive || state._pasteConfirmActive) return;
   if (!document.getElementById('pasteImportModal').classList.contains('open')) return;
   document.getElementById('pasteImportModal').classList.remove('open');
+  state._pasteSession++;
   unlockScroll();
 }
 
@@ -720,11 +742,13 @@ Paddington 2
     <button class="btn btn-primary button-full" onclick="_startPasteSearch()">
       Search TMDB →
     </button>`;
+  document.getElementById('pasteTitlesInput').value = state._pasteTitles;
   document.getElementById('pasteTitlesInput').focus();
 }
 
 function _startPasteSearch() {
-  const raw = (document.getElementById('pasteTitlesInput').value || '').trim();
+  state._pasteTitles = document.getElementById('pasteTitlesInput').value || '';
+  const raw = state._pasteTitles.trim();
   const catInp = document.getElementById('pasteCatInput');
   if (catInp) state._pasteCategory = catInp.value.trim();
   state._pasteWatched = document.getElementById('pasteWatchedToggle').checked;
@@ -1192,6 +1216,9 @@ function _pasteRestore(idx) {
 }
 
 async function _pasteCustomSearch(idx) {
+  const session = state._pasteSession;
+  const item = state._pasteItems[idx];
+  const isCurrent = () => session === state._pasteSession && state._pasteItems[idx] === item;
   const input = document.getElementById(`pasteAltSearch-${idx}`);
   if (!input || !state.tmdbKey) return;
   const q = input.value.trim();
@@ -1209,6 +1236,7 @@ async function _pasteCustomSearch(idx) {
     );
     if (res.ok) {
       const data = await res.json();
+      if (!isCurrent()) return;
       const nr = (data.results || []).slice(0, 8);
       if (nr.length) {
         state._pasteItems[idx].results = nr;
@@ -1219,6 +1247,7 @@ async function _pasteCustomSearch(idx) {
   } catch (e) {
     /* skip */
   }
+  if (!isCurrent()) return;
   input.disabled = false;
   if (btn) btn.disabled = false;
   _pasteReplaceCard(idx);

@@ -340,14 +340,17 @@ function unlockScroll() {
 }
 
 function openAddModal() {
+  if (document.getElementById('addModal').classList.contains('open')) return;
   state.editingId = null;
   document.getElementById('modalTitle').textContent = state.christmasMode
     ? '🎄 Add Christmas Film'
     : 'Add Film';
   clearForm();
   document.getElementById('deleteRow').style.display = 'none';
-  document.getElementById('addModal').classList.add('open');
-  lockScroll();
+  if (!document.getElementById('addModal').classList.contains('open')) {
+    document.getElementById('addModal').classList.add('open');
+    lockScroll();
+  }
   updateModalJustWatch();
   updateModalLetterboxd();
   populateCollectionSuggestions();
@@ -579,8 +582,10 @@ function openEditModal(id) {
     : 'Edit Film';
   document.getElementById('deleteRow').style.display = 'flex';
   populateForm(m);
-  document.getElementById('addModal').classList.add('open');
-  lockScroll();
+  if (!document.getElementById('addModal').classList.contains('open')) {
+    document.getElementById('addModal').classList.add('open');
+    lockScroll();
+  }
   updateModalJustWatch();
   updateModalLetterboxd();
   populateCollectionSuggestions();
@@ -593,6 +598,7 @@ function closeAddModal() {
   // Escape calls every close fn — only unlock scroll for a modal that was actually open
   if (!document.getElementById('addModal').classList.contains('open')) return;
   document.getElementById('addModal').classList.remove('open');
+  resetMovieSearch();
   document.getElementById('searchResults').classList.remove('open');
   document.getElementById('searchHint').classList.remove('visible');
   state.editingId = null;
@@ -606,6 +612,10 @@ function handleOverlayClick(e) {
 }
 
 function clearForm() {
+  resetMovieSearch();
+  hideCollectionSuggestions();
+  hideCategorySuggestions();
+  hideWatchWithSuggestions();
   [
     'fTitle',
     'fYear',
@@ -642,6 +652,7 @@ function clearForm() {
 }
 
 function populateForm(m) {
+  clearForm();
   document.getElementById('fTitle').value = m.title || '';
   document.getElementById('fYear').value = m.year || '';
   document.getElementById('fReleaseDate').value = m.releaseDate || '';
@@ -739,11 +750,11 @@ function saveMovie() {
     id: state.editingId || crypto.randomUUID(),
     title,
     year: document.getElementById('fYear').value.trim(),
-    releaseDate: document.getElementById('fReleaseDate').value.trim() || existing?.releaseDate,
+    releaseDate: document.getElementById('fReleaseDate').value.trim() || undefined,
     genre: document.getElementById('fGenre').value.trim(),
     director: document.getElementById('fDirector').value.trim(),
     rating: document.getElementById('fRating').value.trim(),
-    runtime: parseInt(document.getElementById('fRuntime').value) || undefined,
+    runtime: Math.max(0, parseInt(document.getElementById('fRuntime').value) || 0) || undefined,
     poster: document.getElementById('fPoster').value.trim(),
     notes: document.getElementById('fNotes').value.trim(),
     otherName: document.getElementById('fOtherName').value.trim(),
@@ -758,7 +769,10 @@ function saveMovie() {
       ? { rtRating: existing.rtRating, rtCheckedAt: existing.rtCheckedAt, imdbId: existing.imdbId }
       : {}),
     detachExempt: existing?.detachExempt || false,
-    graveyard: existing?.graveyard || false,
+    graveyard:
+      !watched &&
+      !document.getElementById('fWatchingSoon').checked &&
+      (existing?.graveyard || false),
     watched,
     rewatch: watched ? existing?.rewatch || false : false,
     // If marked watched, strip watchingSoon
@@ -824,7 +838,7 @@ function undoDelete(toast) {
   if (!state.undoStack.length) return;
   state.redoStack.push(JSON.parse(JSON.stringify(state.movies)));
   state.movies = state.undoStack.pop();
-  save();
+  save('active', true);
   render();
   dismissToast(toast);
   showInfoToast('Deletion undone.', 3000);
@@ -834,7 +848,7 @@ function redoDelete() {
   if (!state.redoStack.length) return;
   state.undoStack.push(JSON.parse(JSON.stringify(state.movies)));
   state.movies = state.redoStack.pop();
-  save();
+  save('active', true);
   render();
   showInfoToast('Deletion redone.', 3000);
 }

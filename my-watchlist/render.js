@@ -39,7 +39,7 @@ function _formatCinemaDate(dateStr, short) {
 
 // ── Date added helpers ──
 function formatDateAdded(dateStr) {
-  if (!dateStr) return 'Added: unknown';
+  if (!dateStr || !Number.isFinite(new Date(dateStr).getTime())) return 'Added: unknown';
   const todayStr = localDateStr(new Date());
   const addedStr = localDateStr(new Date(dateStr));
   const days = Math.round((new Date(todayStr) - new Date(addedStr)) / 86400000);
@@ -53,7 +53,7 @@ function formatDateAdded(dateStr) {
 }
 
 function formatDateWatched(dateStr) {
-  if (!dateStr) return 'Watched: unknown';
+  if (!dateStr || !Number.isFinite(new Date(dateStr).getTime())) return 'Watched: unknown';
   const todayStr = localDateStr(new Date());
   const watchedStr = localDateStr(new Date(dateStr));
   const days = Math.round((new Date(todayStr) - new Date(watchedStr)) / 86400000);
@@ -123,7 +123,7 @@ function buildListRow(m, i) {
     <div class="list-thumb-wrap">${thumb}${soonPip}</div>
     <div class="list-info">
       <div class="list-title">${esc(m.title)}</div>
-      ${meta ? `<div class="list-meta">${meta}${m.rating ? ' · ★ ' + esc(m.rating) : ''}${m.rtRating ? ' · ' + rtBadge(m) : ''}</div>` : ''}
+      ${meta || m.rating || m.rtRating ? `<div class="list-meta">${meta}${m.rating ? ' · ★ ' + esc(m.rating) : ''}${m.rtRating ? ' · ' + rtBadge(m) : ''}</div>` : ''}
       <div class="list-badges">${badges}</div>
     </div>
     <div class="list-right">
@@ -238,6 +238,11 @@ function buildListGrouped(allMovies) {
 
 // ── Render ──
 function render() {
+  renderContent();
+  syncSelectionUI();
+}
+
+function renderContent() {
   const cnt = state.movies.filter((m) => !m.graveyard && !isDetachedMovie(m)).length;
   document.getElementById('headerCount').textContent = state.christmasMode
     ? cnt === 1
@@ -438,7 +443,7 @@ function render() {
 // ── Categories view ──
 function getCategoryNames() {
   // Returns category names sorted by the earliest dateAdded of any movie in each category
-  const map = {};
+  const map = Object.create(null);
   for (const m of state.movies) {
     if (!m.category) continue;
     const t = m.dateAdded ? new Date(m.dateAdded).getTime() : Infinity;
@@ -475,7 +480,10 @@ function renderCategoriesView() {
     opts.classList.remove('visible');
     opts.innerHTML = '';
     g.className = 'grid';
-    g.innerHTML = `<div class="category-empty-state"><span class="empty-icon">📂</span><p>No categories yet.<br>Add a category to a film when editing or adding it.</p></div>`;
+    _setHTML(
+      g,
+      `<div class="category-empty-state"><span class="empty-icon">📂</span><p>No categories yet.<br>Add a category to a film when editing or adding it.</p></div>`
+    );
     return;
   }
 
@@ -483,7 +491,10 @@ function renderCategoriesView() {
     opts.classList.remove('visible');
     opts.innerHTML = '';
     g.className = 'grid';
-    g.innerHTML = `<div class="category-empty-state"><span class="empty-icon">👆</span><p>Select a category above to browse its films.</p></div>`;
+    _setHTML(
+      g,
+      `<div class="category-empty-state"><span class="empty-icon">👆</span><p>Select a category above to browse its films.</p></div>`
+    );
     return;
   }
 
@@ -512,20 +523,23 @@ function renderCategoriesView() {
 
   // Show movies in the selected category, sorted by the user's chosen sort
   const inCat = state.movies.filter((m) => m.category === state.currentCategory);
-  const sorted = sortWithCollections(inCat);
+  const sorted = _postFilter(sortWithCollections(inCat));
 
   if (!sorted.length) {
     g.className = 'grid';
-    g.innerHTML = `<div class="category-empty-state"><span class="empty-icon">🎬</span><p>No films in this category yet.</p></div>`;
+    _setHTML(
+      g,
+      `<div class="category-empty-state"><span class="empty-icon">🎬</span><p>No films in this category yet.</p></div>`
+    );
     return;
   }
 
   if (state.currentView === 'list') {
     g.className = 'list-container';
-    g.innerHTML = `<div class="list-rows">${buildListItems(groupIntoRenderItems(sorted))}</div>`;
+    _setHTML(g, `<div class="list-rows">${buildListItems(groupIntoRenderItems(sorted))}</div>`);
   } else {
     g.className = 'grid';
-    g.innerHTML = renderItems(groupIntoRenderItems(sorted));
+    _setHTML(g, renderItems(groupIntoRenderItems(sorted)));
     trimCardMetas();
   }
 }
@@ -544,7 +558,7 @@ function sortOldestFirst(a, b) {
 
 // Build a map of collection name → earliest dateAdded timestamp across ALL movies
 function collectionDateMap() {
-  const map = {};
+  const map = Object.create(null);
   for (const m of state.movies) {
     if (!m.collection) continue;
     const t = m.dateAdded ? new Date(m.dateAdded).getTime() : Infinity;
@@ -582,7 +596,7 @@ function _movieSortValue(m, field) {
 // chronologically-earliest entry. Keeps collections together and gives them
 // a single, stable sort position regardless of the field being sorted on.
 function _collectionAnchorMap(arr, field) {
-  const anchor = {};
+  const anchor = Object.create(null);
   for (const m of arr) {
     if (!m.collection) continue;
     const yr = parseInt(m.year) || 9999;
@@ -590,7 +604,7 @@ function _collectionAnchorMap(arr, field) {
       anchor[m.collection] = { yr, val: _movieSortValue(m, field) };
     }
   }
-  const map = {};
+  const map = Object.create(null);
   for (const c in anchor) map[c] = anchor[c].val;
   return map;
 }
@@ -1107,6 +1121,7 @@ function _reconcile(container, newHTML) {
   const temp = document.createElement('div');
   temp.innerHTML = newHTML;
   const newNodes = Array.from(temp.children);
+  state.htmlCache.delete(container);
   if (!newNodes.length || newNodes.some((n) => !n.dataset.id)) {
     _setHTML(container, newHTML);
     return;
@@ -1130,8 +1145,9 @@ function _reconcile(container, newHTML) {
         cursor = old.nextSibling;
       } else {
         // Content changed — swap in the new node
-        container.insertBefore(newNode, old);
+        if (cursor === old) cursor = old.nextSibling;
         old.remove();
+        container.insertBefore(newNode, cursor);
         cursor = newNode.nextSibling;
       }
     } else {
@@ -1146,6 +1162,7 @@ function _reconcile(container, newHTML) {
 
 // Reconcile into a .list-rows wrapper inside g, creating it if needed
 function _reconcileListRows(g, rowsHTML) {
+  state.htmlCache.delete(g);
   let lr = g.querySelector(':scope>.list-rows');
   if (!lr) {
     g.innerHTML = '';

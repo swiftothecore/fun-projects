@@ -470,6 +470,28 @@ function readStorage(key) {
   }
 }
 
+function isMovieList(value) {
+  return (
+    Array.isArray(value) &&
+    value.every(
+      (m) => m && typeof m === 'object' && typeof m.id === 'string' && typeof m.title === 'string'
+    )
+  );
+}
+
+function isSettingsObject(value) {
+  return !!value && typeof value === 'object' && !Array.isArray(value);
+}
+
+function readStoredJSON(key, fallback, validate) {
+  try {
+    const value = JSON.parse(readStorage(key));
+    return validate(value) ? value : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
 function writeStorage(key, value) {
   // Wrap in try-catch: on iOS with "Block All Cookies" enabled, localStorage
   // throws a SecurityError. We still want the Supabase sync to fire.
@@ -492,11 +514,18 @@ function saveCategorySettings() {
 
 // All local data mutations use this path. Remote hydration below writes its
 // storage mirror directly: pulling must not stamp a local edit or echo a push.
-function save(target = 'active') {
-  if (target === 'lists' || (target === 'active' && !state.christmasMode)) {
+function save(target = 'active', preserveRedo = false) {
+  if (!preserveRedo) state.redoStack = [];
+  // Persist this even before the async SDK has initialized.
+  writeStorage('_sb_pending', '1');
+  if (target === 'lists' || target === 'normal' || (target === 'active' && !state.christmasMode)) {
     writeStorage('watchlist_v2', JSON.stringify(getNormalList()));
   }
-  if (target === 'lists' || (target === 'active' && state.christmasMode)) {
+  if (
+    target === 'lists' ||
+    target === 'christmas' ||
+    (target === 'active' && state.christmasMode)
+  ) {
     writeStorage('christmas_watchlist_v1', JSON.stringify(getChristmasList()));
   }
   if (target === 'categories') {
@@ -525,49 +554,39 @@ window._sbGetData = function () {
 };
 
 window._sbOnLoad = function (data) {
-  try {
-    // Handle legacy plain-array format (just a normal watchlist, no Christmas data yet)
-    if (Array.isArray(data)) {
-      const incoming = JSON.stringify(data);
-      // Update in-memory state first so it's never blocked by a localStorage failure.
-      if (!state.christmasMode && JSON.stringify(state.movies) !== incoming) {
-        setNormalList(data);
-        render();
-        scheduleBackfills(300, [backfillReleaseDates]);
-      }
-      writeStorage('watchlist_v2', incoming);
-      return;
-    }
-    // Handle combined object format {watchlist, christmas}
-    if (data && typeof data === 'object') {
-      if (data.watchlist) {
-        const wIncoming = JSON.stringify(data.watchlist);
-        if (state.christmasMode) {
-          setNormalList(data.watchlist); // update the normal list while Christmas is active
-        } else if (JSON.stringify(state.movies) !== wIncoming) {
-          setNormalList(data.watchlist);
-          render();
-          scheduleBackfills(300, [backfillReleaseDates]);
-        }
-        writeStorage('watchlist_v2', wIncoming);
-      }
-      if (data.christmas) {
-        const cIncoming = JSON.stringify(data.christmas);
-        const changed = JSON.stringify(getChristmasList()) !== cIncoming;
-        setChristmasList(data.christmas);
-        if (state.christmasMode && changed) render();
-        writeStorage('christmas_watchlist_v1', cIncoming);
-      }
-      if (data.categorySettings) {
-        const changed =
-          JSON.stringify(state.categorySettings) !== JSON.stringify(data.categorySettings);
-        state.categorySettings = data.categorySettings;
-        writeStorage('category_settings_v1', JSON.stringify(data.categorySettings));
-        // Detached state affects which films are visible, so redraw
-        if (changed) render();
-      }
-    }
-  } catch (e) {
-    console.warn('Supabase load error:', e);
+  const payload = Array.isArray(data) ? { watchlist: data } : data;
+  if (!isSettingsObject(payload)) return;
+  // Validate the whole payload before replacing any local data.
+  if (
+    ('watchlist' in payload && !isMovieList(payload.watchlist)) ||
+    ('christmas' in payload && !isMovieList(payload.christmas)) ||
+    ('categorySettings' in payload && !isSettingsObject(payload.categorySettings))
+  ) {
+    console.warn('[Sync] Ignoring malformed cloud data.');
+    return;
+  }
+  const before = JSON.stringify(window._sbGetData());
+  if ('watchlist' in payload) {
+    setNormalList(payload.watchlist);
+    writeStorage('watchlist_v2', JSON.stringify(payload.watchlist));
+  }
+  if ('christmas' in payload) {
+    setChristmasList(payload.christmas);
+    writeStorage('christmas_watchlist_v1', JSON.stringify(payload.christmas));
+  }
+  if ('categorySettings' in payload) {
+    state.categorySettings = Object.assign(Object.create(null), payload.categorySettings);
+    writeStorage('category_settings_v1', JSON.stringify(state.categorySettings));
+  }
+  if (before !== JSON.stringify(window._sbGetData())) {
+    state.undoStack = [];
+    state.redoStack = [];
+    state._importSnap = state._pasteSnap = state._lastCategoriseAction = null;
+    document.querySelectorAll('.toast').forEach((t) => dismissToast(t));
+    exitSelectMode();
+    closeDetail();
+    closeAddModal();
+    render();
+    scheduleBackfills(300);
   }
 };

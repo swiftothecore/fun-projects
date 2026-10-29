@@ -75,6 +75,7 @@ function updateSearchHighlight(items) {
 }
 
 function onSearchInput(val) {
+  state._searchSeq++;
   clearTimeout(state.searchTimer);
   state._preloadId = null;
   state._preloadPromise = null;
@@ -200,7 +201,19 @@ function preloadMovie(id) {
   })();
 }
 
+function resetMovieSearch() {
+  clearTimeout(state.searchTimer);
+  state._searchSeq++;
+  state._selectionSeq++;
+  state._preloadId = state._preloadPromise = null;
+  document.getElementById('searchInput').value = '';
+  document.getElementById('searchSpinner').classList.remove('active');
+}
+
 async function selectMovie(id) {
+  const seq = ++state._selectionSeq;
+  const isCurrent = () =>
+    seq === state._selectionSeq && document.getElementById('addModal').classList.contains('open');
   const r = document.getElementById('searchResults'),
     h = document.getElementById('searchHint');
   r.classList.remove('open');
@@ -211,6 +224,7 @@ async function selectMovie(id) {
   // Use preloaded data if available (may still be in-flight — awaiting is still faster than a cold fetch)
   if (state._preloadId === id && state._preloadPromise) {
     const cached = await state._preloadPromise;
+    if (!isCurrent()) return;
     state._preloadId = null;
     state._preloadPromise = null;
     if (cached && cached.id === id) {
@@ -235,15 +249,18 @@ async function selectMovie(id) {
       d = await dr.json();
       c = cr.ok ? await cr.json() : null;
     } catch {
+      if (!isCurrent()) return;
       document.getElementById('searchSpinner').classList.remove('active');
       h.textContent = 'Could not load details. Fill in manually.';
       h.classList.add('visible');
       expandMovieDetails();
       return;
     }
+    if (!isCurrent()) return;
     document.getElementById('searchSpinner').classList.remove('active');
   }
 
+  if (!isCurrent()) return;
   document.getElementById('fTitle').value = d.title || '';
   document.getElementById('fYear').value = d.release_date ? d.release_date.slice(0, 4) : '';
   document.getElementById('fReleaseDate').value = d.release_date || '';
@@ -284,7 +301,9 @@ async function selectMovie(id) {
 
 async function backfillRuntimes() {
   if (!state.tmdbKey) return;
-  const needsFill = state.movies.filter((m) => m.runtime === undefined || m.runtime === null);
+  const list = state.movies;
+  const target = state.christmasMode ? 'christmas' : 'normal';
+  const needsFill = list.filter((m) => m.runtime === undefined || m.runtime === null);
   if (!needsFill.length) return;
   let changed = false;
   for (const m of needsFill) {
@@ -328,16 +347,20 @@ async function backfillRuntimes() {
     } catch (e) {}
     await new Promise((r) => setTimeout(r, 150));
   }
-  if (changed) {
-    save();
-    render();
+  if (changed && (list === getNormalList() || list === getChristmasList())) {
+    save(target, true);
+    if (list === state.movies) render();
   }
 }
 
 function rtNeedsFill(m) {
   if (m.rtRating === undefined || m.rtRating === null) return true;
   if (m.rtRating !== '') return false;
-  return !m.rtCheckedAt || Date.now() - new Date(m.rtCheckedAt) > RT_RECHECK_DAYS * 86400000;
+  return (
+    !m.rtCheckedAt ||
+    !Number.isFinite(new Date(m.rtCheckedAt).getTime()) ||
+    Date.now() - new Date(m.rtCheckedAt) > RT_RECHECK_DAYS * 86400000
+  );
 }
 
 async function fetchRtRating(m) {
@@ -373,6 +396,7 @@ async function backfillRtRatings() {
   if (!state.omdbKey || state._rtBackfillRunning) return;
   state._rtBackfillRunning = true;
   const list = state.movies;
+  const target = state.christmasMode ? 'christmas' : 'normal';
   let changed = false;
   try {
     for (const m of list.filter(rtNeedsFill)) {
@@ -393,9 +417,9 @@ async function backfillRtRatings() {
     }
   } finally {
     state._rtBackfillRunning = false;
-    if (changed && list === state.movies) {
-      save();
-      render();
+    if (changed && (list === getNormalList() || list === getChristmasList())) {
+      save(target, true);
+      if (list === state.movies) render();
     }
   }
 }
