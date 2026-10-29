@@ -25,3 +25,17 @@ Manual checklist:
 - `sortOldestFirst()` appears unused. `collectionDateMap()` and the `cdMap` argument are retained; the existing comment explains that `sortWithCollections()` no longer uses the argument.
 - `_sb_local_ts` is stamped by the existing save mechanism but the current conflict resolver does not read it. Conflict handling currently checks persisted pending state and snapshots before/after the initial fetch.
 - `_pendingReleaseDate` is retained even though the form's release date is the source used when saving.
+
+## Phase 2 — static file split
+
+- `index.html` contains the existing markup and ordered classic script references. All CSS is in `styles.css`; there are no inline script blocks or ES modules. The small SVG noise image remains in CSS because it is not a large base64 asset.
+- `state.js` holds shared declarations/helpers; `api.js` handles search and metadata; `render.js` builds/filter/sorts views; `modals.js` holds film forms and Surprise Me; `imports.js` handles both import formats and export; `christmas.js` handles Christmas mode/effects; `ui.js` contains controls, shortcuts, selection and gestures; `storage-sync.js` contains persistence/cloud logic; `bootstrap.js` starts the app after dependencies and markup exist.
+- Confirmed every original executable JavaScript statement moved verbatim and all 322 JavaScript comments survived. The isolated browser regression suite and real-SDK auth checks passed after splitting.
+- Live service and native iOS limitations from Phase 1 still apply.
+
+Manual checklist:
+
+- [ ] Serve the folder with a plain web server and confirm all CSS/JS requests succeed.
+- [ ] Open Add, Detail, Surprise, Letterboxd import/export, Paste, Shortcuts, and Cloud Save.
+- [ ] Use filters, sort, categories, grid/list/compact, bulk selection and keyboard shortcuts.
+- [ ] At a width below 640px, confirm list view, bottom search and bottom-sheet modals.
