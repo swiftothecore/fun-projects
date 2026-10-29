@@ -3026,6 +3026,15 @@ function buildBadges(m,c){
 
 function setFilter(f,btn){
   if(window.selectionMode) exitSelectMode(false);
+  // Clicking All is a "show me everything" reset, so drop any search query too
+  if(f==='all'&&searchQuery){
+    document.getElementById('searchBar').value='';
+    const mi=document.getElementById('mobileSearchBarInput');
+    if(mi){ mi.value=''; document.getElementById('mobileSearchBar').classList.remove('msb-active'); }
+    searchQuery='';
+    searchIncludesDetached=false;
+    document.getElementById('searchBarWrap').classList.remove('expanded','has-query');
+  }
   if(currentFilter===f&&f!=='all'){
     currentFilter='all';currentCategory=null;
     document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
