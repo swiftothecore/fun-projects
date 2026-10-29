@@ -20,7 +20,10 @@ async function _sbRun() {
     _pendingSync = readStorage('_sb_pending') === '1';
   let _syncPromise = null,
     _syncRequested = false,
-    _pullRetryTimer = null;
+    _pullRetryTimer = null,
+    _refreshing = false;
+  const _copy = (data) => JSON.parse(JSON.stringify(data));
+  let _base = readStoredJSON('_sb_base', null, isSettingsObject);
 
   // ── Safe localStorage helper ──
   function _lsGet(k) {
@@ -361,6 +364,36 @@ async function _sbRun() {
     }
   }
 
+  // The base is the last snapshot this device knows matched the cloud. Merging
+  // against it tells "the other device changed this" apart from "I changed this",
+  // so a stale tab cannot silently revert edits made elsewhere.
+  function _setBase(data) {
+    _base = _copy(data);
+    try {
+      writeStorage('_sb_base', JSON.stringify(_base));
+    } catch (e) {}
+  }
+
+  function _applyRemote(data) {
+    if (!window._sbOnLoad) return;
+    window._sbPaused = true;
+    try {
+      window._sbOnLoad(data);
+    } finally {
+      window._sbPaused = false;
+    }
+  }
+
+  async function _fetchRow() {
+    const { data: row, error } = await _sb
+      .from(window._SB_TABLE || '__')
+      .select('data')
+      .eq('user_id', _user.id)
+      .maybeSingle();
+    if (error) throw error;
+    return row;
+  }
+
   function _syncNow() {
     _syncRequested = true;
     _setPending(true);
@@ -371,15 +404,26 @@ async function _sbRun() {
       try {
         while (_syncRequested) {
           _syncRequested = false;
-          if (!window._SB_TABLE) break;
-          const data = window._sbGetData
-            ? window._sbGetData()
-            : window._SB_LS_KEY
-              ? JSON.parse(_lsGet(window._SB_LS_KEY) || 'null')
-              : null;
-          if (data == null) break;
-          const payload = JSON.parse(JSON.stringify(data));
-          if (!(await _upsert(window._SB_TABLE, payload))) break;
+          if (!window._SB_TABLE || !window._sbGetData || !_sb || !_user) break;
+          const local = _copy(window._sbGetData());
+          // Pull first so changes made on another device are merged, not overwritten.
+          let row;
+          try {
+            row = await _fetchRow();
+          } catch (e) {
+            console.warn('[Sync] Pre-save read failed:', e.message);
+            _btnStatus('#c0392b', 'Sync failed: ' + e.message);
+            break;
+          }
+          const remote = row ? normalizeSyncPayload(row.data) : null;
+          const merged = remote ? mergeSyncSnapshots(_base, local, remote) : local;
+          if (!(await _upsert(window._SB_TABLE, merged))) break;
+          _setBase(merged);
+          const current = _copy(window._sbGetData());
+          // Rebase edits made while the request was in flight onto the merge.
+          const next = mergeSyncSnapshots(local, current, merged);
+          if (JSON.stringify(next) !== JSON.stringify(current)) _applyRemote(next);
+          if (JSON.stringify(next) !== JSON.stringify(merged)) _syncRequested = true;
           if (!_syncRequested) {
             _setPending(false);
             _btnStatus('#5a9e7a', 'Saved to cloud \u2713');
@@ -398,24 +442,15 @@ async function _sbRun() {
     const persistedPending = _lsGet('_sb_pending') === '1';
     const before = window._sbGetData ? JSON.stringify(window._sbGetData()) : null;
     try {
-      const { data: row, error } = await client
-        .from(window._SB_TABLE || '__')
-        .select('data')
-        .eq('user_id', user.id)
-        .maybeSingle();
+      const row = await _fetchRow();
       if (client !== _sb || user !== _user) return false;
-      if (error) throw error;
       clearTimeout(_pullRetryTimer);
       const after = window._sbGetData ? JSON.stringify(window._sbGetData()) : null;
       if (_pendingSync || persistedPending || before !== after || !row) {
         await _syncNow();
       } else if (window._sbOnLoad) {
-        window._sbPaused = true;
-        try {
-          window._sbOnLoad(row.data);
-        } finally {
-          window._sbPaused = false;
-        }
+        _applyRemote(row.data);
+        _setBase(window._sbGetData());
         _btnStatus('#5a9e7a', 'Loaded from cloud');
       }
       return true;
@@ -477,10 +512,114 @@ async function _sbRun() {
     _syncNow();
   }, 5000);
 
-  document.addEventListener('visibilitychange', () => {
-    if (!_sb || !_user) return;
-    if (_pendingSync) _syncNow();
-  });
+  // A long-lived (e.g. pinned) tab picks up other devices' changes whenever it
+  // is looked at again, instead of only on page load.
+  async function _refresh() {
+    if (!_sb || !_user || _refreshing) return;
+    if (document.visibilityState === 'hidden') {
+      if (_pendingSync) _syncNow();
+      return;
+    }
+    _refreshing = true;
+    try {
+      await _loadCloud();
+    } finally {
+      _refreshing = false;
+    }
+  }
+
+  document.addEventListener('visibilitychange', _refresh);
+  window.addEventListener?.('focus', _refresh);
+}
+
+// Accepts the legacy bare-array payload as well as the current object shape.
+function normalizeSyncPayload(data) {
+  const payload = Array.isArray(data) ? { watchlist: data } : data;
+  return isSettingsObject(payload) ? payload : {};
+}
+
+// Three-way merge: a value one side changed relative to base wins; when both
+// sides changed it, local wins. Without a base, both sides' items are kept.
+function mergeSyncValue(base, local, remote) {
+  const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+  if (same(local, remote)) return local;
+  if (base !== undefined && same(local, base)) return remote;
+  if (base !== undefined && same(remote, base)) return local;
+  if (isSettingsObject(local) && isSettingsObject(remote)) {
+    const b = isSettingsObject(base) ? base : {};
+    const out = {};
+    for (const k of new Set([...Object.keys(local), ...Object.keys(remote)])) {
+      const inL = k in local,
+        inR = k in remote;
+      if (inL && inR) out[k] = mergeSyncValue(b[k], local[k], remote[k]);
+      else if (base === undefined || !(k in b)) out[k] = inL ? local[k] : remote[k];
+      else {
+        // Deleted on one side: honour it unless the other side edited the value.
+        const kept = inL ? local[k] : remote[k];
+        if (!same(kept, b[k])) out[k] = kept;
+      }
+    }
+    return out;
+  }
+  return local;
+}
+
+function mergeSyncList(base, local, remote) {
+  const byId = (list) => new Map((list || []).map((m) => [m.id, m]));
+  const B = base ? byId(base) : null,
+    L = byId(local),
+    R = byId(remote);
+  const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+  const merged = new Map();
+  for (const id of new Set([...L.keys(), ...R.keys()])) {
+    const inBase = !!B && B.has(id);
+    if (L.has(id) && R.has(id)) {
+      merged.set(id, mergeSyncValue(inBase ? B.get(id) : undefined, L.get(id), R.get(id)));
+    } else if (!inBase) {
+      merged.set(id, L.get(id) || R.get(id));
+    } else {
+      // Deleted on one side: keep it only if the other side edited it since.
+      const kept = L.get(id) || R.get(id);
+      if (!same(kept, B.get(id))) merged.set(id, kept);
+    }
+  }
+  // Keep whichever side reordered; slot the other side's additions after
+  // their nearest preceding neighbour.
+  const ids = (list) => (list || []).map((m) => m.id);
+  const localMoved = !base || !same(ids(local), ids(base));
+  const [primary, secondary] = localMoved ? [local, remote] : [remote, local];
+  const order = ids(primary).filter((id) => merged.has(id));
+  let prev = null;
+  for (const id of ids(secondary)) {
+    if (merged.has(id) && !order.includes(id))
+      order.splice(prev ? order.indexOf(prev) + 1 : 0, 0, id);
+    if (order.includes(id)) prev = id;
+  }
+  return order.map((id) => merged.get(id));
+}
+
+function mergeSyncSnapshots(base, local, remote) {
+  const out = { ...remote, ...local };
+  for (const key of ['watchlist', 'christmas']) {
+    if (!isMovieList(local[key]) || !isMovieList(remote[key])) continue;
+    const b = base && isMovieList(base[key]) ? base[key] : null;
+    out[key] = mergeSyncList(b, local[key], remote[key]);
+  }
+  if (isSettingsObject(local.categorySettings) && isSettingsObject(remote.categorySettings)) {
+    const b = base && isSettingsObject(base.categorySettings) ? base.categorySettings : undefined;
+    out.categorySettings = mergeSyncValue(b, local.categorySettings, remote.categorySettings);
+  }
+  // A film moved between lists on one side must not end up in both.
+  if (isMovieList(out.watchlist) && isMovieList(out.christmas)) {
+    const baseNormal = new Set((base?.watchlist || []).map((m) => m.id));
+    const christmasIds = new Set(out.christmas.map((m) => m.id));
+    const both = new Set(out.watchlist.map((m) => m.id).filter((id) => christmasIds.has(id)));
+    if (both.size) {
+      out.watchlist = out.watchlist.filter((m) => !both.has(m.id) || !baseNormal.has(m.id));
+      out.christmas = out.christmas.filter((m) => !both.has(m.id) || baseNormal.has(m.id));
+    }
+  }
+  return out;
 }
 
 // Safe storage access also covers iOS restrictions during startup/preferences.
@@ -576,8 +715,7 @@ window._sbGetData = function () {
 };
 
 window._sbOnLoad = function (data) {
-  const payload = Array.isArray(data) ? { watchlist: data } : data;
-  if (!isSettingsObject(payload)) return;
+  const payload = normalizeSyncPayload(data);
   // Validate the whole payload before replacing any local data.
   if (
     ('watchlist' in payload && !isMovieList(payload.watchlist)) ||

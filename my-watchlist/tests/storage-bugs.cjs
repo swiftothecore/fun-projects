@@ -54,6 +54,8 @@ function makeApp({ connected = true, pending = false, read } = {}) {
     return elements.get(id);
   };
   let authStore;
+  // The cloud row persists resolved writes, like the real table.
+  const cloud = { row: { data: { watchlist: [copy(film)] } } };
   const client = {
     auth: {
       async getSession() {
@@ -74,12 +76,15 @@ function makeApp({ connected = true, pending = false, read } = {}) {
           return this;
         },
         maybeSingle() {
-          return read ? read() : Promise.resolve({ data: { data: { watchlist: [copy(film)] } } });
+          return read ? read() : Promise.resolve({ data: cloud.row && copy(cloud.row) });
         },
         upsert(row) {
           const completion = deferred();
           writes.push({ row: copy(row), completion });
-          return completion.promise;
+          return completion.promise.then((result) => {
+            if (!result?.error) cloud.row = { data: copy(row.data) };
+            return result;
+          });
         },
       };
     },
@@ -128,6 +133,7 @@ function makeApp({ connected = true, pending = false, read } = {}) {
   const run = (code) => vm.runInContext(code, context);
   return {
     context,
+    cloud,
     storage,
     timers,
     writes,
@@ -194,7 +200,12 @@ test('manual reconnect preserves pending local edits over older cloud data', asy
 
 test('edits made during a manual cloud pull survive its stale response', async () => {
   const pull = deferred();
-  const app = makeApp({ connected: false, read: () => pull.promise });
+  let reads = 0;
+  const app = makeApp({
+    connected: false,
+    read: () =>
+      reads++ ? Promise.resolve({ data: { data: { watchlist: [film] } } }) : pull.promise,
+  });
   await app.start();
   const connection = app.connect();
   await settle();
@@ -277,6 +288,68 @@ test('persisted auth values still observe token changes and sign-out in another 
   assert.equal(app.authStore().getItem('auth-fixture'), 'other-tab-token');
   app.storage.delete('auth-fixture');
   assert.equal(app.authStore().getItem('auth-fixture'), null);
+});
+
+async function flush(app) {
+  for (let i = 0; i < 10; i++) {
+    await settle();
+    for (const write of app.writes) write.completion.resolve({});
+  }
+  await settle();
+}
+
+test('a stale tab adding a film keeps a change another device made since', async () => {
+  const app = makeApp();
+  await app.start();
+  // Another device marks the film watched after this tab loaded.
+  app.cloud.row = { data: { watchlist: [{ ...film, watched: true }] } };
+  app.run(`state.lists.normal.push({ id: 'new', title: 'New film', streaming: {} }); save();`);
+  await flush(app);
+  const saved = app.cloud.row.data.watchlist;
+  assert.deepEqual(
+    saved.map((m) => m.id),
+    ['local', 'new']
+  );
+  assert.equal(saved[0].watched, true, 'the other device\'s change must survive');
+  assert.equal(app.run('state.lists.normal[0].watched'), true, 'and show in this tab');
+});
+
+test('films deleted on another device are not resurrected by a stale tab', async () => {
+  const app = makeApp();
+  await app.start();
+  app.cloud.row = { data: { watchlist: [] } };
+  app.run(`state.lists.normal.push({ id: 'new', title: 'New film', streaming: {} }); save();`);
+  await flush(app);
+  assert.deepEqual(
+    app.cloud.row.data.watchlist.map((m) => m.id),
+    ['new']
+  );
+});
+
+test('both devices editing different fields of one film keep both edits', async () => {
+  const app = makeApp();
+  await app.start();
+  app.cloud.row = { data: { watchlist: [{ ...film, watched: true }] } };
+  app.edit('Renamed here');
+  await flush(app);
+  const saved = app.cloud.row.data.watchlist[0];
+  assert.equal(saved.watched, true);
+  assert.equal(saved.title, 'Renamed here');
+});
+
+test('returning to a pinned tab pulls changes from other devices', async () => {
+  const app = makeApp();
+  const listeners = [];
+  app.context.document.addEventListener = (type, fn) => listeners.push({ type, fn });
+  app.context.addEventListener = (type, fn) => listeners.push({ type, fn });
+  await app.start();
+  app.cloud.row = { data: { watchlist: [{ ...film, watched: true }] } };
+  const focus = listeners.find((l) => l.type === 'focus');
+  assert(focus, 'focus listener registered');
+  await focus.fn();
+  await settle();
+  assert.equal(app.run('state.lists.normal[0].watched'), true);
+  assert.equal(app.writes.length, 0, 'a pure refresh does not write');
 });
 
 (async () => {
