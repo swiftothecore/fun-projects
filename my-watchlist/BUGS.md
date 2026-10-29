@@ -55,3 +55,24 @@ WATCHLIST_PLAYWRIGHT_PATH=/path/to/playwright node my-watchlist/tests/regression
 Optional `WATCHLIST_APP_ROOT=/path/to/original-watchlist` runs the new tests against a pre-fix snapshot. `WATCHLIST_BROWSER` overrides the default Brave executable. The new suite uses isolated fixture storage and intercepts all network requests; it never reads the user's browser profile or contacts a live API/cloud account.
 
 The existing suite also passes, including search/add/edit/delete/undo/redo, CSV import/export, paste import, bulk moves, Christmas separation, storage restrictions, hostile strings, mobile behavior, and the real pinned Supabase SDK against simulated HTTP responses. Desktop and 390px mobile screenshots were captured for visual inspection. Live TMDB/OMDb/Supabase credentials and native iPhone Safari remain outside this automated verification.
+
+## Follow-up bug hunt — 30 October 2026
+
+All changes in this pass are confined to `my-watchlist`. Three subagents handled independent import, form/API, and UI/rendering fixes; the parent handled cloud sync and integrated verification. Peer review checked each area before the final combined run.
+
+The new suites contain 48 focused regression cases. Forty-seven reproduce failures in the pre-fix app; the remaining case guards cross-tab authentication behavior while fixing blocked-storage fallback.
+
+| Suite | Cases | Repaired behavior |
+| --- | --- | --- |
+| `tests/forms-api-bugs.cjs` | 11 | Selecting a movie cancels pending searches and clears the spinner; a new query cancels older details. Failed optional alias/credits requests preserve useful results, and failed TMDB external-ID lookup still permits OMDb title lookup. Replacing a movie refreshes its automatic synopsis while preserving custom notes and updates the edit form's Letterboxd link. Watching Soon clears conflicting cinema status; repeated Surprise Me opening releases its scroll lock correctly. |
+| `tests/imports-bugs.cjs` | 15 | Export opening is idempotent. Categorisation and undo refresh the main cards, and undo cannot leak across categorisation sessions. CSV reads respect file selection, modal session, and returning to the selection step. Newer alternative searches win; unmatched titles can be corrected; closed review panels cannot consume navigation keys. Diary updates preserve release dates and finish rewatch plans. Optional credits/alias failures preserve usable diary and paste metadata. |
+| `tests/render-ui-bugs.cjs` | 11 | Desktop Escape clears mobile search too. Uppercase shifted redo works. Enter activates the focused modal control without triggering Save or Watched. Search shortcuts respect modal focus and choose the visible mobile input. Repeated bulk selection retains selected films. Grid and list search use the selected sort within equal relevance tiers. |
+| `tests/storage-bugs.cjs` | 11 | Cloud writes are serialized and coalesced; older saves cannot clear newer pending edits. Manual reconnect honors unsynced changes and edits made during its fetch. Failed reads retry without treating failure as an empty cloud list; restored sessions upload when no row exists. Changing email authenticates the requested account. Failed auth storage writes/removals use memory without hiding successful token changes or sign-out from another tab. |
+
+The storage suite runs with plain Node.js and deterministic DOM/storage/Supabase fixtures:
+
+```sh
+node my-watchlist/tests/storage-bugs.cjs
+```
+
+The other three new suites use the same `WATCHLIST_PLAYWRIGHT_PATH`, `WATCHLIST_BROWSER`, and optional pre-fix `WATCHLIST_APP_ROOT` setup as `tests/bughunt.cjs`. The existing 40-case bughunt suite and the full functional suite, including the actual pinned Supabase SDK against simulated HTTP responses, are also run after integration. No test accesses personal browser storage or a live API/cloud account.

@@ -52,9 +52,10 @@ function updateModalLetterboxd() {
   if (!el) return;
   if (t) {
     const m = state.editingId ? state.movies.find((x) => x.id === state.editingId) : null;
+    const tmdbId = state._pendingTmdbId || m?.tmdbId;
     const url =
-      m?.tmdbId || state._pendingTmdbId
-        ? `https://letterboxd.com/tmdb/${m?.tmdbId || state._pendingTmdbId}/`
+      tmdbId
+        ? `https://letterboxd.com/tmdb/${encodeURIComponent(tmdbId)}/`
         : `https://letterboxd.com/search/films/${encodeURIComponent(t)}/`;
     el.href = url;
     el.style.opacity = '1';
@@ -641,6 +642,7 @@ function clearForm() {
   });
   document.getElementById('fWatched').checked = false;
   document.getElementById('fWatchingSoon').checked = false;
+  delete document.getElementById('fNotes').dataset.tmdbOverview;
   document.querySelectorAll('.toggle-chip').forEach((c) => c.classList.remove('active'));
   document.getElementById('fOtherName').classList.remove('visible');
   document.querySelectorAll('.vpn-country-input').forEach((el) => el.classList.remove('visible'));
@@ -746,6 +748,8 @@ function saveMovie() {
     streaming.cinema.coming = true;
   }
   const watched = document.getElementById('fWatched').checked;
+  const watchingSoon = !watched && document.getElementById('fWatchingSoon').checked;
+  if (watchingSoon && streaming.cinema?.coming) streaming.cinema.coming = false;
   const movie = {
     id: state.editingId || crypto.randomUUID(),
     title,
@@ -776,7 +780,7 @@ function saveMovie() {
     watched,
     rewatch: watched ? existing?.rewatch || false : false,
     // If marked watched, strip watchingSoon
-    watchingSoon: watched ? false : document.getElementById('fWatchingSoon').checked,
+    watchingSoon,
     rewatchingSoon: watched ? existing?.rewatchingSoon || false : false,
     streaming,
     dateAdded: existing?.dateAdded || new Date().toISOString(),
@@ -934,6 +938,7 @@ function toggleDetachExempt(id) {
 }
 
 function openSurpriseModal() {
+  if (document.getElementById('surpriseModal').classList.contains('open')) return;
   // Reset state
   const ra = document.getElementById('surpriseResultArea');
   ra.style.display = 'none';

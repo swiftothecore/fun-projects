@@ -76,6 +76,7 @@ function updateSearchHighlight(items) {
 
 function onSearchInput(val) {
   state._searchSeq++;
+  state._selectionSeq++;
   clearTimeout(state.searchTimer);
   state._preloadId = null;
   state._preloadPromise = null;
@@ -121,8 +122,10 @@ async function searchTMDB(q) {
         fetch(
           `https://api.themoviedb.org/3/movie/${aliasId}?api_key=${encodeURIComponent(state.tmdbKey)}`
         )
+          .then((response) => (response.ok ? response.json() : null))
+          .catch(() => null)
       );
-    const [res, aliasRes] = await Promise.all(fetches);
+    const [res, aliasMovie] = await Promise.all(fetches);
     if (seq !== state._searchSeq || !document.getElementById('searchInput').value.trim()) return;
     if (!res.ok) {
       r.innerHTML =
@@ -137,8 +140,7 @@ async function searchTMDB(q) {
     let results = d.results || [];
     // Prepend the aliased movie if the fetch succeeded — dedupe if it also
     // happened to come back in the regular search results.
-    if (aliasRes && aliasRes.ok) {
-      const aliasMovie = await aliasRes.json();
+    if (aliasMovie) {
       results = [aliasMovie, ...results.filter((m) => m.id !== aliasMovie.id)];
     }
     if (seq !== state._searchSeq) return;
@@ -178,22 +180,31 @@ async function searchTMDB(q) {
   }
 }
 
+async function fetchMovieCredits(id) {
+  try {
+    const response = await fetch(
+      `https://api.themoviedb.org/3/movie/${id}/credits?api_key=${encodeURIComponent(state.tmdbKey)}`
+    );
+    return response.ok ? await response.json() : null;
+  } catch {
+    // Credits are optional; a temporary failure must not discard film details.
+    return null;
+  }
+}
+
 function preloadMovie(id) {
   if (state._preloadId === id) return; // already preloading/preloaded this one
   state._preloadId = id;
   state._preloadPromise = (async () => {
     try {
-      const [dr, cr] = await Promise.all([
+      const [dr, c] = await Promise.all([
         fetch(
           `https://api.themoviedb.org/3/movie/${id}?api_key=${encodeURIComponent(state.tmdbKey)}`
         ),
-        fetch(
-          `https://api.themoviedb.org/3/movie/${id}/credits?api_key=${encodeURIComponent(state.tmdbKey)}`
-        ),
+        fetchMovieCredits(id),
       ]);
       if (!dr.ok) return null;
-      const d = await dr.json(),
-        c = cr.ok ? await cr.json() : null;
+      const d = await dr.json();
       return { id, d, c };
     } catch {
       return null;
@@ -211,12 +222,15 @@ function resetMovieSearch() {
 }
 
 async function selectMovie(id) {
+  clearTimeout(state.searchTimer);
+  state._searchSeq++;
   const seq = ++state._selectionSeq;
   const isCurrent = () =>
     seq === state._selectionSeq && document.getElementById('addModal').classList.contains('open');
   const r = document.getElementById('searchResults'),
     h = document.getElementById('searchHint');
   r.classList.remove('open');
+  document.getElementById('searchSpinner').classList.add('active');
   // Hide the details section immediately so fTitle is not focusable during the fetch
   document.getElementById('movieDetailsCollapsible').classList.add('collapsed');
 
@@ -237,17 +251,15 @@ async function selectMovie(id) {
     // Fallback: fresh fetch (e.g. direct click on a result that was never preloaded)
     document.getElementById('searchSpinner').classList.add('active');
     try {
-      const [dr, cr] = await Promise.all([
+      const [dr, credits] = await Promise.all([
         fetch(
           `https://api.themoviedb.org/3/movie/${id}?api_key=${encodeURIComponent(state.tmdbKey)}`
         ),
-        fetch(
-          `https://api.themoviedb.org/3/movie/${id}/credits?api_key=${encodeURIComponent(state.tmdbKey)}`
-        ),
+        fetchMovieCredits(id),
       ]);
       if (!dr.ok) throw new Error('TMDB ' + dr.status);
       d = await dr.json();
-      c = cr.ok ? await cr.json() : null;
+      c = credits;
     } catch {
       if (!isCurrent()) return;
       document.getElementById('searchSpinner').classList.remove('active');
@@ -261,6 +273,7 @@ async function selectMovie(id) {
   }
 
   if (!isCurrent()) return;
+  document.getElementById('searchSpinner').classList.remove('active');
   document.getElementById('fTitle').value = d.title || '';
   document.getElementById('fYear').value = d.release_date ? d.release_date.slice(0, 4) : '';
   document.getElementById('fReleaseDate').value = d.release_date || '';
@@ -274,8 +287,11 @@ async function selectMovie(id) {
   const p = d.poster_path ? TMDB_IMG + d.poster_path : '';
   document.getElementById('fPoster').value = p;
   updatePosterPreview(p);
-  if (!document.getElementById('fNotes').value)
-    document.getElementById('fNotes').value = d.overview || '';
+  const notes = document.getElementById('fNotes');
+  if (!notes.value || notes.value === notes.dataset.tmdbOverview) {
+    notes.value = d.overview || '';
+    notes.dataset.tmdbOverview = notes.value;
+  }
   document.getElementById('searchInput').value = '';
   state._pendingTmdbId = id;
   state._pendingReleaseDate = d.release_date || null;
@@ -366,12 +382,16 @@ function rtNeedsFill(m) {
 async function fetchRtRating(m) {
   let imdbId = m.imdbId || null;
   if (!imdbId && m.tmdbId && state.tmdbKey) {
-    const res = await fetch(
-      `https://api.themoviedb.org/3/movie/${encodeURIComponent(m.tmdbId)}/external_ids?api_key=${encodeURIComponent(state.tmdbKey)}`
-    );
-    if (res.ok) {
-      const d = await res.json();
-      imdbId = d.imdb_id || null;
+    try {
+      const res = await fetch(
+        `https://api.themoviedb.org/3/movie/${encodeURIComponent(m.tmdbId)}/external_ids?api_key=${encodeURIComponent(state.tmdbKey)}`
+      );
+      if (res.ok) {
+        const d = await res.json();
+        imdbId = d.imdb_id || null;
+      }
+    } catch {
+      // OMDb can still find the film by title when TMDB is unavailable.
     }
   }
   const q = imdbId

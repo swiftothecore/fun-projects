@@ -2,6 +2,7 @@
 // Classic scripts intentionally expose handler functions to inline HTML events.
 
 function openExportModal() {
+  if (document.getElementById('exportModal').classList.contains('open')) return;
   state._exportScope = 'unwatched';
   _renderExportSelect();
   document.getElementById('exportModal').classList.add('open');
@@ -100,6 +101,7 @@ function openImportModal() {
   state._importSnap = null;
   state._importActive = false;
   state._importCategoriseSkipped = new Set();
+  state._lastCategoriseAction = null;
   _renderImportSelect();
   document.getElementById('importModal').classList.add('open');
   lockScroll();
@@ -109,6 +111,7 @@ function closeImportModal() {
   if (state._importActive || !document.getElementById('importModal').classList.contains('open'))
     return;
   document.getElementById('importModal').classList.remove('open');
+  state._importReadSeq = (state._importReadSeq || 0) + 1;
   unlockScroll();
 }
 
@@ -174,6 +177,7 @@ function diaryDateISO(value) {
 
 // ── Step 1: file selection UI ──
 function _renderImportSelect() {
+  state._importReadSeq = (state._importReadSeq || 0) + 1;
   const hasKey = !!state.tmdbKey;
   const uncatCount = state.movies.filter((m) => hasNoStreaming(m) && !m.graveyard).length;
   document.getElementById('importBody').innerHTML = `
@@ -232,8 +236,13 @@ function importFileChosen(input) {
 }
 
 function _readImportFile(file) {
+  const readSeq = (state._importReadSeq = (state._importReadSeq || 0) + 1);
   const reader = new FileReader();
   reader.onload = (e) => {
+    if (
+      readSeq !== state._importReadSeq ||
+      !document.getElementById('importModal').classList.contains('open')
+    ) return;
     const rows = _parseLetterboxdCSV(e.target.result).filter((row) => row.Name?.trim());
     if (!rows.length || !('Name' in (rows[0] || {}))) {
       const dz = document.getElementById('importDropzone');
@@ -343,17 +352,14 @@ async function _tmdbSearchForImport(title, year) {
 async function _tmdbDetailsForImport(id) {
   if (!state.tmdbKey || !id) return null;
   try {
-    const [dr, cr] = await Promise.all([
+    const [dr, c] = await Promise.all([
       fetch(
         `https://api.themoviedb.org/3/movie/${id}?api_key=${encodeURIComponent(state.tmdbKey)}`
       ),
-      fetch(
-        `https://api.themoviedb.org/3/movie/${id}/credits?api_key=${encodeURIComponent(state.tmdbKey)}`
-      ),
+      fetchMovieCredits(id),
     ]);
     if (!dr.ok) return null;
     const d = await dr.json();
-    const c = cr.ok ? await cr.json() : null;
     return { d, c };
   } catch {
     return null;
@@ -425,11 +431,14 @@ async function runLetterboxdImport() {
         existing.watched = true;
         existing.watchingSoon = false;
         existing.graveyard = false;
+        existing.rewatch = false;
+        existing.rewatchingSoon = false;
         existing.dateWatched = watchedISO;
         // Backfill missing metadata while we have it
         if (tmdbId && !existing.tmdbId) existing.tmdbId = tmdbId;
         if (d?.poster_path && !existing.poster) existing.poster = TMDB_IMG + d.poster_path;
         if (d?.runtime && !existing.runtime) existing.runtime = d.runtime;
+        if (d?.release_date && !existing.releaseDate) existing.releaseDate = d.release_date;
         if (d?.genres?.length && !existing.genre)
           existing.genre = d.genres.map((g) => g.name).join(', ');
         if (dir && !existing.director) existing.director = dir.name;
@@ -539,6 +548,7 @@ document.addEventListener('keydown', (e) => {
   m.streaming = streaming;
   m.otherName = otherName;
   save();
+  render();
   // Re-insert the row at the top of the list
   const temp = document.createElement('div');
   temp.innerHTML = _buildCategoriseRow(m);
@@ -643,6 +653,7 @@ function assignServiceFromCategorise(id, svc, name) {
   m.streaming[svc] = { direct: true, vpn: false, vpnCountry: '' };
   if (svc === 'other' && name) m.otherName = name;
   save();
+  render();
   _removeCategoriseRow(id);
 }
 
@@ -698,6 +709,8 @@ function closePasteImportModal() {
   if (!document.getElementById('pasteImportModal').classList.contains('open')) return;
   document.getElementById('pasteImportModal').classList.remove('open');
   state._pasteSession++;
+  state._openAltsIdx = -1;
+  state._altHighlightIdx = -1;
   unlockScroll();
 }
 
@@ -826,13 +839,14 @@ async function _runPasteSearch(titles) {
             fetch(
               `https://api.themoviedb.org/3/movie/${aliasId}?api_key=${encodeURIComponent(state.tmdbKey)}`
             )
+              .then((response) => (response.ok ? response.json() : null))
+              .catch(() => null)
           );
-        const [res, aliasRes] = await Promise.all(fetches);
+        const [res, aliasMovie] = await Promise.all(fetches);
         if (res.ok) {
           const data = await res.json();
           results = (data.results || []).slice(0, 8);
-          if (aliasRes && aliasRes.ok) {
-            const aliasMovie = await aliasRes.json();
+          if (aliasMovie) {
             results = [aliasMovie, ...results.filter((m) => m.id !== aliasMovie.id)];
           }
         }
@@ -1013,7 +1027,8 @@ function _buildPasteCard(item, idx) {
       <div class="paste-result-notfound">Not found on TMDB</div>`;
   }
 
-  const altsPanel = item.showingAlts && hit ? _buildPasteAltsPanel(item, idx) : '';
+  const canSearch = !hit?._manual && (!!hit || !!state.tmdbKey);
+  const altsPanel = item.showingAlts && canSearch ? _buildPasteAltsPanel(item, idx) : '';
   const changeCls = item.showingAlts ? 'paste-action-btn pab-active' : 'paste-action-btn';
 
   return `<div class="paste-result-card ${isRemoved ? 'pr-removed' : ''}" id="paste-card-${idx}">
@@ -1022,7 +1037,7 @@ function _buildPasteCard(item, idx) {
         ${posterEl}
         <div class="paste-result-info">${infoEl}</div>
         <div class="paste-result-actions">
-          ${hit && !hit._manual ? `<button class="${changeCls}" onclick="_pasteToggleAlts(${idx})">${item.showingAlts ? 'Hide' : 'Change'}</button>` : ''}
+          ${canSearch ? `<button class="${changeCls}" onclick="_pasteToggleAlts(${idx})">${item.showingAlts ? 'Hide' : 'Change'}</button>` : ''}
           ${
             isRemoved
               ? `<button class="paste-action-btn pab-restore" onclick="_pasteRestore(${idx})">Restore</button>`
@@ -1101,6 +1116,7 @@ function _onPasteAltSearchKey(e, idx) {
 
 // ── Global keydown for alt panel navigation (arrow keys / Enter) ──────────
 document.addEventListener('keydown', (e) => {
+  if (!document.getElementById('pasteImportModal').classList.contains('open')) return;
   if (state._openAltsIdx < 0) return;
   // Only intercept if we're NOT focused in the search input (that's handled separately)
   const searchInp = document.getElementById(`pasteAltSearch-${state._openAltsIdx}`);
@@ -1218,11 +1234,15 @@ function _pasteRestore(idx) {
 async function _pasteCustomSearch(idx) {
   const session = state._pasteSession;
   const item = state._pasteItems[idx];
-  const isCurrent = () => session === state._pasteSession && state._pasteItems[idx] === item;
   const input = document.getElementById(`pasteAltSearch-${idx}`);
   if (!input || !state.tmdbKey) return;
   const q = input.value.trim();
   if (!q) return;
+  const request = (item._searchRequest = (item._searchRequest || 0) + 1);
+  const isCurrent = () =>
+    session === state._pasteSession &&
+    state._pasteItems[idx] === item &&
+    item._searchRequest === request;
   input.disabled = true;
   const btn = input.nextElementSibling;
   if (btn) btn.disabled = true;
@@ -1283,16 +1303,14 @@ async function _pasteConfirmAll() {
       crew = null;
     if (state.tmdbKey && hit.id) {
       try {
-        const [dr, cr] = await Promise.all([
+        const [dr, credits] = await Promise.all([
           fetch(
             `https://api.themoviedb.org/3/movie/${hit.id}?api_key=${encodeURIComponent(state.tmdbKey)}`
           ),
-          fetch(
-            `https://api.themoviedb.org/3/movie/${hit.id}/credits?api_key=${encodeURIComponent(state.tmdbKey)}`
-          ),
+          fetchMovieCredits(hit.id),
         ]);
         if (dr.ok) d = await dr.json();
-        if (cr.ok) crew = await cr.json();
+        crew = credits;
       } catch (e) {
         /* fallback to search result */
       }

@@ -17,7 +17,10 @@ async function _sbRun() {
   const K = { url: '_sb_url', key: '_sb_key', email: '_sb_email', dismissed: '_sb_dismissed' };
   let _sb = null,
     _user = null,
-    _pendingSync = false;
+    _pendingSync = readStorage('_sb_pending') === '1';
+  let _syncPromise = null,
+    _syncRequested = false,
+    _pullRetryTimer = null;
 
   // ── Safe localStorage helper ──
   function _lsGet(k) {
@@ -29,11 +32,13 @@ async function _sbRun() {
   }
 
   // ── Custom auth storage for supabase-js ──
-  const _sbMem = {};
+  const _sbMem = Object.create(null);
+  const _sbDirty = new Set();
   const _sbStore = {
     getItem: (k) => {
+      if (_sbDirty.has(k)) return _sbMem[k];
       try {
-        return readStorage(k) ?? _sbMem[k] ?? null;
+        return localStorage.getItem(k);
       } catch (e) {
         return _sbMem[k] ?? null;
       }
@@ -41,14 +46,21 @@ async function _sbRun() {
     setItem: (k, v) => {
       _sbMem[k] = v;
       try {
-        writeStorage(k, v);
-      } catch (e) {}
+        localStorage.setItem(k, v);
+        _sbDirty.delete(k);
+      } catch (e) {
+        _sbDirty.add(k);
+      }
     },
     removeItem: (k) => {
-      delete _sbMem[k];
+      // Remember removals even when storage is blocked or full.
+      _sbMem[k] = null;
       try {
-        removeStorage(k);
-      } catch (e) {}
+        localStorage.removeItem(k);
+        _sbDirty.delete(k);
+      } catch (e) {
+        _sbDirty.add(k);
+      }
     },
   };
 
@@ -135,7 +147,8 @@ async function _sbRun() {
       // getSession restores the SDK's persisted session and refreshes it if needed.
       const restored = await client.auth.getSession();
       let data =
-        !restored.error && restored.data?.session?.user
+        !restored.error &&
+        restored.data?.session?.user?.email?.toLowerCase() === email.toLowerCase()
           ? { user: restored.data.session.user }
           : null;
       if (!data) {
@@ -162,23 +175,8 @@ async function _sbRun() {
       _passwordField();
       setStatus('Connected!', 'ok');
       _btnStatus('#5a9e7a', 'Connected');
-      // Pull remote data if it exists, otherwise push local up
-      const { data: remoteRow } = await client
-        .from(window._SB_TABLE || '__')
-        .select('data')
-        .eq('user_id', data.user.id)
-        .maybeSingle();
-      if (remoteRow && window._sbOnLoad) {
-        window._sbPaused = true;
-        try {
-          window._sbOnLoad(remoteRow.data);
-        } finally {
-          window._sbPaused = false;
-        }
-      } else {
-        await _syncNow();
-      }
-      setTimeout(hideBanner, 1500);
+      // Use the same conflict checks for manual connection and session restore.
+      if (await _loadCloud()) setTimeout(hideBanner, 1500);
     } catch (e) {
       setStatus('Error: ' + e.message, 'err');
     }
@@ -308,6 +306,8 @@ async function _sbRun() {
       const client = _makeClient(url, key);
       const { data, error } = await client.auth.getSession();
       if (error || !data.session?.user) return false;
+      const email = _lsGet(K.email);
+      if (email && data.session.user.email?.toLowerCase() !== email.toLowerCase()) return false;
       _sb = client;
       _user = data.session.user;
       _passwordField();
@@ -342,14 +342,11 @@ async function _sbRun() {
         _setPending(true);
         setTimeout(async () => {
           if (_pendingSync && _sb && _user) {
-            _pendingSync = false;
             await _syncNow();
           }
         }, 2000);
         return false;
       }
-      _setPending(false);
-      _btnStatus('#5a9e7a', 'Saved to cloud \u2713');
       return true;
     } catch (e) {
       console.warn('[Sync] Upsert error:', e.message);
@@ -357,7 +354,6 @@ async function _sbRun() {
       _setPending(true);
       setTimeout(async () => {
         if (_pendingSync && _sb && _user) {
-          _pendingSync = false;
           await _syncNow();
         }
       }, 2000);
@@ -365,14 +361,72 @@ async function _sbRun() {
     }
   }
 
-  async function _syncNow() {
-    if (!window._SB_TABLE) return;
-    const payload = window._sbGetData
-      ? window._sbGetData()
-      : window._SB_LS_KEY
-        ? JSON.parse(_lsGet(window._SB_LS_KEY) || 'null')
-        : null;
-    if (payload != null) await _upsert(window._SB_TABLE, payload);
+  function _syncNow() {
+    _syncRequested = true;
+    _setPending(true);
+    if (_syncPromise) return _syncPromise;
+    // Serialize writes so an older response cannot overwrite a later edit or
+    // clear its pending marker. Coalesce queued saves into the latest snapshot.
+    _syncPromise = Promise.resolve().then(async () => {
+      try {
+        while (_syncRequested) {
+          _syncRequested = false;
+          if (!window._SB_TABLE) break;
+          const data = window._sbGetData
+            ? window._sbGetData()
+            : window._SB_LS_KEY
+              ? JSON.parse(_lsGet(window._SB_LS_KEY) || 'null')
+              : null;
+          if (data == null) break;
+          const payload = JSON.parse(JSON.stringify(data));
+          if (!(await _upsert(window._SB_TABLE, payload))) break;
+          if (!_syncRequested) {
+            _setPending(false);
+            _btnStatus('#5a9e7a', 'Saved to cloud \u2713');
+          }
+        }
+      } finally {
+        _syncPromise = null;
+      }
+    });
+    return _syncPromise;
+  }
+
+  async function _loadCloud() {
+    const client = _sb,
+      user = _user;
+    const persistedPending = _lsGet('_sb_pending') === '1';
+    const before = window._sbGetData ? JSON.stringify(window._sbGetData()) : null;
+    try {
+      const { data: row, error } = await client
+        .from(window._SB_TABLE || '__')
+        .select('data')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      if (client !== _sb || user !== _user) return false;
+      if (error) throw error;
+      clearTimeout(_pullRetryTimer);
+      const after = window._sbGetData ? JSON.stringify(window._sbGetData()) : null;
+      if (_pendingSync || persistedPending || before !== after || !row) {
+        await _syncNow();
+      } else if (window._sbOnLoad) {
+        window._sbPaused = true;
+        try {
+          window._sbOnLoad(row.data);
+        } finally {
+          window._sbPaused = false;
+        }
+        _btnStatus('#5a9e7a', 'Loaded from cloud');
+      }
+      return true;
+    } catch (e) {
+      if (client !== _sb || user !== _user) return false;
+      setStatus('Could not load cloud data: ' + e.message, 'err');
+      _btnStatus('#c0392b', 'Cloud load failed: ' + e.message);
+      clearTimeout(_pullRetryTimer);
+      _pullRetryTimer = setTimeout(_loadCloud, 5000);
+      return false;
+    }
   }
 
   window._sbSyncNow = _syncNow;
@@ -408,34 +462,7 @@ async function _sbRun() {
     hideBanner();
     _btnStatus('#d97706', 'Loading...');
 
-    const persistedPending = _lsGet('_sb_pending') === '1';
-
-    const _snapBefore = window._sbGetData ? JSON.stringify(window._sbGetData()) : null;
-    const { data: row } = await _sb
-      .from(window._SB_TABLE || '__')
-      .select('data')
-      .eq('user_id', _user.id)
-      .maybeSingle();
-    const _snapAfter = window._sbGetData ? JSON.stringify(window._sbGetData()) : null;
-
-    const changedDuringFetch = _snapBefore !== null && _snapBefore !== _snapAfter;
-
-    if (_pendingSync || persistedPending || changedDuringFetch) {
-      _pendingSync = false;
-      await _syncNow();
-    } else {
-      if (row && window._sbOnLoad) {
-        window._sbPaused = true;
-        try {
-          window._sbOnLoad(row.data);
-        } finally {
-          window._sbPaused = false;
-        }
-        _btnStatus('#5a9e7a', 'Loaded from cloud');
-      } else {
-        _btnStatus('#5a9e7a', 'Connected');
-      }
-    }
+    await _loadCloud();
   } else {
     _btnStatus('#4a4440', 'Not connected — tap to set up');
     if (!_lsGet(K.dismissed)) showBanner();
@@ -447,17 +474,12 @@ async function _sbRun() {
       const ok = await _tryConnect();
       if (!ok) return;
     }
-    _pendingSync = false;
     _syncNow();
   }, 5000);
 
   document.addEventListener('visibilitychange', () => {
     if (!_sb || !_user) return;
-    if (document.visibilityState === 'hidden') _syncNow();
-    else if (_pendingSync) {
-      _pendingSync = false;
-      _syncNow();
-    }
+    if (_pendingSync) _syncNow();
   });
 }
 

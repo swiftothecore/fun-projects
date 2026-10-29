@@ -319,8 +319,10 @@ function renderContent() {
     if (state.currentFilter === 'all') {
       const base = state.searchQuery
         ? _postFilter(
-            state.movies.filter(
-              (m) => !m.graveyard && (state.searchIncludesDetached || !isDetachedMovie(m))
+            sortWithCollections(
+              state.movies.filter(
+                (m) => !m.graveyard && (state.searchIncludesDetached || !isDetachedMovie(m))
+              )
             )
           )
         : _postFilter(
@@ -382,8 +384,10 @@ function renderContent() {
   if (state.currentFilter === 'all') {
     const base = state.searchQuery
       ? _postFilter(
-          state.movies.filter(
-            (m) => !m.graveyard && (state.searchIncludesDetached || !isDetachedMovie(m))
+          sortWithCollections(
+            state.movies.filter(
+              (m) => !m.graveyard && (state.searchIncludesDetached || !isDetachedMovie(m))
+            )
           )
         )
       : _postFilter(

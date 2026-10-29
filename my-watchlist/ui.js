@@ -216,6 +216,8 @@ function onSearchBarKeyDown(e) {
     // Escape always clears and fully dismisses in one go
     const hadQuery = !!i.value;
     i.value = '';
+    document.getElementById('mobileSearchBarInput').value = '';
+    document.getElementById('mobileSearchBar').classList.remove('msb-active');
     if (state.selectionMode) exitSelectMode(false);
     state.searchQuery = '';
     state.searchIncludesDetached = false;
@@ -234,21 +236,21 @@ function onSearchBarBlur() {
   if (!i.value) setTimeout(() => w.classList.remove('expanded'), 100);
 }
 
-// Cmd/Ctrl+K opens & focuses the inline search bar from anywhere on the page.
-// Skipped when typing in another input or while a modal is open, to avoid
-// hijacking text shortcuts the user actually wants.
+function focusSearchBar() {
+  const mobile = window.innerWidth <= 640;
+  if (!mobile) document.getElementById('searchBarWrap').classList.add('expanded');
+  const input = document.getElementById(mobile ? 'mobileSearchBarInput' : 'searchBar');
+  input.focus();
+  input.select();
+}
+
+// Cmd/Ctrl+K focuses the visible search input. Keep keyboard focus inside
+// an open modal instead of sending it behind the overlay.
 document.addEventListener('keydown', (e) => {
-  if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-    const inModalInput = e.target.closest(
-      '.modal-overlay.open input, .modal-overlay.open textarea'
-    );
-    if (inModalInput) return;
+  if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+    if (document.querySelector('.modal-overlay.open, #shortcutsOverlay.open')) return;
     e.preventDefault();
-    const w = document.getElementById('searchBarWrap');
-    if (!w) return;
-    w.classList.add('expanded');
-    document.getElementById('searchBar').focus();
-    document.getElementById('searchBar').select();
+    focusSearchBar();
   }
 });
 
@@ -270,6 +272,10 @@ document.addEventListener('keydown', (e) => {
     if (typeof closeImportModal === 'function') closeImportModal();
     return;
   }
+  // Enter activates the focused control using the browser's normal click behavior.
+  // Modal shortcuts must not turn Close, Edit, or service buttons into Save/Watched.
+  if (e.key === 'Enter' && document.activeElement?.closest('button, a[href], select, summary'))
+    return;
   if (e.key === 'Enter' && !e.shiftKey) {
     const modalOpen = document.getElementById('addModal').classList.contains('open');
     if (modalOpen) {
@@ -451,13 +457,7 @@ document.addEventListener('keydown', (e) => {
     }
     if (e.key === '/') {
       e.preventDefault();
-      const w = document.getElementById('searchBarWrap');
-      if (w) {
-        w.classList.add('expanded');
-        const sb = document.getElementById('searchBar');
-        sb.focus();
-        sb.select();
-      }
+      focusSearchBar();
       return;
     }
   }
@@ -491,7 +491,13 @@ document.addEventListener('keydown', (e) => {
   }
   // Require no open modal: the categorise panel has its own Cmd+Z undo, and both
   // firing at once would also roll back an unrelated earlier deletion.
-  if (e.key === 'z' && (e.metaKey || e.ctrlKey) && !e.shiftKey && !inField && noModal) {
+  if (
+    e.key.toLowerCase() === 'z' &&
+    (e.metaKey || e.ctrlKey) &&
+    !e.shiftKey &&
+    !inField &&
+    noModal
+  ) {
     e.preventDefault();
     if (state.undoStack.length) {
       state.redoStack.push(JSON.parse(JSON.stringify(state.movies)));
@@ -502,7 +508,13 @@ document.addEventListener('keydown', (e) => {
       showInfoToast('Deletion undone.', 3000);
     }
   }
-  if (e.key === 'z' && (e.metaKey || e.ctrlKey) && e.shiftKey && !inField && noModal) {
+  if (
+    e.key.toLowerCase() === 'z' &&
+    (e.metaKey || e.ctrlKey) &&
+    e.shiftKey &&
+    !inField &&
+    noModal
+  ) {
     e.preventDefault();
     redoDelete();
   }
@@ -678,6 +690,7 @@ function syncSelectionUI() {
 }
 
 function enterSelectMode() {
+  if (state.selectionMode) return;
   state.selectionMode = true;
   state.selectedIds = new Set();
   document.getElementById('selectModeBtn')?.classList.add('active');
