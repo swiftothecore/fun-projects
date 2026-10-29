@@ -1,531 +1,1250 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <link rel="icon" type="image/svg+xml" href="favicon.svg">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Watchlist</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css">
-</head>
-<body>
-
-<div class="christmas-banner" id="christmasBanner">
-  <span style="font-size:1.1rem">🎄</span>
-  <span class="christmas-banner-label">Christmas Mode — these films are kept completely separate from your main watchlist</span>
-  <button class="btn btn-ghost btn-sm" onclick="toggleChristmasMode()" style="flex-shrink:0">Exit Christmas Mode</button>
-</div>
-
-<script src="https://unpkg.com/@supabase/supabase-js@2.118.0/dist/umd/supabase.js" async onload="window._sbLibReady&&window._sbLibReady()"></script>
-
-
-<div id="_sb_wrap">
-  <div id="_sb_main_row">
-    <span id="_sb_msg"><strong>Sync your data across devices</strong> &mdash; connect Supabase to save externally and access anywhere</span>
-    <button id="_sb_connect_btn">Set up sync &rarr;</button>
-    <button id="_sb_dismiss_btn" title="Dismiss">&times;</button>
-  </div>
-  <div id="_sb_form_row">
-    <div id="_sb_paste_row"><textarea id="_sb_paste_area" placeholder="Paste anything here — .env snippet, JSON, or plain text containing your project URL, anon key, email. Fields fill automatically; type your password separately."></textarea></div>
-    <input id="_sb_url_in"   placeholder="Project URL  (https://xxx.supabase.co)">
-    <input id="_sb_key_in"   placeholder="Anon public key">
-    <input id="_sb_email_in" placeholder="Email">
-    <input id="_sb_pass_in"  type="password" placeholder="Password">
-    <button id="_sb_paste_toggle" title="Paste a config snippet to fill all fields at once">Paste config</button>
-    <button id="_sb_save_btn">Save &amp; Connect</button>
-    <button id="_sb_copy_cfg" title="Copy connection settings as a portable snippet to use on another device">Copy config</button>
-    <span id="_sb_status"></span>
-  </div>
-</div>
-
-
-<div id="apiBanner">
-  <span style="font-size:1.1rem">🔑</span>
-  <div class="banner-text"><strong>Set up TMDB movie search.</strong> Get a free API key at <a href="https://www.themoviedb.org/settings/api" target="_blank">themoviedb.org</a> (sign up, then copy your API Key).</div>
-    <div class="banner-input-row">
-    <input class="banner-input" id="apiKeyInput" type="text" placeholder="Paste your TMDB API key...">
-    <button class="btn btn-primary btn-sm" onclick="saveApiKey()">Save</button>
-  </div>
-  <div class="banner-text"><strong>Rotten Tomatoes scores (optional).</strong> Get a free OMDb key at <a href="https://www.omdbapi.com/apikey.aspx" target="_blank">omdbapi.com</a> (check your email to activate it).</div>
-  <div class="banner-input-row">
-    <input class="banner-input" id="omdbKeyInput" type="text" placeholder="Paste your OMDb API key...">
-    <button class="btn btn-primary btn-sm" onclick="saveOmdbKey()">Save</button>
-  </div>
-</div>
-
-<header>
-  <div>
-    <h1 class="header-title"><a href="../" style="color:inherit;text-decoration:none;cursor:pointer;">My <span>Watchlist</span></a></h1>
-    <p class="header-count" id="headerCount">0 films</p>
-  </div>
-  <div style="display:flex;gap:10px;align-items:center;">
-    <button id="_sb_cloud_btn" class="btn btn-ghost btn-sm" onclick="window._sbOpenPanel&&window._sbOpenPanel()"><svg viewBox="0 0 24 24" width="13" height="13" style="flex-shrink:0"><path fill="currentColor" d="M19.35 10.04A7.49 7.49 0 0 0 12 4C9.11 4 6.6 5.64 5.35 8.04A5.994 5.994 0 0 0 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96z"/></svg>Cloud Save</button>
-    <button class="btn btn-ghost btn-sm" onclick="showApiSettings()">🔑 API Key</button>
-    <button class="btn btn-ghost btn-sm" onclick="openImportModal()">📥 Letterboxd</button>
-    <button class="btn btn-ghost btn-sm" onclick="openExportModal()" title="Export your watchlist to import into Letterboxd">📤 Export</button>
-    <button class="btn btn-ghost btn-sm" onclick="openSurpriseModal()" title="Let the list decide">🎲 Surprise</button>
-    <button class="btn btn-primary" onclick="openAddModal()">
-      <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-      Add Film
-    </button>
-  </div>
-</header>
-
-<div id="christmasLights" style="display:none;"></div>
-
-<div class="controls">
-  <div class="filter-bar">
-    <button class="filter-btn active" onclick="setFilter('all',this)">All</button>
-    <button class="filter-btn" id="filterSoon" onclick="setFilter('soon',this)"><span class="dot" style="background:var(--soon)"></span>Watching Soon</button>
-    <button class="filter-btn" onclick="setFilter('netflix',this)"><span class="dot" style="background:#e50914"></span>Netflix</button>
-    <button class="filter-btn" onclick="setFilter('disney',this)"><span class="dot" style="background:#3b82f6"></span>Disney+</button>
-    <button class="filter-btn" onclick="setFilter('prime',this)"><span class="dot" style="background:#00a8e1"></span>Prime</button>
-    <button class="filter-btn" onclick="setFilter('cinema',this)"><span class="dot" style="background:#818cf8"></span>In Cinemas</button>
-    <button class="filter-btn" onclick="setFilter('other',this)"><span class="dot" style="background:#4a7c59"></span>Other</button>
-    <button class="filter-btn" onclick="setFilter('vpn',this)"><span class="dot" style="background:#7c3aed"></span>VPN only</button>
-    <button class="filter-btn" onclick="setFilter('unwatched',this)">Unwatched</button>
-    <button class="filter-btn" onclick="setFilter('watched',this)">Watched</button>
-    <button class="filter-btn" onclick="setFilter('rewatch',this)">Rewatch</button>
-    <button class="filter-btn" id="filterGraveyard" onclick="setFilter('graveyard',this)">💀 Graveyard</button>
-    <button class="filter-btn" id="filterCategories" onclick="setFilter('categories',this)">&#128196; Categories</button>
-  </div>
-  <div class="search-bar-wrap" id="searchBarWrap">
-    <span class="search-bar-icon" onclick="toggleSearchBar()" title="Search films (Ctrl/Cmd+K)">
-      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="6" cy="6" r="4.5"/><line x1="9.5" y1="9.5" x2="12.5" y2="12.5" stroke-linecap="round"/></svg>
-    </span>
-    <input type="text" id="searchBar" class="search-bar-input" placeholder="Search title, director, with…" autocomplete="off"
-      oninput="onSearchBarInput(this.value)" onkeydown="onSearchBarKeyDown(event)" onblur="onSearchBarBlur()">
-    <button class="search-bar-clear" onclick="clearSearchBar()" title="Clear search">&times;</button>
-  </div>
-  <button id="sortBtn" class="btn btn-ghost btn-sm sort-btn" onclick="toggleSortMenu()" title="Sort films">
-    <svg class="sort-icon" width="11" height="11" viewBox="0 0 11 11" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M3 1.5v8M3 9.5l-1.5-1.5M3 9.5l1.5-1.5M8 9.5v-8M8 1.5l-1.5 1.5M8 1.5l1.5 1.5"/></svg>
-    <span id="sortBtnLabel" class="sort-btn-label">Oldest</span>
-  </button>
-  <button class="btn btn-ghost btn-sm" id="selectModeBtn" onclick="enterSelectMode()" style="flex-shrink:0;">Select</button>
-  <div class="view-toggle">
-    <button class="view-toggle-btn" onclick="openPasteImportModal()" title="Paste film list  [P]">
-      <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="1" width="7" height="9" rx="1.2"/><path d="M4 3H2.8A1.8 1.8 0 0 0 1 4.8v5.4A1.8 1.8 0 0 0 2.8 12h4.4A1.8 1.8 0 0 0 9 10.2V10"/><path d="M6 4.5h3M6 6.5h3"/></svg>
-    </button>
-    <span class="view-toggle-sep"></span>
-    <button id="groupToggleBtn" class="view-toggle-btn active" onclick="toggleGrouping()" title="Switch to flat list">
-      <svg width="13" height="10" viewBox="0 0 13 10" fill="currentColor"><rect x="0" y="0" width="13" height="4" rx="1.5"/><rect x="0" y="6" width="13" height="4" rx="1.5"/></svg>
-    </button>
-    <button id="hideWatchedBtn" class="view-toggle-btn" onclick="toggleHideWatched()" title="Hide watched films">
-      <svg width="15" height="11" viewBox="0 0 15 11" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1.5 5.5C3.5 2.2 5.4 1 7.5 1c2.1 0 4 1.2 6 4.5-2 3.3-3.9 4.5-6 4.5-2.1 0-4-1.2-6-4.5z"/><circle cx="7.5" cy="5.5" r="1.9" fill="currentColor" stroke="none"/></svg>
-    </button>
-    <span class="view-toggle-sep"></span>
-    <button id="viewGrid" class="view-toggle-btn active" onclick="setView('grid')" title="Grid view">
-      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="1" width="5" height="5" rx="1" fill="currentColor"/><rect x="8" y="1" width="5" height="5" rx="1" fill="currentColor"/><rect x="1" y="8" width="5" height="5" rx="1" fill="currentColor"/><rect x="8" y="8" width="5" height="5" rx="1" fill="currentColor"/></svg>
-    </button>
-    <button id="viewCompact" class="view-toggle-btn" onclick="setView('compact')" title="Compact grid">
-      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="1" width="3" height="3" rx="0.6" fill="currentColor"/><rect x="5.5" y="1" width="3" height="3" rx="0.6" fill="currentColor"/><rect x="10" y="1" width="3" height="3" rx="0.6" fill="currentColor"/><rect x="1" y="5.5" width="3" height="3" rx="0.6" fill="currentColor"/><rect x="5.5" y="5.5" width="3" height="3" rx="0.6" fill="currentColor"/><rect x="10" y="5.5" width="3" height="3" rx="0.6" fill="currentColor"/><rect x="1" y="10" width="3" height="3" rx="0.6" fill="currentColor"/><rect x="5.5" y="10" width="3" height="3" rx="0.6" fill="currentColor"/><rect x="10" y="10" width="3" height="3" rx="0.6" fill="currentColor"/></svg>
-    </button>
-    <button id="viewList" class="view-toggle-btn" onclick="setView('list')" title="List view">
-      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="2" width="12" height="2" rx="1" fill="currentColor"/><rect x="1" y="6" width="12" height="2" rx="1" fill="currentColor"/><rect x="1" y="10" width="12" height="2" rx="1" fill="currentColor"/></svg>
-    </button>
-    <span class="view-toggle-sep"></span>
-    <button id="christmasToggleBtn" class="view-toggle-btn" onclick="toggleChristmasMode()" title="Christmas mode">🎄</button>
-  </div>
-</div>
-
-<div id="watchWithFilterBar" class="watch-with-bar" style="display:none;">
-  <span class="watch-with-bar-label">Filtering by</span>
-  <span class="watch-with-bar-chip">👥 <span id="watchWithFilterName"></span><button onclick="clearWatchWithFilter()" title="Clear filter">&times;</button></span>
-</div>
-
-<div id="categoryBar">
-  <div class="category-bar-heading">
-    <span class="category-bar-label">&#9658; Categories</span>
-    <span class="category-bar-line" aria-hidden="true"></span>
-  </div>
-  <div class="category-pill-strip" id="categoryPillStrip"></div>
-</div>
-
-<div id="categoryOptions">
-  <!-- populated by renderCategoriesView when a category is selected -->
-</div>
-
-<div id="soonWrapper">
-<div id="soonSection">
-  <div class="soon-heading"><span class="soon-heading-text">&#9658; Watching Soon</span><span class="soon-heading-line" aria-hidden="true"></span><span class="soon-scroll-hint" aria-hidden="true"></span></div>
-  <div class="soon-strip" id="soonStrip"></div>
-</div>
-<div id="rewatchSoonSection">
-  <div class="rewatch-soon-heading"><span class="rewatch-soon-heading-text">&#9658; Rewatching Soon</span><span class="rewatch-soon-heading-line" aria-hidden="true"></span></div>
-  <div class="rewatch-soon-strip" id="rewatchSoonStrip"></div>
-</div>
-</div>
-<hr class="soon-divider" id="soonDivider" style="display:none;">
-
-<div id="movieGrid"></div>
-<div id="categoryPillPopover"></div>
-<div id="toastContainer"></div>
-
-<!-- ADD/EDIT MODAL -->
-<div class="modal-overlay" id="addModal" onmousedown="handleOverlayClick(event)">
-  <div class="modal">
-    <div class="modal-header">
-      <h2 class="modal-title" id="modalTitle">Add Film</h2>
-      <button class="modal-close" onclick="closeAddModal()">&times;</button>
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Watchlist</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="christmas-banner" id="christmasBanner">
+      <span class="banner-icon">🎄</span>
+      <span class="christmas-banner-label"
+        >Christmas Mode — these films are kept completely separate from your main watchlist</span
+      >
+      <button class="btn btn-ghost btn-sm no-shrink" onclick="toggleChristmasMode()"
+        >Exit Christmas Mode</button
+      >
     </div>
-    <div class="modal-body">
-      <div class="search-section">
-        <span class="search-label">Search TMDB</span>
-        <div id="searchOrNotice">
-          <div class="search-input-wrap">
-            <input class="search-input" id="searchInput" type="text" placeholder="Type a movie title to search..." autocomplete="off" oninput="onSearchInput(this.value)" onkeydown="onSearchKeyDown(event)" onkeyup="if(event.key==='Enter')event.preventDefault()">
-            <div class="search-spinner" id="searchSpinner"><div class="spinner-ring"></div></div>
-          </div>
-          <div class="search-results" id="searchResults"></div>
-          <p class="search-hint" id="searchHint"></p>
-        </div>
-        <div id="noApiNotice" class="no-api-notice" style="display:none;">No TMDB API key set. You can still add films manually, or <a href="#" onclick="showApiSettings();return false;" style="color:var(--gold)">add your key</a> to enable search.</div>
-      </div>
 
-      <div class="form-section-label">Film Details <button id="showMovieDetailsBtn" class="btn btn-ghost btn-sm" style="display:none;text-transform:none;letter-spacing:0.03em;font-size:0.72rem;padding:4px 12px;" onclick="toggleMovieDetails()">&#128065; Show details</button></div>
-      <div id="collapsedTitleBanner" style="display:none;background:var(--surface2);border:1px solid var(--border-hi);border-radius:var(--radius);padding:10px 14px;margin-bottom:14px;display:none;align-items:center;justify-content:space-between;gap:12px;">
-        <div>
-          <div id="collapsedTitleText" style="font-family:'Playfair Display',serif;font-size:1rem;font-weight:400;color:var(--text);line-height:1.2;"></div>
-          <div id="collapsedTitleMeta" style="font-size:0.7rem;color:var(--text-muted);margin-top:2px;letter-spacing:0.04em;"></div>
-        </div>
-        <button class="btn btn-ghost btn-sm" style="text-transform:none;letter-spacing:0.03em;font-size:0.72rem;padding:4px 12px;flex-shrink:0;" onclick="toggleMovieDetails()">&#128065; Edit details</button>
+    <script
+      src="https://unpkg.com/@supabase/supabase-js@2.118.0/dist/umd/supabase.js"
+      async
+      onload="window._sbLibReady&&window._sbLibReady()"
+    ></script>
+
+    <div id="_sb_wrap">
+      <div id="_sb_main_row">
+        <span id="_sb_msg"
+          ><strong>Sync your data across devices</strong> &mdash; connect Supabase to save
+          externally and access anywhere</span
+        >
+        <button id="_sb_connect_btn">Set up sync &rarr;</button>
+        <button id="_sb_dismiss_btn" title="Dismiss">&times;</button>
       </div>
-      <div id="movieDetailsCollapsible">
-        <div class="form-grid">
-          <div class="field full">
-            <label>Title <span style="color:var(--danger)">*</span></label>
-            <input type="text" id="fTitle" placeholder="e.g. Dune: Part Two" oninput="updateModalJustWatch();updateModalLetterboxd();syncCollapsedTitle()">
+      <div id="_sb_form_row">
+        <div id="_sb_paste_row">
+          <textarea
+            id="_sb_paste_area"
+            placeholder="Paste anything here — .env snippet, JSON, or plain text containing your project URL, anon key, email. Fields fill automatically; type your password separately."
+          ></textarea>
+        </div>
+        <input id="_sb_url_in" placeholder="Project URL  (https://xxx.supabase.co)" />
+        <input id="_sb_key_in" placeholder="Anon public key" />
+        <input id="_sb_email_in" placeholder="Email" />
+        <input id="_sb_pass_in" type="password" placeholder="Password" />
+        <button id="_sb_paste_toggle" title="Paste a config snippet to fill all fields at once"
+          >Paste config</button
+        >
+        <button id="_sb_save_btn">Save &amp; Connect</button>
+        <button
+          id="_sb_copy_cfg"
+          title="Copy connection settings as a portable snippet to use on another device"
+          >Copy config</button
+        >
+        <span id="_sb_status"></span>
+      </div>
+    </div>
+
+    <div id="apiBanner">
+      <span class="banner-icon">🔑</span>
+      <div class="banner-text"
+        ><strong>Set up TMDB movie search.</strong> Get a free API key at
+        <a href="https://www.themoviedb.org/settings/api" target="_blank">themoviedb.org</a> (sign
+        up, then copy your API Key).</div
+      >
+      <div class="banner-input-row">
+        <input
+          class="banner-input"
+          id="apiKeyInput"
+          type="text"
+          placeholder="Paste your TMDB API key..."
+        />
+        <button class="btn btn-primary btn-sm" onclick="saveApiKey()">Save</button>
+      </div>
+      <div class="banner-text"
+        ><strong>Rotten Tomatoes scores (optional).</strong> Get a free OMDb key at
+        <a href="https://www.omdbapi.com/apikey.aspx" target="_blank">omdbapi.com</a> (check your
+        email to activate it).</div
+      >
+      <div class="banner-input-row">
+        <input
+          class="banner-input"
+          id="omdbKeyInput"
+          type="text"
+          placeholder="Paste your OMDb API key..."
+        />
+        <button class="btn btn-primary btn-sm" onclick="saveOmdbKey()">Save</button>
+      </div>
+    </div>
+
+    <header>
+      <div>
+        <h1 class="header-title"
+          ><a class="header-home" href="../">My <span>Watchlist</span></a></h1
+        >
+        <p class="header-count" id="headerCount">0 films</p>
+      </div>
+      <div class="header-actions">
+        <button
+          id="_sb_cloud_btn"
+          class="btn btn-ghost btn-sm"
+          onclick="window._sbOpenPanel&&window._sbOpenPanel()"
+          ><svg class="no-shrink" viewBox="0 0 24 24" width="13" height="13">
+            <path
+              fill="currentColor"
+              d="M19.35 10.04A7.49 7.49 0 0 0 12 4C9.11 4 6.6 5.64 5.35 8.04A5.994 5.994 0 0 0 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96z"
+            /></svg
+          >Cloud Save</button
+        >
+        <button class="btn btn-ghost btn-sm" onclick="showApiSettings()">🔑 API Key</button>
+        <button class="btn btn-ghost btn-sm" onclick="openImportModal()">📥 Letterboxd</button>
+        <button
+          class="btn btn-ghost btn-sm"
+          onclick="openExportModal()"
+          title="Export your watchlist to import into Letterboxd"
+          >📤 Export</button
+        >
+        <button
+          class="btn btn-ghost btn-sm"
+          onclick="openSurpriseModal()"
+          title="Let the list decide"
+          >🎲 Surprise</button
+        >
+        <button class="btn btn-primary" onclick="openAddModal()">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+            <path
+              d="M6 1v10M1 6h10"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linecap="round"
+            />
+          </svg>
+          Add Film
+        </button>
+      </div>
+    </header>
+
+    <div id="christmasLights" style="display: none"></div>
+
+    <div class="controls">
+      <div class="filter-bar">
+        <button class="filter-btn active" onclick="setFilter('all',this)">All</button>
+        <button class="filter-btn" id="filterSoon" onclick="setFilter('soon',this)"
+          ><span class="dot background-soon"></span>Watching Soon</button
+        >
+        <button class="filter-btn" onclick="setFilter('netflix',this)"
+          ><span class="dot background-netflix"></span>Netflix</button
+        >
+        <button class="filter-btn" onclick="setFilter('disney',this)"
+          ><span class="dot background-disney"></span>Disney+</button
+        >
+        <button class="filter-btn" onclick="setFilter('prime',this)"
+          ><span class="dot background-prime"></span>Prime</button
+        >
+        <button class="filter-btn" onclick="setFilter('cinema',this)"
+          ><span class="dot background-cinema"></span>In Cinemas</button
+        >
+        <button class="filter-btn" onclick="setFilter('other',this)"
+          ><span class="dot background-other"></span>Other</button
+        >
+        <button class="filter-btn" onclick="setFilter('vpn',this)"
+          ><span class="dot background-vpn"></span>VPN only</button
+        >
+        <button class="filter-btn" onclick="setFilter('unwatched',this)">Unwatched</button>
+        <button class="filter-btn" onclick="setFilter('watched',this)">Watched</button>
+        <button class="filter-btn" onclick="setFilter('rewatch',this)">Rewatch</button>
+        <button class="filter-btn" id="filterGraveyard" onclick="setFilter('graveyard',this)"
+          >💀 Graveyard</button
+        >
+        <button class="filter-btn" id="filterCategories" onclick="setFilter('categories',this)"
+          >&#128196; Categories</button
+        >
+      </div>
+      <div class="search-bar-wrap" id="searchBarWrap">
+        <span class="search-bar-icon" onclick="toggleSearchBar()" title="Search films (Ctrl/Cmd+K)">
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 14 14"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+          >
+            <circle cx="6" cy="6" r="4.5" />
+            <line x1="9.5" y1="9.5" x2="12.5" y2="12.5" stroke-linecap="round" />
+          </svg>
+        </span>
+        <input
+          type="text"
+          id="searchBar"
+          class="search-bar-input"
+          placeholder="Search title, director, with…"
+          autocomplete="off"
+          oninput="onSearchBarInput(this.value)"
+          onkeydown="onSearchBarKeyDown(event)"
+          onblur="onSearchBarBlur()"
+        />
+        <button class="search-bar-clear" onclick="clearSearchBar()" title="Clear search"
+          >&times;</button
+        >
+      </div>
+      <button
+        id="sortBtn"
+        class="btn btn-ghost btn-sm sort-btn"
+        onclick="toggleSortMenu()"
+        title="Sort films"
+      >
+        <svg
+          class="sort-icon"
+          width="11"
+          height="11"
+          viewBox="0 0 11 11"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.4"
+          stroke-linecap="round"
+        >
+          <path d="M3 1.5v8M3 9.5l-1.5-1.5M3 9.5l1.5-1.5M8 9.5v-8M8 1.5l-1.5 1.5M8 1.5l1.5 1.5" />
+        </svg>
+        <span id="sortBtnLabel" class="sort-btn-label">Oldest</span>
+      </button>
+      <button class="btn btn-ghost btn-sm no-shrink" id="selectModeBtn" onclick="enterSelectMode()"
+        >Select</button
+      >
+      <div class="view-toggle">
+        <button
+          class="view-toggle-btn"
+          onclick="openPasteImportModal()"
+          title="Paste film list  [P]"
+        >
+          <svg
+            width="13"
+            height="13"
+            viewBox="0 0 13 13"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.4"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <rect x="4" y="1" width="7" height="9" rx="1.2" />
+            <path
+              d="M4 3H2.8A1.8 1.8 0 0 0 1 4.8v5.4A1.8 1.8 0 0 0 2.8 12h4.4A1.8 1.8 0 0 0 9 10.2V10"
+            />
+            <path d="M6 4.5h3M6 6.5h3" />
+          </svg>
+        </button>
+        <span class="view-toggle-sep"></span>
+        <button
+          id="groupToggleBtn"
+          class="view-toggle-btn active"
+          onclick="toggleGrouping()"
+          title="Switch to flat list"
+        >
+          <svg width="13" height="10" viewBox="0 0 13 10" fill="currentColor">
+            <rect x="0" y="0" width="13" height="4" rx="1.5" />
+            <rect x="0" y="6" width="13" height="4" rx="1.5" />
+          </svg>
+        </button>
+        <button
+          id="hideWatchedBtn"
+          class="view-toggle-btn"
+          onclick="toggleHideWatched()"
+          title="Hide watched films"
+        >
+          <svg
+            width="15"
+            height="11"
+            viewBox="0 0 15 11"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path
+              d="M1.5 5.5C3.5 2.2 5.4 1 7.5 1c2.1 0 4 1.2 6 4.5-2 3.3-3.9 4.5-6 4.5-2.1 0-4-1.2-6-4.5z"
+            />
+            <circle cx="7.5" cy="5.5" r="1.9" fill="currentColor" stroke="none" />
+          </svg>
+        </button>
+        <span class="view-toggle-sep"></span>
+        <button
+          id="viewGrid"
+          class="view-toggle-btn active"
+          onclick="setView('grid')"
+          title="Grid view"
+        >
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <rect x="1" y="1" width="5" height="5" rx="1" fill="currentColor" />
+            <rect x="8" y="1" width="5" height="5" rx="1" fill="currentColor" />
+            <rect x="1" y="8" width="5" height="5" rx="1" fill="currentColor" />
+            <rect x="8" y="8" width="5" height="5" rx="1" fill="currentColor" />
+          </svg>
+        </button>
+        <button
+          id="viewCompact"
+          class="view-toggle-btn"
+          onclick="setView('compact')"
+          title="Compact grid"
+        >
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <rect x="1" y="1" width="3" height="3" rx="0.6" fill="currentColor" />
+            <rect x="5.5" y="1" width="3" height="3" rx="0.6" fill="currentColor" />
+            <rect x="10" y="1" width="3" height="3" rx="0.6" fill="currentColor" />
+            <rect x="1" y="5.5" width="3" height="3" rx="0.6" fill="currentColor" />
+            <rect x="5.5" y="5.5" width="3" height="3" rx="0.6" fill="currentColor" />
+            <rect x="10" y="5.5" width="3" height="3" rx="0.6" fill="currentColor" />
+            <rect x="1" y="10" width="3" height="3" rx="0.6" fill="currentColor" />
+            <rect x="5.5" y="10" width="3" height="3" rx="0.6" fill="currentColor" />
+            <rect x="10" y="10" width="3" height="3" rx="0.6" fill="currentColor" />
+          </svg>
+        </button>
+        <button id="viewList" class="view-toggle-btn" onclick="setView('list')" title="List view">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <rect x="1" y="2" width="12" height="2" rx="1" fill="currentColor" />
+            <rect x="1" y="6" width="12" height="2" rx="1" fill="currentColor" />
+            <rect x="1" y="10" width="12" height="2" rx="1" fill="currentColor" />
+          </svg>
+        </button>
+        <span class="view-toggle-sep"></span>
+        <button
+          id="christmasToggleBtn"
+          class="view-toggle-btn"
+          onclick="toggleChristmasMode()"
+          title="Christmas mode"
+          >🎄</button
+        >
+      </div>
+    </div>
+
+    <div id="watchWithFilterBar" class="watch-with-bar" style="display: none">
+      <span class="watch-with-bar-label">Filtering by</span>
+      <span class="watch-with-bar-chip"
+        >👥 <span id="watchWithFilterName"></span
+        ><button onclick="clearWatchWithFilter()" title="Clear filter">&times;</button></span
+      >
+    </div>
+
+    <div id="categoryBar">
+      <div class="category-bar-heading">
+        <span class="category-bar-label">&#9658; Categories</span>
+        <span class="category-bar-line" aria-hidden="true"></span>
+      </div>
+      <div class="category-pill-strip" id="categoryPillStrip"></div>
+    </div>
+
+    <div id="categoryOptions">
+      <!-- populated by renderCategoriesView when a category is selected -->
+    </div>
+
+    <div id="soonWrapper">
+      <div id="soonSection">
+        <div class="soon-heading"
+          ><span class="soon-heading-text">&#9658; Watching Soon</span
+          ><span class="soon-heading-line" aria-hidden="true"></span
+          ><span class="soon-scroll-hint" aria-hidden="true"></span
+        ></div>
+        <div class="soon-strip" id="soonStrip"></div>
+      </div>
+      <div id="rewatchSoonSection">
+        <div class="rewatch-soon-heading"
+          ><span class="rewatch-soon-heading-text">&#9658; Rewatching Soon</span
+          ><span class="rewatch-soon-heading-line" aria-hidden="true"></span
+        ></div>
+        <div class="rewatch-soon-strip" id="rewatchSoonStrip"></div>
+      </div>
+    </div>
+    <hr class="soon-divider" id="soonDivider" style="display: none" />
+
+    <div id="movieGrid"></div>
+    <div id="categoryPillPopover"></div>
+    <div id="toastContainer"></div>
+
+    <!-- ADD/EDIT MODAL -->
+    <div class="modal-overlay" id="addModal" onmousedown="handleOverlayClick(event)">
+      <div class="modal">
+        <div class="modal-header">
+          <h2 class="modal-title" id="modalTitle">Add Film</h2>
+          <button class="modal-close" onclick="closeAddModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="search-section">
+            <span class="search-label">Search TMDB</span>
+            <div id="searchOrNotice">
+              <div class="search-input-wrap">
+                <input
+                  class="search-input"
+                  id="searchInput"
+                  type="text"
+                  placeholder="Type a movie title to search..."
+                  autocomplete="off"
+                  oninput="onSearchInput(this.value)"
+                  onkeydown="onSearchKeyDown(event)"
+                  onkeyup="if(event.key==='Enter')event.preventDefault()"
+                />
+                <div class="search-spinner" id="searchSpinner"
+                  ><div class="spinner-ring"></div
+                ></div>
+              </div>
+              <div class="search-results" id="searchResults"></div>
+              <p class="search-hint" id="searchHint"></p>
+            </div>
+            <div id="noApiNotice" class="no-api-notice" style="display: none"
+              >No TMDB API key set. You can still add films manually, or
+              <a class="text-gold" href="#" onclick="showApiSettings();return false;"
+                >add your key</a
+              >
+              to enable search.</div
+            >
           </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
-            <div class="field"><label>Year</label><input type="number" id="fYear" placeholder="2024" min="1900" max="2099" oninput="syncCollapsedTitle()"></div>
-            <div class="field"><label>Release Date</label><input type="text" id="fReleaseDate" placeholder="YYYY-MM-DD"></div>
+
+          <div class="form-section-label"
+            >Film Details
+            <button
+              id="showMovieDetailsBtn"
+              class="btn btn-ghost btn-sm film-details-button"
+              style="display: none"
+              onclick="toggleMovieDetails()"
+              >&#128065; Show details</button
+            ></div
+          >
+          <div id="collapsedTitleBanner" class="collapsed-title-banner" style="display: none">
+            <div>
+              <div class="collapsed-title" id="collapsedTitleText"></div>
+              <div class="collapsed-title-meta" id="collapsedTitleMeta"></div>
+            </div>
+            <button
+              class="btn btn-ghost btn-sm film-details-edit-button"
+              onclick="toggleMovieDetails()"
+              >&#128065; Edit details</button
+            >
           </div>
-          <div class="field"><label>Genre</label><input type="text" id="fGenre" placeholder="Sci-Fi, Drama..." oninput="syncCollapsedTitle()"></div>
-          <div class="field"><label>Director</label><input type="text" id="fDirector" placeholder="Director name"></div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
-            <div class="field"><label>Rating</label><input type="text" id="fRating" placeholder="e.g. 8.5/10"></div>
-            <div class="field"><label>Runtime (mins)</label><input type="number" id="fRuntime" placeholder="e.g. 120" min="1" max="999"></div>
-          </div>
-          <div class="field full">
-            <label>Poster Image URL</label>
-            <div class="poster-preview-row">
-              <div class="poster-preview-thumb" id="posterThumb">&#127917;</div>
-              <input type="url" id="fPoster" placeholder="https://..." oninput="updatePosterPreview(this.value)" style="flex:1">
+          <div id="movieDetailsCollapsible">
+            <div class="form-grid">
+              <div class="field full">
+                <label>Title <span class="text-danger">*</span></label>
+                <input
+                  type="text"
+                  id="fTitle"
+                  placeholder="e.g. Dune: Part Two"
+                  oninput="updateModalJustWatch();updateModalLetterboxd();syncCollapsedTitle()"
+                />
+              </div>
+              <div class="field-pair">
+                <div class="field"
+                  ><label>Year</label
+                  ><input
+                    type="number"
+                    id="fYear"
+                    placeholder="2024"
+                    min="1900"
+                    max="2099"
+                    oninput="syncCollapsedTitle()"
+                /></div>
+                <div class="field"
+                  ><label>Release Date</label
+                  ><input type="text" id="fReleaseDate" placeholder="YYYY-MM-DD"
+                /></div>
+              </div>
+              <div class="field"
+                ><label>Genre</label
+                ><input
+                  type="text"
+                  id="fGenre"
+                  placeholder="Sci-Fi, Drama..."
+                  oninput="syncCollapsedTitle()"
+              /></div>
+              <div class="field"
+                ><label>Director</label
+                ><input type="text" id="fDirector" placeholder="Director name"
+              /></div>
+              <div class="field-pair">
+                <div class="field"
+                  ><label>Rating</label><input type="text" id="fRating" placeholder="e.g. 8.5/10"
+                /></div>
+                <div class="field"
+                  ><label>Runtime (mins)</label
+                  ><input type="number" id="fRuntime" placeholder="e.g. 120" min="1" max="999"
+                /></div>
+              </div>
+              <div class="field full">
+                <label>Poster Image URL</label>
+                <div class="poster-preview-row">
+                  <div class="poster-preview-thumb" id="posterThumb">&#127917;</div>
+                  <input
+                    class="flex-fill"
+                    type="url"
+                    id="fPoster"
+                    placeholder="https://..."
+                    oninput="updatePosterPreview(this.value)"
+                  />
+                </div>
+              </div>
+              <div class="field full"
+                ><label>Notes</label
+                ><textarea
+                  id="fNotes"
+                  placeholder="Why you want to watch it, who recommended it, etc."
+                ></textarea>
+              </div>
             </div>
           </div>
-          <div class="field full"><label>Notes</label><textarea id="fNotes" placeholder="Why you want to watch it, who recommended it, etc."></textarea></div>
-        </div>
-      </div>
-      <div class="form-grid" id="collectionFields" style="margin-top:14px;grid-template-columns:1fr 1fr 1fr;">
-        <div class="field" style="position:relative;">
-          <label>Collection</label>
-          <input type="text" id="fCollection" placeholder="e.g. Hunger Games Series" autocomplete="off"
-            oninput="filterCollectionSuggestions()" onfocus="filterCollectionSuggestions()" onblur="setTimeout(hideCollectionSuggestions,150)" onkeydown="onCollectionKeyDown(event)">
-          <div id="collectionDropdown" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:9999;background:var(--surface2);border:1px solid var(--border-hi);border-radius:var(--radius);margin-top:4px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,0.5);"></div>
-        </div>
-        <div class="field" style="position:relative;">
-          <label>Category</label>
-          <input type="text" id="fCategory" placeholder="e.g. Sci-Fi, Date Night..." autocomplete="off"
-            oninput="filterCategorySuggestions()" onfocus="filterCategorySuggestions()" onblur="setTimeout(hideCategorySuggestions,150)" onkeydown="onCategoryKeyDown(event)">
-          <div id="categoryDropdown" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:9999;background:var(--surface2);border:1px solid var(--border-hi);border-radius:var(--radius);margin-top:4px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,0.5);"></div>
-        </div>
-        <div class="field" style="position:relative;">
-          <label>Watching With</label>
-          <input type="text" id="fWatchWith" placeholder="e.g. Dad, Movie club..." autocomplete="off"
-            oninput="filterWatchWithSuggestions()" onfocus="filterWatchWithSuggestions()" onblur="setTimeout(hideWatchWithSuggestions,150)" onkeydown="onWatchWithKeyDown(event)">
-          <div id="watchWithDropdown" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:9999;background:var(--surface2);border:1px solid var(--border-hi);border-radius:var(--radius);margin-top:4px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,0.5);"></div>
-        </div>
-      </div>
-
-      <div class="streaming-section">
-        <div class="form-section-label" style="margin-top:0;">Where to Watch</div>
-        <div class="streaming-rows">
-          <div class="streaming-row">
-            <div class="streaming-row-inner"><span class="service-label netflix">Netflix</span><div class="toggle-group"><button class="toggle-chip on-direct" data-service="netflix" data-type="direct" onclick="toggleChip(this)">Direct</button><button class="toggle-chip on-vpn" data-service="netflix" data-type="vpn" onclick="toggleChip(this)">VPN</button></div></div>
-            <input type="text" id="fVpnCountry-netflix" class="vpn-country-input" placeholder="VPN country (e.g. United States)">
+          <div class="form-grid collection-fields" id="collectionFields">
+            <div class="field relative-field">
+              <label>Collection</label>
+              <input
+                type="text"
+                id="fCollection"
+                placeholder="e.g. Hunger Games Series"
+                autocomplete="off"
+                oninput="filterCollectionSuggestions()"
+                onfocus="filterCollectionSuggestions()"
+                onblur="setTimeout(hideCollectionSuggestions,150)"
+                onkeydown="onCollectionKeyDown(event)"
+              />
+              <div class="suggestion-dropdown" id="collectionDropdown" style="display: none"></div>
+            </div>
+            <div class="field relative-field">
+              <label>Category</label>
+              <input
+                type="text"
+                id="fCategory"
+                placeholder="e.g. Sci-Fi, Date Night..."
+                autocomplete="off"
+                oninput="filterCategorySuggestions()"
+                onfocus="filterCategorySuggestions()"
+                onblur="setTimeout(hideCategorySuggestions,150)"
+                onkeydown="onCategoryKeyDown(event)"
+              />
+              <div class="suggestion-dropdown" id="categoryDropdown" style="display: none"></div>
+            </div>
+            <div class="field relative-field">
+              <label>Watching With</label>
+              <input
+                type="text"
+                id="fWatchWith"
+                placeholder="e.g. Dad, Movie club..."
+                autocomplete="off"
+                oninput="filterWatchWithSuggestions()"
+                onfocus="filterWatchWithSuggestions()"
+                onblur="setTimeout(hideWatchWithSuggestions,150)"
+                onkeydown="onWatchWithKeyDown(event)"
+              />
+              <div class="suggestion-dropdown" id="watchWithDropdown" style="display: none"></div>
+            </div>
           </div>
-          <div class="streaming-row">
-            <div class="streaming-row-inner"><span class="service-label disney">Disney+</span><div class="toggle-group"><button class="toggle-chip on-direct" data-service="disney" data-type="direct" onclick="toggleChip(this)">Direct</button><button class="toggle-chip on-vpn" data-service="disney" data-type="vpn" onclick="toggleChip(this)">VPN</button></div></div>
-            <input type="text" id="fVpnCountry-disney" class="vpn-country-input" placeholder="VPN country (e.g. United States)">
+
+          <div class="streaming-section">
+            <div class="form-section-label section-label-flush">Where to Watch</div>
+            <div class="streaming-rows">
+              <div class="streaming-row">
+                <div class="streaming-row-inner"
+                  ><span class="service-label netflix">Netflix</span
+                  ><div class="toggle-group"
+                    ><button
+                      class="toggle-chip on-direct"
+                      data-service="netflix"
+                      data-type="direct"
+                      onclick="toggleChip(this)"
+                      >Direct</button
+                    ><button
+                      class="toggle-chip on-vpn"
+                      data-service="netflix"
+                      data-type="vpn"
+                      onclick="toggleChip(this)"
+                      >VPN</button
+                    ></div
+                  ></div
+                >
+                <input
+                  type="text"
+                  id="fVpnCountry-netflix"
+                  class="vpn-country-input"
+                  placeholder="VPN country (e.g. United States)"
+                />
+              </div>
+              <div class="streaming-row">
+                <div class="streaming-row-inner"
+                  ><span class="service-label disney">Disney+</span
+                  ><div class="toggle-group"
+                    ><button
+                      class="toggle-chip on-direct"
+                      data-service="disney"
+                      data-type="direct"
+                      onclick="toggleChip(this)"
+                      >Direct</button
+                    ><button
+                      class="toggle-chip on-vpn"
+                      data-service="disney"
+                      data-type="vpn"
+                      onclick="toggleChip(this)"
+                      >VPN</button
+                    ></div
+                  ></div
+                >
+                <input
+                  type="text"
+                  id="fVpnCountry-disney"
+                  class="vpn-country-input"
+                  placeholder="VPN country (e.g. United States)"
+                />
+              </div>
+              <div class="streaming-row">
+                <div class="streaming-row-inner"
+                  ><span class="service-label prime">Prime Video</span
+                  ><div class="toggle-group"
+                    ><button
+                      class="toggle-chip on-direct"
+                      data-service="prime"
+                      data-type="direct"
+                      onclick="toggleChip(this)"
+                      >Direct</button
+                    ><button
+                      class="toggle-chip on-vpn"
+                      data-service="prime"
+                      data-type="vpn"
+                      onclick="toggleChip(this)"
+                      >VPN</button
+                    ></div
+                  ></div
+                >
+                <input
+                  type="text"
+                  id="fVpnCountry-prime"
+                  class="vpn-country-input"
+                  placeholder="VPN country (e.g. United States)"
+                />
+              </div>
+              <div class="streaming-row">
+                <div class="streaming-row-inner"
+                  ><span class="service-label cinema">In Cinemas</span
+                  ><div class="toggle-group"
+                    ><button
+                      class="toggle-chip on-direct"
+                      data-service="cinema"
+                      data-type="direct"
+                      onclick="toggleChip(this)"
+                      >Currently in cinemas</button
+                    ><button
+                      class="toggle-chip on-coming"
+                      data-service="cinema"
+                      data-type="coming"
+                      onclick="toggleChip(this)"
+                      >Coming soon</button
+                    ></div
+                  ></div
+                >
+              </div>
+              <div class="streaming-row">
+                <div class="streaming-row-inner"
+                  ><span class="service-label other">Other</span
+                  ><div class="toggle-group"
+                    ><button
+                      class="toggle-chip on-direct"
+                      data-service="other"
+                      data-type="direct"
+                      onclick="toggleChip(this)"
+                      >Direct</button
+                    ><button
+                      class="toggle-chip on-vpn"
+                      data-service="other"
+                      data-type="vpn"
+                      onclick="toggleChip(this)"
+                      >VPN</button
+                    ></div
+                  ></div
+                >
+                <input
+                  type="text"
+                  id="fOtherName"
+                  class="other-name-input"
+                  placeholder="Service name (e.g. Apple TV, HBO Max, YouTube...)"
+                />
+                <input
+                  type="text"
+                  id="fVpnCountry-other"
+                  class="vpn-country-input"
+                  placeholder="VPN country (e.g. United States)"
+                />
+              </div>
+            </div>
           </div>
-          <div class="streaming-row">
-            <div class="streaming-row-inner"><span class="service-label prime">Prime Video</span><div class="toggle-group"><button class="toggle-chip on-direct" data-service="prime" data-type="direct" onclick="toggleChip(this)">Direct</button><button class="toggle-chip on-vpn" data-service="prime" data-type="vpn" onclick="toggleChip(this)">VPN</button></div></div>
-            <input type="text" id="fVpnCountry-prime" class="vpn-country-input" placeholder="VPN country (e.g. United States)">
+
+          <div class="form-footer">
+            <div class="form-footer-left">
+              <label class="toggle-row"
+                ><input type="checkbox" id="fWatched" /><span class="track"></span
+                ><span class="toggle-label">Marked as watched</span></label
+              >
+              <label class="toggle-row soon-toggle"
+                ><input type="checkbox" id="fWatchingSoon" /><span class="track"></span
+                ><span class="toggle-label watching-soon-label">Watching soon</span></label
+              >
+            </div>
+            <div class="form-footer-right">
+              <a
+                id="modalJustWatch"
+                class="btn-justwatch btn-sm no-underline"
+                href="#"
+                target="_blank"
+                rel="noopener"
+                style="opacity: 0.35; pointer-events: none"
+                ><span class="jw-dot"></span>JustWatch</a
+              >
+              <a
+                id="modalLetterboxd"
+                class="btn-letterboxd btn-sm no-underline"
+                href="#"
+                target="_blank"
+                rel="noopener"
+                style="opacity: 0.35; pointer-events: none"
+                ><span class="lb-dot"></span>LB</a
+              >
+              <button class="btn btn-ghost" onclick="closeAddModal()">Cancel</button>
+              <button class="btn btn-primary" onclick="saveMovie()">Save</button>
+            </div>
           </div>
-          <div class="streaming-row">
-            <div class="streaming-row-inner"><span class="service-label cinema">In Cinemas</span><div class="toggle-group"><button class="toggle-chip on-direct" data-service="cinema" data-type="direct" onclick="toggleChip(this)">Currently in cinemas</button><button class="toggle-chip on-coming" data-service="cinema" data-type="coming" onclick="toggleChip(this)">Coming soon</button></div></div>
-          </div>
-          <div class="streaming-row">
-            <div class="streaming-row-inner"><span class="service-label other">Other</span><div class="toggle-group"><button class="toggle-chip on-direct" data-service="other" data-type="direct" onclick="toggleChip(this)">Direct</button><button class="toggle-chip on-vpn" data-service="other" data-type="vpn" onclick="toggleChip(this)">VPN</button></div></div>
-            <input type="text" id="fOtherName" class="other-name-input" placeholder="Service name (e.g. Apple TV, HBO Max, YouTube...)">
-            <input type="text" id="fVpnCountry-other" class="vpn-country-input" placeholder="VPN country (e.g. United States)">
+          <div class="delete-row" id="deleteRow" style="display: none">
+            <button class="btn-danger-soft" onclick="deleteCurrentMovie()"
+              >Remove from watchlist</button
+            >
           </div>
         </div>
       </div>
+    </div>
 
-      <div class="form-footer">
-        <div class="form-footer-left">
-          <label class="toggle-row"><input type="checkbox" id="fWatched"><span class="track"></span><span class="toggle-label">Marked as watched</span></label>
-          <label class="toggle-row soon-toggle"><input type="checkbox" id="fWatchingSoon"><span class="track"></span><span class="toggle-label" style="color:rgba(74,222,128,0.85)">Watching soon</span></label>
+    <!-- DETAIL MODAL -->
+    <div class="modal-overlay" id="detailModal" onmousedown="handleDetailOverlay(event)">
+      <div class="modal">
+        <div class="modal-header"
+          ><div></div><button class="modal-close" onclick="closeDetail()">&times;</button></div
+        >
+        <div class="modal-body" id="detailContent"></div>
+      </div>
+    </div>
+
+    <footer class="site-footer">
+      <span class="footer-age-label">Border age</span>
+      <span class="footer-age-items">
+        <span class="footer-age-item"><span class="footer-age-swatch age-amber"></span>30d</span>
+        <span class="footer-age-item"><span class="footer-age-swatch age-orange"></span>60d</span>
+        <span class="footer-age-item"><span class="footer-age-swatch age-red"></span>90d</span>
+        <span class="footer-age-item"><span class="footer-age-swatch age-crimson"></span>180d</span>
+        <span class="footer-age-item"><span class="footer-age-swatch age-purple"></span>1yr</span>
+      </span>
+      <button class="shortcuts-btn" onclick="openShortcutsPanel()">
+        <svg width="13" height="13" viewBox="0 0 13 13" fill="none" class="shortcuts-icon">
+          <rect
+            x="0.75"
+            y="2.25"
+            width="11.5"
+            height="8.5"
+            rx="1.8"
+            stroke="currentColor"
+            stroke-width="1.1"
+          />
+          <rect x="2" y="4.3" width="1.6" height="1.6" rx="0.45" fill="currentColor" />
+          <rect x="4.7" y="4.3" width="1.6" height="1.6" rx="0.45" fill="currentColor" />
+          <rect x="7.4" y="4.3" width="1.6" height="1.6" rx="0.45" fill="currentColor" />
+          <rect x="10.1" y="4.3" width="1.6" height="1.6" rx="0.45" fill="currentColor" />
+          <rect x="2" y="6.9" width="1.6" height="1.6" rx="0.45" fill="currentColor" />
+          <rect x="4.7" y="6.9" width="3.5" height="1.6" rx="0.45" fill="currentColor" />
+          <rect x="10.1" y="6.9" width="1.6" height="1.6" rx="0.45" fill="currentColor" />
+        </svg>
+        Shortcuts
+      </button>
+    </footer>
+
+    <!-- ── SURPRISE ME MODAL ───────────────────────────────────────────────── -->
+    <div class="modal-overlay" id="surpriseModal" onclick="handleSurpriseOverlay(event)">
+      <div class="modal">
+        <div class="modal-header">
+          <h2 class="modal-title"><span id="surpriseDiceIcon">🎲</span> Surprise Me</h2>
+          <button class="modal-close" onclick="closeSurpriseModal()">&times;</button>
         </div>
-        <div class="form-footer-right">
-          <a id="modalJustWatch" class="btn-justwatch btn-sm" href="#" target="_blank" rel="noopener" style="text-decoration:none;opacity:0.35;pointer-events:none;"><span class="jw-dot"></span>JustWatch</a>
-          <a id="modalLetterboxd" class="btn-letterboxd btn-sm" href="#" target="_blank" rel="noopener" style="text-decoration:none;opacity:0.35;pointer-events:none;"><span class="lb-dot"></span>LB</a>
-          <button class="btn btn-ghost" onclick="closeAddModal()">Cancel</button>
-          <button class="btn btn-primary" onclick="saveMovie()">Save</button>
-        </div>
-      </div>
-      <div id="deleteRow" style="display:none;justify-content:flex-end;margin-top:14px;">
-        <button class="btn-danger-soft" onclick="deleteCurrentMovie()">Remove from watchlist</button>
-      </div>
-    </div>
-  </div>
-</div>
+        <div class="modal-body">
+          <div class="form-section-label section-label-flush">Services</div>
+          <div class="surprise-svc-chips" id="surpriseSvcChips">
+            <button
+              class="surprise-svc-chip"
+              data-service="netflix"
+              onclick="toggleSurpriseChip(this)"
+            >
+              <span class="chip-dot background-netflix"></span>Netflix
+            </button>
+            <button
+              class="surprise-svc-chip"
+              data-service="disney"
+              onclick="toggleSurpriseChip(this)"
+            >
+              <span class="chip-dot background-disney"></span>Disney+
+            </button>
+            <button
+              class="surprise-svc-chip"
+              data-service="prime"
+              onclick="toggleSurpriseChip(this)"
+            >
+              <span class="chip-dot background-prime"></span>Prime
+            </button>
+            <button
+              class="surprise-svc-chip"
+              data-service="cinema"
+              onclick="toggleSurpriseChip(this)"
+            >
+              <span class="chip-dot background-cinema"></span>Cinema
+            </button>
+            <button
+              class="surprise-svc-chip"
+              data-service="other"
+              onclick="toggleSurpriseChip(this)"
+            >
+              <span class="chip-dot background-other"></span>Other
+            </button>
+          </div>
 
-<!-- DETAIL MODAL -->
-<div class="modal-overlay" id="detailModal" onmousedown="handleDetailOverlay(event)">
-  <div class="modal">
-    <div class="modal-header"><div></div><button class="modal-close" onclick="closeDetail()">&times;</button></div>
-    <div class="modal-body" id="detailContent"></div>
-  </div>
-</div>
+          <div class="surprise-option-row">
+            <div class="surprise-option-lbl">
+              <strong>Include VPN films</strong>
+              <span>Films that require a VPN to stream</span>
+            </div>
+            <label class="toggle-row toggle-reset">
+              <input
+                type="checkbox"
+                id="surpriseIncludeVpn"
+                checked
+                onchange="onSurpriseOptionChange()"
+              />
+              <span class="track"></span>
+            </label>
+          </div>
 
+          <div class="form-section-label spacing-top-sm">Max Runtime</div>
+          <div class="surprise-runtime-chips" id="surpriseRuntimeChips">
+            <button
+              class="surprise-runtime-chip active"
+              data-maxruntime="0"
+              onclick="selectRuntimeChip(this)"
+              >Any</button
+            >
+            <button
+              class="surprise-runtime-chip"
+              data-maxruntime="90"
+              onclick="selectRuntimeChip(this)"
+              >≤ 1h 30m</button
+            >
+            <button
+              class="surprise-runtime-chip"
+              data-maxruntime="105"
+              onclick="selectRuntimeChip(this)"
+              >≤ 1h 45m</button
+            >
+            <button
+              class="surprise-runtime-chip"
+              data-maxruntime="120"
+              onclick="selectRuntimeChip(this)"
+              >≤ 2h</button
+            >
+            <button
+              class="surprise-runtime-chip"
+              data-maxruntime="150"
+              onclick="selectRuntimeChip(this)"
+              >≤ 2h 30m</button
+            >
+          </div>
 
-<footer class="site-footer" style="margin-top:48px;padding:16px 48px;border-top:1px solid var(--border);display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
-  <span style="font-size:0.58rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-muted);opacity:0.5;flex-shrink:0;">Border age</span>
-  <span style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;opacity:0.45;">
-    <span style="display:flex;align-items:center;gap:5px;font-size:0.58rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-muted);"><span style="width:8px;height:8px;border-radius:2px;border:1.5px solid rgba(217,119,6,0.7);display:inline-block;flex-shrink:0;"></span>30d</span>
-    <span style="display:flex;align-items:center;gap:5px;font-size:0.58rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-muted);"><span style="width:8px;height:8px;border-radius:2px;border:1.5px solid rgba(234,88,12,0.8);display:inline-block;flex-shrink:0;"></span>60d</span>
-    <span style="display:flex;align-items:center;gap:5px;font-size:0.58rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-muted);"><span style="width:8px;height:8px;border-radius:2px;border:1.5px solid rgba(192,57,43,0.8);display:inline-block;flex-shrink:0;"></span>90d</span>
-    <span style="display:flex;align-items:center;gap:5px;font-size:0.58rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-muted);"><span style="width:8px;height:8px;border-radius:2px;border:1.5px solid rgba(180,30,60,0.85);display:inline-block;flex-shrink:0;"></span>180d</span>
-    <span style="display:flex;align-items:center;gap:5px;font-size:0.58rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-muted);"><span style="width:8px;height:8px;border-radius:2px;border:1.5px solid rgba(124,58,237,0.85);display:inline-block;flex-shrink:0;"></span>1yr</span>
-  </span>
-  <button class="shortcuts-btn" onclick="openShortcutsPanel()">
-    <svg width="13" height="13" viewBox="0 0 13 13" fill="none" style="flex-shrink:0;opacity:0.8"><rect x="0.75" y="2.25" width="11.5" height="8.5" rx="1.8" stroke="currentColor" stroke-width="1.1"/><rect x="2" y="4.3" width="1.6" height="1.6" rx="0.45" fill="currentColor"/><rect x="4.7" y="4.3" width="1.6" height="1.6" rx="0.45" fill="currentColor"/><rect x="7.4" y="4.3" width="1.6" height="1.6" rx="0.45" fill="currentColor"/><rect x="10.1" y="4.3" width="1.6" height="1.6" rx="0.45" fill="currentColor"/><rect x="2" y="6.9" width="1.6" height="1.6" rx="0.45" fill="currentColor"/><rect x="4.7" y="6.9" width="3.5" height="1.6" rx="0.45" fill="currentColor"/><rect x="10.1" y="6.9" width="1.6" height="1.6" rx="0.45" fill="currentColor"/></svg>
-    Shortcuts
-  </button>
-</footer>
+          <div class="surprise-pool-count" id="surprisePoolCount"></div>
 
+          <!-- Result appears here once a film is picked -->
+          <div id="surpriseResultArea" style="display: none"></div>
 
-<!-- ── SURPRISE ME MODAL ───────────────────────────────────────────────── -->
-<div class="modal-overlay" id="surpriseModal" onclick="handleSurpriseOverlay(event)">
-  <div class="modal">
-    <div class="modal-header">
-      <h2 class="modal-title"><span id="surpriseDiceIcon">🎲</span> Surprise Me</h2>
-      <button class="modal-close" onclick="closeSurpriseModal()">&times;</button>
-    </div>
-    <div class="modal-body">
-
-      <div class="form-section-label" style="margin-top:0;">Services</div>
-      <div class="surprise-svc-chips" id="surpriseSvcChips">
-        <button class="surprise-svc-chip" data-service="netflix" onclick="toggleSurpriseChip(this)">
-          <span class="chip-dot" style="background:#e50914"></span>Netflix
-        </button>
-        <button class="surprise-svc-chip" data-service="disney" onclick="toggleSurpriseChip(this)">
-          <span class="chip-dot" style="background:#3b82f6"></span>Disney+
-        </button>
-        <button class="surprise-svc-chip" data-service="prime" onclick="toggleSurpriseChip(this)">
-          <span class="chip-dot" style="background:#00a8e1"></span>Prime
-        </button>
-        <button class="surprise-svc-chip" data-service="cinema" onclick="toggleSurpriseChip(this)">
-          <span class="chip-dot" style="background:#818cf8"></span>Cinema
-        </button>
-        <button class="surprise-svc-chip" data-service="other" onclick="toggleSurpriseChip(this)">
-          <span class="chip-dot" style="background:#4a7c59"></span>Other
-        </button>
-      </div>
-
-      <div class="surprise-option-row">
-        <div class="surprise-option-lbl">
-          <strong>Include VPN films</strong>
-          <span>Films that require a VPN to stream</span>
-        </div>
-        <label class="toggle-row" style="margin:0;">
-          <input type="checkbox" id="surpriseIncludeVpn" checked onchange="onSurpriseOptionChange()">
-          <span class="track"></span>
-        </label>
-      </div>
-
-      <div class="form-section-label" style="margin-top:8px;">Max Runtime</div>
-      <div class="surprise-runtime-chips" id="surpriseRuntimeChips">
-        <button class="surprise-runtime-chip active" data-maxruntime="0" onclick="selectRuntimeChip(this)">Any</button>
-        <button class="surprise-runtime-chip" data-maxruntime="90" onclick="selectRuntimeChip(this)">≤ 1h 30m</button>
-        <button class="surprise-runtime-chip" data-maxruntime="105" onclick="selectRuntimeChip(this)">≤ 1h 45m</button>
-        <button class="surprise-runtime-chip" data-maxruntime="120" onclick="selectRuntimeChip(this)">≤ 2h</button>
-        <button class="surprise-runtime-chip" data-maxruntime="150" onclick="selectRuntimeChip(this)">≤ 2h 30m</button>
-      </div>
-
-      <div class="surprise-pool-count" id="surprisePoolCount"></div>
-
-      <!-- Result appears here once a film is picked -->
-      <div id="surpriseResultArea" style="display:none;"></div>
-
-      <!-- Action buttons -->
-      <div id="surpriseActionRow" style="display:flex;gap:8px;">
-        <button class="btn btn-primary" style="flex:1;justify-content:center;" onclick="runSurprise()">🎲 Surprise Me</button>
-      </div>
-
-    </div>
-  </div>
-</div>
-
-
-<!-- ── LETTERBOXD IMPORT MODAL ────────────────────────────────────────────── -->
-<div class="modal-overlay" id="exportModal" onclick="handleExportOverlay(event)">
-  <div class="modal">
-    <div class="modal-header">
-      <h2 class="modal-title">📤 Export to Letterboxd</h2>
-      <button class="modal-close" onclick="closeExportModal()">&times;</button>
-    </div>
-    <div class="modal-body" id="exportBody"></div>
-  </div>
-</div>
-
-
-<div class="modal-overlay" id="importModal" onclick="handleImportOverlay(event)">
-  <div class="modal">
-    <div class="modal-header">
-      <h2 class="modal-title">📥 Letterboxd Import</h2>
-      <button class="modal-close" onclick="closeImportModal()">&times;</button>
-    </div>
-    <div class="modal-body" id="importBody"></div>
-  </div>
-</div>
-
-
-<!-- ── SORT DROPDOWN MENU ───────────────────────────────────────────────── -->
-<div id="sortMenu" class="sort-menu" role="menu" aria-label="Sort films">
-  <div class="sort-menu-label">Sort by</div>
-  <button class="sort-menu-item" data-sort="dateAdded-desc" onclick="setSort('dateAdded-desc')">Date added<span class="sort-menu-detail">newest first</span></button>
-  <button class="sort-menu-item" data-sort="dateAdded-asc"  onclick="setSort('dateAdded-asc')">Date added<span class="sort-menu-detail">oldest first</span></button>
-  <button class="sort-menu-item" data-sort="year-desc"      onclick="setSort('year-desc')">Year<span class="sort-menu-detail">newest first</span></button>
-  <button class="sort-menu-item" data-sort="year-asc"       onclick="setSort('year-asc')">Year<span class="sort-menu-detail">oldest first</span></button>
-  <button class="sort-menu-item" data-sort="title-asc"      onclick="setSort('title-asc')">Title<span class="sort-menu-detail">A&ndash;Z</span></button>
-  <button class="sort-menu-item" data-sort="runtime-desc"   onclick="setSort('runtime-desc')">Runtime<span class="sort-menu-detail">longest first</span></button>
-  <button class="sort-menu-item" data-sort="runtime-asc"    onclick="setSort('runtime-asc')">Runtime<span class="sort-menu-detail">shortest first</span></button>
-  <button class="sort-menu-item" data-sort="rating-desc"    onclick="setSort('rating-desc')">Rating<span class="sort-menu-detail">highest first</span></button>
-  <div id="watchedSortSection" style="display:none;border-top:1px solid var(--border);margin-top:4px;padding-top:4px;">
-    <button class="sort-menu-item" data-sort="dateWatched-desc" onclick="setSort('dateWatched-desc')">Date watched<span class="sort-menu-detail">newest first</span></button>
-    <button class="sort-menu-item" data-sort="dateWatched-asc"  onclick="setSort('dateWatched-asc')">Date watched<span class="sort-menu-detail">oldest first</span></button>
-  </div>
-</div>
-
-<!-- ── BULK ACTION BAR ──────────────────────────────────────────────────── -->
-<div id="bulkBar">
-  <div id="bulkSubpanel" class="bulk-subpanel"></div>
-  <div class="bulk-main">
-    <div class="bulk-top">
-      <span id="bulkCount" class="bulk-count">0 selected</span>
-      <div class="bulk-sep"></div>
-      <button class="bulk-btn" id="bulkSelectAllBtn" onclick="bulkSelectAll()">Select All</button>
-      <div class="bulk-sep"></div>
-      <button class="bulk-cancel" onclick="exitSelectMode()">Cancel</button>
-    </div>
-    <div class="bulk-actions">
-      <button class="bulk-btn bulk-action-btn" onclick="bulkWatch()"                 disabled>✓ Watched</button>
-      <button class="bulk-btn bulk-action-btn" onclick="bulkUnwatch()"               disabled>✗ Unwatched</button>
-      <button class="bulk-btn bulk-action-btn" onclick="bulkWatchingSoon()"          disabled>⏰ Soon</button>
-      <button class="bulk-btn bulk-action-btn" onclick="openBulkSubpanel('service')" disabled>📺 Service</button>
-      <button class="bulk-btn bulk-action-btn" onclick="openBulkSubpanel('category')" disabled>🏷 Category</button>
-      <button class="bulk-btn bulk-action-btn" onclick="bulkGraveyard()"             disabled>💀 Graveyard</button>
-      <button class="bulk-btn bulk-action-btn" id="bulkChristmasBtn" onclick="bulkMoveToChristmas()" disabled>🎄 Christmas</button>
-      <button class="bulk-btn bulk-action-btn bulk-btn-danger" onclick="bulkDelete()" disabled>🗑 Delete</button>
-    </div>
-  </div>
-</div>
-
-
-<!-- ── Keyboard shortcuts panel ───────────────────────────────────────── -->
-<div class="shortcuts-overlay" id="shortcutsOverlay" onclick="if(event.target===this)closeShortcutsPanel()">
-  <div class="shortcuts-panel">
-    <div class="shortcuts-panel-header">
-      <svg width="15" height="15" viewBox="0 0 15 15" fill="none" style="color:var(--gold);flex-shrink:0"><rect x="0.75" y="2.75" width="13.5" height="9.5" rx="2" stroke="currentColor" stroke-width="1.1"/><rect x="2.2" y="5" width="1.8" height="1.8" rx="0.5" fill="currentColor"/><rect x="5.1" y="5" width="1.8" height="1.8" rx="0.5" fill="currentColor"/><rect x="8" y="5" width="1.8" height="1.8" rx="0.5" fill="currentColor"/><rect x="10.9" y="5" width="1.8" height="1.8" rx="0.5" fill="currentColor"/><rect x="2.2" y="7.9" width="1.8" height="1.8" rx="0.5" fill="currentColor"/><rect x="5.1" y="7.9" width="4.6" height="1.8" rx="0.5" fill="currentColor"/><rect x="10.9" y="7.9" width="1.8" height="1.8" rx="0.5" fill="currentColor"/></svg>
-      <span class="shortcuts-panel-title">Keyboard shortcuts</span>
-      <button class="shortcuts-panel-close" onclick="closeShortcutsPanel()">×</button>
-    </div>
-    <div class="shortcuts-panel-body">
-      <div class="shortcut-col">
-        <div class="shortcut-section">
-          <div class="shortcut-section-label">Global</div>
-          <div class="shortcut-row"><span class="shortcut-desc">Add a film</span><span class="shortcut-keys"><span class="kbd">A</span></span></div>
-          <div class="shortcut-row"><span class="shortcut-desc">Surprise Me</span><span class="shortcut-keys"><span class="kbd">R</span><span class="kbd-sep">/</span><span class="kbd">S</span></span></div>
-          <div class="shortcut-row"><span class="shortcut-desc">Letterboxd import</span><span class="shortcut-keys"><span class="kbd">L</span></span></div>
-          <div class="shortcut-row"><span class="shortcut-desc">Paste film list</span><span class="shortcut-keys"><span class="kbd">P</span></span></div>
-          <div class="shortcut-row"><span class="shortcut-desc">Toggle hide watched</span><span class="shortcut-keys"><span class="kbd">H</span></span></div>
-          <div class="shortcut-row"><span class="shortcut-desc">This panel</span><span class="shortcut-keys"><span class="kbd">?</span></span></div>
-          <div class="shortcut-row"><span class="shortcut-desc">Focus search</span><span class="shortcut-keys"><span class="kbd">/</span><span class="kbd-sep">/</span><span class="kbd">⌘</span><span class="kbd-sep">+</span><span class="kbd">K</span></span></div>
-          <div class="shortcut-row"><span class="shortcut-desc">Clear &amp; dismiss search</span><span class="shortcut-keys"><span class="kbd">Esc</span></span></div>
-          <div class="shortcut-row"><span class="shortcut-desc">Grid view</span><span class="shortcut-keys"><span class="kbd">⌘</span><span class="kbd-sep">+</span><span class="kbd">1</span></span></div>
-          <div class="shortcut-row"><span class="shortcut-desc">Compact view</span><span class="shortcut-keys"><span class="kbd">⌘</span><span class="kbd-sep">+</span><span class="kbd">2</span></span></div>
-          <div class="shortcut-row"><span class="shortcut-desc">List view</span><span class="shortcut-keys"><span class="kbd">⌘</span><span class="kbd-sep">+</span><span class="kbd">3</span></span></div>
-          <div class="shortcut-row"><span class="shortcut-desc">Undo delete</span><span class="shortcut-keys"><span class="kbd">⌘</span><span class="kbd-sep">+</span><span class="kbd">Z</span></span></div>
-          <div class="shortcut-row"><span class="shortcut-desc">Redo delete</span><span class="shortcut-keys"><span class="kbd">⌘</span><span class="kbd-sep">+</span><span class="kbd">⇧</span><span class="kbd-sep">+</span><span class="kbd">Z</span></span></div>
-          <div class="shortcut-row"><span class="shortcut-desc">Close / dismiss</span><span class="shortcut-keys"><span class="kbd">Esc</span></span></div>
-        </div>
-      </div>
-      <div class="shortcut-col">
-        <div class="shortcut-section">
-          <div class="shortcut-section-label">Add modal</div>
-          <div class="shortcut-row"><span class="shortcut-desc">Save film</span><span class="shortcut-keys"><span class="kbd">↵</span></span></div>
-          <div class="shortcut-row"><span class="shortcut-desc">Toggle service</span><span class="shortcut-keys"><span class="kbd">N</span><span class="kbd-sep">/</span><span class="kbd">D</span><span class="kbd-sep">/</span><span class="kbd">P</span><span class="kbd-sep">/</span><span class="kbd">C</span><span class="kbd-sep">/</span><span class="kbd">O</span></span></div>
-          <div class="shortcut-row"><span class="shortcut-desc">Coming soon</span><span class="shortcut-keys"><span class="kbd">⇧</span><span class="kbd-sep">+</span><span class="kbd">C</span></span></div>
-          <div class="shortcut-row"><span class="shortcut-desc">Toggle VPN</span><span class="shortcut-keys"><span class="kbd">⇧</span><span class="kbd-sep">+</span><span class="shortcut-desc" style="font-size:0.64rem;color:var(--text-muted)">service key</span></span></div>
-          <div class="shortcut-row"><span class="shortcut-desc">Focus VPN input</span><span class="shortcut-keys"><span class="kbd">/</span></span></div>
-          <div class="shortcut-row"><span class="shortcut-desc">Watching soon</span><span class="shortcut-keys"><span class="kbd">W</span></span></div>
-          <div class="shortcut-row"><span class="shortcut-desc">Mark watched</span><span class="shortcut-keys"><span class="kbd">⇧</span><span class="kbd-sep">+</span><span class="kbd">W</span></span></div>
-          <div class="shortcut-row"><span class="shortcut-desc">JustWatch / Letterboxd</span><span class="shortcut-keys"><span class="kbd">J</span><span class="kbd-sep">/</span><span class="kbd">L</span></span></div>
-        </div>
-        <div class="shortcut-section">
-          <div class="shortcut-section-label">Detail modal</div>
-          <div class="shortcut-row"><span class="shortcut-desc">Edit film</span><span class="shortcut-keys"><span class="kbd">E</span></span></div>
-          <div class="shortcut-row"><span class="shortcut-desc">Toggle watched</span><span class="shortcut-keys"><span class="kbd">↵</span></span></div>
-          <div class="shortcut-row"><span class="shortcut-desc">JustWatch / Letterboxd</span><span class="shortcut-keys"><span class="kbd">J</span><span class="kbd-sep">/</span><span class="kbd">L</span></span></div>
-          <div class="shortcut-row"><span class="shortcut-desc">TMDB / IMDb</span><span class="shortcut-keys"><span class="kbd">T</span><span class="kbd-sep">/</span><span class="kbd">I</span></span></div>
-          <div class="shortcut-row"><span class="shortcut-desc">Close</span><span class="shortcut-keys"><span class="kbd">Esc</span></span></div>
+          <!-- Action buttons -->
+          <div class="action-row" id="surpriseActionRow">
+            <button class="btn btn-primary button-fill" onclick="runSurprise()"
+              >🎲 Surprise Me</button
+            >
+          </div>
         </div>
       </div>
     </div>
-    <div class="shortcuts-panel-footer">⌘ = Ctrl on Windows &nbsp;·&nbsp; Shortcuts only fire when no text field is focused</div>
-  </div>
-</div>
 
-
-<!-- ── MOBILE BOTTOM SEARCH BAR ─────────────────────────────────────────── -->
-<div id="mobileSearchBar">
-  <span id="mobileSearchBarIcon">
-    <svg width="16" height="16" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="6" cy="6" r="4.5"/><line x1="9.5" y1="9.5" x2="12.5" y2="12.5"/></svg>
-  </span>
-  <input id="mobileSearchBarInput" type="text" placeholder="Search films, directors…"
-    autocomplete="off" autocorrect="off" spellcheck="false"
-    enterkeyhint="done"
-    oninput="_msbInput(this.value)"
-    onkeydown="if(event.key==='Escape'){this.value='';_msbInput('');this.blur();}else if(event.key==='Enter'){this.blur();}">
-  <button id="mobileSearchBarClear" onclick="_msbClear()" title="Clear search">&times;</button>
-</div>
-
-<!-- ── PASTE LIST IMPORT MODAL ─────────────────────────────────────────── -->
-<div class="modal-overlay" id="pasteImportModal" onclick="handlePasteImportOverlay(event)">
-  <div class="modal">
-    <div class="modal-header">
-      <h2 class="modal-title">📋 Paste Film List</h2>
-      <button class="modal-close" onclick="closePasteImportModal()">&times;</button>
+    <!-- ── LETTERBOXD IMPORT MODAL ────────────────────────────────────────────── -->
+    <div class="modal-overlay" id="exportModal" onclick="handleExportOverlay(event)">
+      <div class="modal">
+        <div class="modal-header">
+          <h2 class="modal-title">📤 Export to Letterboxd</h2>
+          <button class="modal-close" onclick="closeExportModal()">&times;</button>
+        </div>
+        <div class="modal-body" id="exportBody"></div>
+      </div>
     </div>
-    <div class="modal-body" id="pasteImportBody"></div>
-  </div>
-</div>
 
+    <div class="modal-overlay" id="importModal" onclick="handleImportOverlay(event)">
+      <div class="modal">
+        <div class="modal-header">
+          <h2 class="modal-title">📥 Letterboxd Import</h2>
+          <button class="modal-close" onclick="closeImportModal()">&times;</button>
+        </div>
+        <div class="modal-body" id="importBody"></div>
+      </div>
+    </div>
 
-<!-- Classic scripts: shared state first; startup last. No bundler or modules. -->
-<script src="storage-sync.js"></script>
-<script src="state.js"></script>
-<script src="api.js"></script>
-<script src="render.js"></script>
-<script src="modals.js"></script>
-<script src="imports.js"></script>
-<script src="christmas.js"></script>
-<script src="ui.js"></script>
-<script src="bootstrap.js"></script>
+    <!-- ── SORT DROPDOWN MENU ───────────────────────────────────────────────── -->
+    <div id="sortMenu" class="sort-menu" role="menu" aria-label="Sort films">
+      <div class="sort-menu-label">Sort by</div>
+      <button class="sort-menu-item" data-sort="dateAdded-desc" onclick="setSort('dateAdded-desc')"
+        >Date added<span class="sort-menu-detail">newest first</span></button
+      >
+      <button class="sort-menu-item" data-sort="dateAdded-asc" onclick="setSort('dateAdded-asc')"
+        >Date added<span class="sort-menu-detail">oldest first</span></button
+      >
+      <button class="sort-menu-item" data-sort="year-desc" onclick="setSort('year-desc')"
+        >Year<span class="sort-menu-detail">newest first</span></button
+      >
+      <button class="sort-menu-item" data-sort="year-asc" onclick="setSort('year-asc')"
+        >Year<span class="sort-menu-detail">oldest first</span></button
+      >
+      <button class="sort-menu-item" data-sort="title-asc" onclick="setSort('title-asc')"
+        >Title<span class="sort-menu-detail">A&ndash;Z</span></button
+      >
+      <button class="sort-menu-item" data-sort="runtime-desc" onclick="setSort('runtime-desc')"
+        >Runtime<span class="sort-menu-detail">longest first</span></button
+      >
+      <button class="sort-menu-item" data-sort="runtime-asc" onclick="setSort('runtime-asc')"
+        >Runtime<span class="sort-menu-detail">shortest first</span></button
+      >
+      <button class="sort-menu-item" data-sort="rating-desc" onclick="setSort('rating-desc')"
+        >Rating<span class="sort-menu-detail">highest first</span></button
+      >
+      <div class="watched-sort-section" id="watchedSortSection" style="display: none">
+        <button
+          class="sort-menu-item"
+          data-sort="dateWatched-desc"
+          onclick="setSort('dateWatched-desc')"
+          >Date watched<span class="sort-menu-detail">newest first</span></button
+        >
+        <button
+          class="sort-menu-item"
+          data-sort="dateWatched-asc"
+          onclick="setSort('dateWatched-asc')"
+          >Date watched<span class="sort-menu-detail">oldest first</span></button
+        >
+      </div>
+    </div>
 
-</body>
+    <!-- ── BULK ACTION BAR ──────────────────────────────────────────────────── -->
+    <div id="bulkBar">
+      <div id="bulkSubpanel" class="bulk-subpanel"></div>
+      <div class="bulk-main">
+        <div class="bulk-top">
+          <span id="bulkCount" class="bulk-count">0 selected</span>
+          <div class="bulk-sep"></div>
+          <button class="bulk-btn" id="bulkSelectAllBtn" onclick="bulkSelectAll()"
+            >Select All</button
+          >
+          <div class="bulk-sep"></div>
+          <button class="bulk-cancel" onclick="exitSelectMode()">Cancel</button>
+        </div>
+        <div class="bulk-actions">
+          <button class="bulk-btn bulk-action-btn" onclick="bulkWatch()" disabled>✓ Watched</button>
+          <button class="bulk-btn bulk-action-btn" onclick="bulkUnwatch()" disabled
+            >✗ Unwatched</button
+          >
+          <button class="bulk-btn bulk-action-btn" onclick="bulkWatchingSoon()" disabled
+            >⏰ Soon</button
+          >
+          <button class="bulk-btn bulk-action-btn" onclick="openBulkSubpanel('service')" disabled
+            >📺 Service</button
+          >
+          <button class="bulk-btn bulk-action-btn" onclick="openBulkSubpanel('category')" disabled
+            >🏷 Category</button
+          >
+          <button class="bulk-btn bulk-action-btn" onclick="bulkGraveyard()" disabled
+            >💀 Graveyard</button
+          >
+          <button
+            class="bulk-btn bulk-action-btn"
+            id="bulkChristmasBtn"
+            onclick="bulkMoveToChristmas()"
+            disabled
+            >🎄 Christmas</button
+          >
+          <button class="bulk-btn bulk-action-btn bulk-btn-danger" onclick="bulkDelete()" disabled
+            >🗑 Delete</button
+          >
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Keyboard shortcuts panel ───────────────────────────────────────── -->
+    <div
+      class="shortcuts-overlay"
+      id="shortcutsOverlay"
+      onclick="if(event.target===this)closeShortcutsPanel()"
+    >
+      <div class="shortcuts-panel">
+        <div class="shortcuts-panel-header">
+          <svg width="15" height="15" viewBox="0 0 15 15" fill="none" class="shortcuts-header-icon">
+            <rect
+              x="0.75"
+              y="2.75"
+              width="13.5"
+              height="9.5"
+              rx="2"
+              stroke="currentColor"
+              stroke-width="1.1"
+            />
+            <rect x="2.2" y="5" width="1.8" height="1.8" rx="0.5" fill="currentColor" />
+            <rect x="5.1" y="5" width="1.8" height="1.8" rx="0.5" fill="currentColor" />
+            <rect x="8" y="5" width="1.8" height="1.8" rx="0.5" fill="currentColor" />
+            <rect x="10.9" y="5" width="1.8" height="1.8" rx="0.5" fill="currentColor" />
+            <rect x="2.2" y="7.9" width="1.8" height="1.8" rx="0.5" fill="currentColor" />
+            <rect x="5.1" y="7.9" width="4.6" height="1.8" rx="0.5" fill="currentColor" />
+            <rect x="10.9" y="7.9" width="1.8" height="1.8" rx="0.5" fill="currentColor" />
+          </svg>
+          <span class="shortcuts-panel-title">Keyboard shortcuts</span>
+          <button class="shortcuts-panel-close" onclick="closeShortcutsPanel()">×</button>
+        </div>
+        <div class="shortcuts-panel-body">
+          <div class="shortcut-col">
+            <div class="shortcut-section">
+              <div class="shortcut-section-label">Global</div>
+              <div class="shortcut-row"
+                ><span class="shortcut-desc">Add a film</span
+                ><span class="shortcut-keys"><span class="kbd">A</span></span></div
+              >
+              <div class="shortcut-row"
+                ><span class="shortcut-desc">Surprise Me</span
+                ><span class="shortcut-keys"
+                  ><span class="kbd">R</span><span class="kbd-sep">/</span
+                  ><span class="kbd">S</span></span
+                ></div
+              >
+              <div class="shortcut-row"
+                ><span class="shortcut-desc">Letterboxd import</span
+                ><span class="shortcut-keys"><span class="kbd">L</span></span></div
+              >
+              <div class="shortcut-row"
+                ><span class="shortcut-desc">Paste film list</span
+                ><span class="shortcut-keys"><span class="kbd">P</span></span></div
+              >
+              <div class="shortcut-row"
+                ><span class="shortcut-desc">Toggle hide watched</span
+                ><span class="shortcut-keys"><span class="kbd">H</span></span></div
+              >
+              <div class="shortcut-row"
+                ><span class="shortcut-desc">This panel</span
+                ><span class="shortcut-keys"><span class="kbd">?</span></span></div
+              >
+              <div class="shortcut-row"
+                ><span class="shortcut-desc">Focus search</span
+                ><span class="shortcut-keys"
+                  ><span class="kbd">/</span><span class="kbd-sep">/</span><span class="kbd">⌘</span
+                  ><span class="kbd-sep">+</span><span class="kbd">K</span></span
+                ></div
+              >
+              <div class="shortcut-row"
+                ><span class="shortcut-desc">Clear &amp; dismiss search</span
+                ><span class="shortcut-keys"><span class="kbd">Esc</span></span></div
+              >
+              <div class="shortcut-row"
+                ><span class="shortcut-desc">Grid view</span
+                ><span class="shortcut-keys"
+                  ><span class="kbd">⌘</span><span class="kbd-sep">+</span
+                  ><span class="kbd">1</span></span
+                ></div
+              >
+              <div class="shortcut-row"
+                ><span class="shortcut-desc">Compact view</span
+                ><span class="shortcut-keys"
+                  ><span class="kbd">⌘</span><span class="kbd-sep">+</span
+                  ><span class="kbd">2</span></span
+                ></div
+              >
+              <div class="shortcut-row"
+                ><span class="shortcut-desc">List view</span
+                ><span class="shortcut-keys"
+                  ><span class="kbd">⌘</span><span class="kbd-sep">+</span
+                  ><span class="kbd">3</span></span
+                ></div
+              >
+              <div class="shortcut-row"
+                ><span class="shortcut-desc">Undo delete</span
+                ><span class="shortcut-keys"
+                  ><span class="kbd">⌘</span><span class="kbd-sep">+</span
+                  ><span class="kbd">Z</span></span
+                ></div
+              >
+              <div class="shortcut-row"
+                ><span class="shortcut-desc">Redo delete</span
+                ><span class="shortcut-keys"
+                  ><span class="kbd">⌘</span><span class="kbd-sep">+</span><span class="kbd">⇧</span
+                  ><span class="kbd-sep">+</span><span class="kbd">Z</span></span
+                ></div
+              >
+              <div class="shortcut-row"
+                ><span class="shortcut-desc">Close / dismiss</span
+                ><span class="shortcut-keys"><span class="kbd">Esc</span></span></div
+              >
+            </div>
+          </div>
+          <div class="shortcut-col">
+            <div class="shortcut-section">
+              <div class="shortcut-section-label">Add modal</div>
+              <div class="shortcut-row"
+                ><span class="shortcut-desc">Save film</span
+                ><span class="shortcut-keys"><span class="kbd">↵</span></span></div
+              >
+              <div class="shortcut-row"
+                ><span class="shortcut-desc">Toggle service</span
+                ><span class="shortcut-keys"
+                  ><span class="kbd">N</span><span class="kbd-sep">/</span><span class="kbd">D</span
+                  ><span class="kbd-sep">/</span><span class="kbd">P</span
+                  ><span class="kbd-sep">/</span><span class="kbd">C</span
+                  ><span class="kbd-sep">/</span><span class="kbd">O</span></span
+                ></div
+              >
+              <div class="shortcut-row"
+                ><span class="shortcut-desc">Coming soon</span
+                ><span class="shortcut-keys"
+                  ><span class="kbd">⇧</span><span class="kbd-sep">+</span
+                  ><span class="kbd">C</span></span
+                ></div
+              >
+              <div class="shortcut-row"
+                ><span class="shortcut-desc">Toggle VPN</span
+                ><span class="shortcut-keys"
+                  ><span class="kbd">⇧</span><span class="kbd-sep">+</span
+                  ><span class="shortcut-desc shortcut-service-key">service key</span></span
+                ></div
+              >
+              <div class="shortcut-row"
+                ><span class="shortcut-desc">Focus VPN input</span
+                ><span class="shortcut-keys"><span class="kbd">/</span></span></div
+              >
+              <div class="shortcut-row"
+                ><span class="shortcut-desc">Watching soon</span
+                ><span class="shortcut-keys"><span class="kbd">W</span></span></div
+              >
+              <div class="shortcut-row"
+                ><span class="shortcut-desc">Mark watched</span
+                ><span class="shortcut-keys"
+                  ><span class="kbd">⇧</span><span class="kbd-sep">+</span
+                  ><span class="kbd">W</span></span
+                ></div
+              >
+              <div class="shortcut-row"
+                ><span class="shortcut-desc">JustWatch / Letterboxd</span
+                ><span class="shortcut-keys"
+                  ><span class="kbd">J</span><span class="kbd-sep">/</span
+                  ><span class="kbd">L</span></span
+                ></div
+              >
+            </div>
+            <div class="shortcut-section">
+              <div class="shortcut-section-label">Detail modal</div>
+              <div class="shortcut-row"
+                ><span class="shortcut-desc">Edit film</span
+                ><span class="shortcut-keys"><span class="kbd">E</span></span></div
+              >
+              <div class="shortcut-row"
+                ><span class="shortcut-desc">Toggle watched</span
+                ><span class="shortcut-keys"><span class="kbd">↵</span></span></div
+              >
+              <div class="shortcut-row"
+                ><span class="shortcut-desc">JustWatch / Letterboxd</span
+                ><span class="shortcut-keys"
+                  ><span class="kbd">J</span><span class="kbd-sep">/</span
+                  ><span class="kbd">L</span></span
+                ></div
+              >
+              <div class="shortcut-row"
+                ><span class="shortcut-desc">TMDB / IMDb</span
+                ><span class="shortcut-keys"
+                  ><span class="kbd">T</span><span class="kbd-sep">/</span
+                  ><span class="kbd">I</span></span
+                ></div
+              >
+              <div class="shortcut-row"
+                ><span class="shortcut-desc">Close</span
+                ><span class="shortcut-keys"><span class="kbd">Esc</span></span></div
+              >
+            </div>
+          </div>
+        </div>
+        <div class="shortcuts-panel-footer"
+          >⌘ = Ctrl on Windows &nbsp;·&nbsp; Shortcuts only fire when no text field is focused</div
+        >
+      </div>
+    </div>
+
+    <!-- ── MOBILE BOTTOM SEARCH BAR ─────────────────────────────────────────── -->
+    <div id="mobileSearchBar">
+      <span id="mobileSearchBarIcon">
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 14 14"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.8"
+          stroke-linecap="round"
+        >
+          <circle cx="6" cy="6" r="4.5" />
+          <line x1="9.5" y1="9.5" x2="12.5" y2="12.5" />
+        </svg>
+      </span>
+      <input
+        id="mobileSearchBarInput"
+        type="text"
+        placeholder="Search films, directors…"
+        autocomplete="off"
+        autocorrect="off"
+        spellcheck="false"
+        enterkeyhint="done"
+        oninput="_msbInput(this.value)"
+        onkeydown="if(event.key==='Escape'){this.value='';_msbInput('');this.blur();}else if(event.key==='Enter'){this.blur();}"
+      />
+      <button id="mobileSearchBarClear" onclick="_msbClear()" title="Clear search">&times;</button>
+    </div>
+
+    <!-- ── PASTE LIST IMPORT MODAL ─────────────────────────────────────────── -->
+    <div class="modal-overlay" id="pasteImportModal" onclick="handlePasteImportOverlay(event)">
+      <div class="modal">
+        <div class="modal-header">
+          <h2 class="modal-title">📋 Paste Film List</h2>
+          <button class="modal-close" onclick="closePasteImportModal()">&times;</button>
+        </div>
+        <div class="modal-body" id="pasteImportBody"></div>
+      </div>
+    </div>
+
+    <!-- Classic scripts: shared state first; startup last. No bundler or modules. -->
+    <script src="storage-sync.js"></script>
+    <script src="state.js"></script>
+    <script src="api.js"></script>
+    <script src="render.js"></script>
+    <script src="modals.js"></script>
+    <script src="imports.js"></script>
+    <script src="christmas.js"></script>
+    <script src="ui.js"></script>
+    <script src="bootstrap.js"></script>
+  </body>
 </html>
