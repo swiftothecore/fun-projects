@@ -1,6 +1,33 @@
 // TMDB search/details, OMDb scores, API settings, and background metadata fills.
 // Classic scripts intentionally expose handler functions to inline HTML events.
 
+// TMDB allows ~40 req/s, so callers run requests in parallel and rely on this
+// to back off when a 429 does come back instead of sleeping between every call.
+async function tmdbFetch(url, opts, attempt = 0) {
+  const res = await fetch(url, opts);
+  if (res && res.status === 429 && attempt < 3) {
+    const retryAfter = parseFloat(res.headers && res.headers.get && res.headers.get('Retry-After'));
+    await new Promise((r) => setTimeout(r, (retryAfter > 0 ? retryAfter : 1) * 1000));
+    return tmdbFetch(url, opts, attempt + 1);
+  }
+  return res;
+}
+
+// Run worker(item, index) over items with at most `limit` in flight.
+async function runPool(items, limit, worker) {
+  let next = 0;
+  const lanes = Array.from({ length: Math.min(limit, items.length) }, async () => {
+    while (next < items.length) {
+      const i = next++;
+      await worker(items[i], i);
+    }
+  });
+  await Promise.all(lanes);
+}
+
+// Recent search results by query, so backspacing/retyping is instant.
+const _searchCache = new Map();
+
 function updateBanner() {
   document.getElementById('apiBanner').classList.toggle('hidden', !!state.tmdbKey);
 }
@@ -80,6 +107,7 @@ function onSearchInput(val) {
   clearTimeout(state.searchTimer);
   state._preloadId = null;
   state._preloadPromise = null;
+  if (state._searchAbort) state._searchAbort.abort();
   const r = document.getElementById('searchResults'),
     h = document.getElementById('searchHint');
   if (!val.trim()) {
@@ -91,7 +119,7 @@ function onSearchInput(val) {
     return;
   }
   document.getElementById('searchSpinner').classList.add('active');
-  state.searchTimer = setTimeout(() => searchTMDB(val.trim()), 400);
+  state.searchTimer = setTimeout(() => searchTMDB(val.trim()), 150);
 }
 
 async function searchTMDB(q) {
@@ -111,37 +139,48 @@ async function searchTMDB(q) {
   const aliasKey = normalisedQ.toLowerCase();
   const aliasKeyStripped = aliasKey.replace(/\s+/g, '');
   const aliasId = TMDB_SEARCH_ALIASES[aliasKey] || TMDB_SEARCH_ALIASES[aliasKeyStripped] || null;
+  const cacheKey = `${state.tmdbKey}|${normalisedQ.toLowerCase()}|${aliasId || ''}`;
   try {
-    const fetches = [
-      fetch(
-        `https://api.themoviedb.org/3/search/movie?api_key=${encodeURIComponent(state.tmdbKey)}&query=${encodeURIComponent(normalisedQ)}&include_adult=false`
-      ),
-    ];
-    if (aliasId)
-      fetches.push(
-        fetch(
-          `https://api.themoviedb.org/3/movie/${aliasId}?api_key=${encodeURIComponent(state.tmdbKey)}`
-        )
-          .then((response) => (response.ok ? response.json() : null))
-          .catch(() => null)
-      );
-    const [res, aliasMovie] = await Promise.all(fetches);
-    if (seq !== state._searchSeq || !document.getElementById('searchInput').value.trim()) return;
-    if (!res.ok) {
-      r.innerHTML =
-        res.status === 401
-          ? `<div class="search-no-results">Invalid API key. <a class="text-gold" href="#" onclick="showApiSettings();return false;">Update it here.</a></div>`
-          : `<div class="search-no-results">Search failed (${res.status}).</div>`;
-      r.classList.add('open');
-      sp.classList.remove('active');
-      return;
-    }
-    const d = await res.json();
-    let results = d.results || [];
-    // Prepend the aliased movie if the fetch succeeded — dedupe if it also
-    // happened to come back in the regular search results.
-    if (aliasMovie) {
-      results = [aliasMovie, ...results.filter((m) => m.id !== aliasMovie.id)];
+    let results = _searchCache.get(cacheKey);
+    if (!results) {
+      const ctrl = (state._searchAbort = new AbortController());
+      const fetches = [
+        tmdbFetch(
+          `https://api.themoviedb.org/3/search/movie?api_key=${encodeURIComponent(state.tmdbKey)}&query=${encodeURIComponent(normalisedQ)}&include_adult=false`,
+          { signal: ctrl.signal }
+        ),
+      ];
+      if (aliasId)
+        fetches.push(
+          tmdbFetch(
+            `https://api.themoviedb.org/3/movie/${aliasId}?api_key=${encodeURIComponent(state.tmdbKey)}`,
+            { signal: ctrl.signal }
+          )
+            .then((response) => (response.ok ? response.json() : null))
+            .catch(() => null)
+        );
+      const [res, aliasMovie] = await Promise.all(fetches);
+      if (seq !== state._searchSeq || !document.getElementById('searchInput').value.trim()) return;
+      if (!res.ok) {
+        r.innerHTML =
+          res.status === 401
+            ? `<div class="search-no-results">Invalid API key. <a class="text-gold" href="#" onclick="showApiSettings();return false;">Update it here.</a></div>`
+            : `<div class="search-no-results">Search failed (${res.status}).</div>`;
+        r.classList.add('open');
+        sp.classList.remove('active');
+        return;
+      }
+      const d = await res.json();
+      results = d.results || [];
+      // Prepend the aliased movie if the fetch succeeded — dedupe if it also
+      // happened to come back in the regular search results.
+      if (aliasMovie) {
+        results = [aliasMovie, ...results.filter((m) => m.id !== aliasMovie.id)];
+      }
+      if (seq === state._searchSeq) {
+        if (_searchCache.size >= 50) _searchCache.delete(_searchCache.keys().next().value);
+        _searchCache.set(cacheKey, results);
+      }
     }
     if (seq !== state._searchSeq) return;
     sp.classList.remove('active');
@@ -182,7 +221,7 @@ async function searchTMDB(q) {
 
 async function fetchMovieCredits(id) {
   try {
-    const response = await fetch(
+    const response = await tmdbFetch(
       `https://api.themoviedb.org/3/movie/${id}/credits?api_key=${encodeURIComponent(state.tmdbKey)}`
     );
     return response.ok ? await response.json() : null;
@@ -214,6 +253,7 @@ function preloadMovie(id) {
 
 function resetMovieSearch() {
   clearTimeout(state.searchTimer);
+  if (state._searchAbort) state._searchAbort.abort();
   state._searchSeq++;
   state._selectionSeq++;
   state._preloadId = state._preloadPromise = null;
@@ -223,6 +263,7 @@ function resetMovieSearch() {
 
 async function selectMovie(id) {
   clearTimeout(state.searchTimer);
+  if (state._searchAbort) state._searchAbort.abort();
   state._searchSeq++;
   const seq = ++state._selectionSeq;
   const isCurrent = () =>
@@ -322,13 +363,13 @@ async function backfillRuntimes() {
   const needsFill = list.filter((m) => m.runtime === undefined || m.runtime === null);
   if (!needsFill.length) return;
   let changed = false;
-  for (const m of needsFill) {
+  await runPool(needsFill, 4, async (m) => {
     try {
       // HTTP failures (rate limit, bad key) throw so the film is retried on the
       // next backfill instead of being permanently stamped with runtime 0.
       let runtime = 0;
       if (m.tmdbId) {
-        const res = await fetch(
+        const res = await tmdbFetch(
           `https://api.themoviedb.org/3/movie/${m.tmdbId}?api_key=${encodeURIComponent(state.tmdbKey)}`
         );
         if (!res.ok) throw new Error('TMDB ' + res.status);
@@ -342,14 +383,14 @@ async function backfillRuntimes() {
             .trim()
         );
         const yr = m.year ? `&year=${m.year}` : '';
-        const res = await fetch(
+        const res = await tmdbFetch(
           `https://api.themoviedb.org/3/search/movie?api_key=${encodeURIComponent(state.tmdbKey)}&query=${q}${yr}&include_adult=false`
         );
         if (!res.ok) throw new Error('TMDB ' + res.status);
         const d = await res.json();
         if (d.results && d.results.length) {
           const best = d.results[0];
-          const dr = await fetch(
+          const dr = await tmdbFetch(
             `https://api.themoviedb.org/3/movie/${best.id}?api_key=${encodeURIComponent(state.tmdbKey)}`
           );
           if (!dr.ok) throw new Error('TMDB ' + dr.status);
@@ -361,8 +402,7 @@ async function backfillRuntimes() {
       m.runtime = runtime;
       changed = true;
     } catch (e) {}
-    await new Promise((r) => setTimeout(r, 150));
-  }
+  });
   if (changed && (list === getNormalList() || list === getChristmasList())) {
     save(target, true);
     if (list === state.movies) render();
@@ -383,7 +423,7 @@ async function fetchRtRating(m) {
   let imdbId = m.imdbId || null;
   if (!imdbId && m.tmdbId && state.tmdbKey) {
     try {
-      const res = await fetch(
+      const res = await tmdbFetch(
         `https://api.themoviedb.org/3/movie/${encodeURIComponent(m.tmdbId)}/external_ids?api_key=${encodeURIComponent(state.tmdbKey)}`
       );
       if (res.ok) {
@@ -419,8 +459,9 @@ async function backfillRtRatings() {
   const target = state.christmasMode ? 'christmas' : 'normal';
   let changed = false;
   try {
-    for (const m of list.filter(rtNeedsFill)) {
-      if (!m.title) continue;
+    let stopped = false;
+    await runPool(list.filter(rtNeedsFill), 3, async (m) => {
+      if (stopped || !m.title) return;
       try {
         const r = await fetchRtRating(m);
         m.rtRating = r.rtRating;
@@ -430,11 +471,10 @@ async function backfillRtRatings() {
       } catch (e) {
         if (e.fatal) {
           console.warn('RT backfill stopped:', e.message);
-          break;
+          stopped = true;
         }
       }
-      await new Promise((r) => setTimeout(r, 200));
-    }
+    });
   } finally {
     state._rtBackfillRunning = false;
     if (changed && (list === getNormalList() || list === getChristmasList())) {

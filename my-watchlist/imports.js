@@ -331,13 +331,13 @@ async function _tmdbSearchForImport(title, year) {
       .replace(/\s+/g, ' ')
       .trim();
     const base = `https://api.themoviedb.org/3/search/movie?api_key=${encodeURIComponent(state.tmdbKey)}&query=${encodeURIComponent(q)}&include_adult=false`;
-    const res = await fetch(year ? base + '&year=' + encodeURIComponent(year) : base);
+    const res = await tmdbFetch(year ? base + '&year=' + encodeURIComponent(year) : base);
     if (!res.ok) return null;
     const data = await res.json();
     let results = data.results || [];
     // Year filter sometimes causes misses — retry without it
     if (!results.length && year) {
-      const res2 = await fetch(base);
+      const res2 = await tmdbFetch(base);
       if (res2.ok) {
         const d2 = await res2.json();
         results = d2.results || [];
@@ -353,7 +353,7 @@ async function _tmdbDetailsForImport(id) {
   if (!state.tmdbKey || !id) return null;
   try {
     const [dr, c] = await Promise.all([
-      fetch(
+      tmdbFetch(
         `https://api.themoviedb.org/3/movie/${id}?api_key=${encodeURIComponent(state.tmdbKey)}`
       ),
       fetchMovieCredits(id),
@@ -393,6 +393,25 @@ async function runLetterboxdImport() {
       </div>
     </div>`;
 
+  // Look films up on TMDB several at a time, then apply them in CSV order below
+  // so duplicate rows still match against earlier ones.
+  const lookups = new Array(total);
+  let looked = 0;
+  await runPool(state._importRows, 6, async (row, i) => {
+    const title = row.Name || '';
+    const year = row.Year || '';
+    const hit = await _tmdbSearchForImport(title, year);
+    const details = hit?.id ? await _tmdbDetailsForImport(hit.id) : null;
+    lookups[i] = { hit, details };
+    looked++;
+    const fill = document.getElementById('impFill');
+    const label = document.getElementById('impLabel');
+    const count = document.getElementById('impCount');
+    if (fill) fill.style.width = Math.round((looked / total) * 100) + '%';
+    if (label) label.textContent = title + (year ? ' (' + year + ')' : '');
+    if (count) count.textContent = `${looked} / ${total}`;
+  });
+
   for (let i = 0; i < state._importRows.length; i++) {
     const row = state._importRows[i];
     const title = row.Name || '';
@@ -401,22 +420,9 @@ async function runLetterboxdImport() {
     const watchedStr = row['Watched Date'] || row['Date'] || '';
     const watchedISO = diaryDateISO(watchedStr);
 
-    // Update progress bar
-    const pct = Math.round((i / total) * 100);
-    const fill = document.getElementById('impFill');
-    const label = document.getElementById('impLabel');
-    const count = document.getElementById('impCount');
-    if (fill) fill.style.width = pct + '%';
-    if (label) label.textContent = title + (year ? ' (' + year + ')' : '');
-    if (count) count.textContent = `${i} / ${total}`;
-    // Yield to browser so the progress bar actually renders
-    await new Promise((r) => setTimeout(r, 0));
-
     try {
-      // Fetch TMDB data
-      const hit = await _tmdbSearchForImport(title, year);
+      const { hit, details } = lookups[i];
       const tmdbId = hit?.id || null;
-      const details = tmdbId ? await _tmdbDetailsForImport(tmdbId) : null;
       if (!tmdbId) noTmdb++;
 
       const d = details?.d;
@@ -476,8 +482,6 @@ async function runLetterboxdImport() {
       noTmdb++;
     }
 
-    // ~6 films/sec — respectful of TMDB's rate limit
-    await new Promise((r) => setTimeout(r, 160));
   }
 
   // Final tick
@@ -810,18 +814,10 @@ async function _runPasteSearch(titles) {
       </div>
     </div>`;
 
-  state._pasteItems = [];
-
-  for (let i = 0; i < titles.length; i++) {
-    const title = titles[i];
-    const fill = document.getElementById('pasteFill');
-    const label = document.getElementById('pasteProgLabel');
-    const count = document.getElementById('pasteProgCount');
-    if (fill) fill.style.width = Math.round((i / total) * 100) + '%';
-    if (label) label.textContent = title;
-    if (count) count.textContent = `${i} / ${total}`;
-    await new Promise((r) => setTimeout(r, 0));
-
+  // Search several titles at once; items are stored by index so list order is kept.
+  const items = new Array(titles.length);
+  let searched = 0;
+  await runPool(titles, 6, async (title, i) => {
     let results = [];
     if (hasKey) {
       try {
@@ -833,10 +829,10 @@ async function _runPasteSearch(titles) {
         const aliasKeyStr = aliasKey.replace(/\s+/g, '');
         const aliasId = TMDB_SEARCH_ALIASES[aliasKey] || TMDB_SEARCH_ALIASES[aliasKeyStr] || null;
         const base = `https://api.themoviedb.org/3/search/movie?api_key=${encodeURIComponent(state.tmdbKey)}&query=${encodeURIComponent(q)}&include_adult=false`;
-        const fetches = [fetch(base)];
+        const fetches = [tmdbFetch(base)];
         if (aliasId)
           fetches.push(
-            fetch(
+            tmdbFetch(
               `https://api.themoviedb.org/3/movie/${aliasId}?api_key=${encodeURIComponent(state.tmdbKey)}`
             )
               .then((response) => (response.ok ? response.json() : null))
@@ -857,15 +853,22 @@ async function _runPasteSearch(titles) {
       // No TMDB key: keep the typed title as a manual entry so it can still be saved
       results = [{ id: null, title, release_date: '', _manual: true }];
     }
-    state._pasteItems.push({
+    items[i] = {
       inputTitle: title,
       results,
       selectedIdx: 0,
       removed: false,
       showingAlts: false,
-    });
-    await new Promise((r) => setTimeout(r, 160));
-  }
+    };
+    searched++;
+    const fill = document.getElementById('pasteFill');
+    const label = document.getElementById('pasteProgLabel');
+    const count = document.getElementById('pasteProgCount');
+    if (fill) fill.style.width = Math.round((searched / total) * 100) + '%';
+    if (label) label.textContent = title;
+    if (count) count.textContent = `${searched} / ${total}`;
+  });
+  state._pasteItems = items;
 
   const fill = document.getElementById('pasteFill');
   if (fill) fill.style.width = '100%';
@@ -1251,7 +1254,7 @@ async function _pasteCustomSearch(idx) {
       .replace(/[-\u2010-\u2015]/g, ' ')
       .replace(/\s+/g, ' ')
       .trim();
-    const res = await fetch(
+    const res = await tmdbFetch(
       `https://api.themoviedb.org/3/search/movie?api_key=${encodeURIComponent(state.tmdbKey)}&query=${encodeURIComponent(norm)}&include_adult=false`
     );
     if (res.ok) {
@@ -1291,7 +1294,26 @@ async function _pasteConfirmAll() {
     skipped = 0;
   const now = new Date().toISOString();
 
-  for (const item of toAdd) {
+  // Fetch details for all picks several at a time, then add them in list order.
+  const fetched = new Array(toAdd.length);
+  await runPool(toAdd, 6, async (item, i) => {
+    const hit = item.results[item.selectedIdx];
+    if (!hit || !state.tmdbKey || !hit.id) return;
+    try {
+      const [dr, credits] = await Promise.all([
+        tmdbFetch(
+          `https://api.themoviedb.org/3/movie/${hit.id}?api_key=${encodeURIComponent(state.tmdbKey)}`
+        ),
+        fetchMovieCredits(hit.id),
+      ]);
+      fetched[i] = { d: dr.ok ? await dr.json() : null, crew: credits };
+    } catch (e) {
+      /* fallback to search result */
+    }
+  });
+
+  for (let i = 0; i < toAdd.length; i++) {
+    const item = toAdd[i];
     const hit = item.results[item.selectedIdx];
     if (!hit) continue;
     const yr = (hit.release_date || '').slice(0, 4);
@@ -1299,22 +1321,8 @@ async function _pasteConfirmAll() {
       skipped++;
       continue;
     }
-    let d = null,
-      crew = null;
-    if (state.tmdbKey && hit.id) {
-      try {
-        const [dr, credits] = await Promise.all([
-          fetch(
-            `https://api.themoviedb.org/3/movie/${hit.id}?api_key=${encodeURIComponent(state.tmdbKey)}`
-          ),
-          fetchMovieCredits(hit.id),
-        ]);
-        if (dr.ok) d = await dr.json();
-        crew = credits;
-      } catch (e) {
-        /* fallback to search result */
-      }
-    }
+    const d = fetched[i]?.d || null;
+    const crew = fetched[i]?.crew || null;
     const dir = crew ? (crew.crew || []).find((x) => x.job === 'Director') : null;
     state.movies.push({
       id: crypto.randomUUID(),
@@ -1341,7 +1349,6 @@ async function _pasteConfirmAll() {
       dateWatched: state._pasteWatched ? now : undefined,
     });
     added++;
-    await new Promise((r) => setTimeout(r, 40));
   }
 
   save();
