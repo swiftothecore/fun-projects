@@ -327,6 +327,11 @@
       .countdown-card { padding: 1.6rem 1.2rem 1.4rem; border-radius: 16px; }
       .colon { padding-bottom: 0.38rem; }
     }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation: none !important; }
+      .particle, .cloud { display: none; }
+      .artist, .album-title, .divider, .release-info, #countdown-wrap { opacity: 1; transform: none; }
+    }
   </style>
 </head>
 <body>

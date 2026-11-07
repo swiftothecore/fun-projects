@@ -302,6 +302,7 @@
             canvas.height = H;
 
             const ctx = canvas.getContext('2d');
+            if(!ctx)return;
 
             // Build a grid of random values for one noise octave
             function makeGrid(cols, rows) {
@@ -373,9 +374,12 @@
             return String(Math.max(0, Math.floor(n))).padStart(2, '0');
         }
 
+        let countdownTimer=null;
         function tick() {
             const diff = RELEASE - Date.now();
             if (diff <= 0) {
+                clearTimeout(countdownTimer);
+                if(els.wrap.querySelector('.released'))return;
                 els.wrap.innerHTML = '<span class="released">petal is here &nbsp;ꕤ</span>';
                 return;
             }
@@ -383,10 +387,11 @@
             els.hours.textContent   = pad((diff % 86400000) / 3600000);
             els.minutes.textContent = pad((diff % 3600000)  / 60000);
             els.seconds.textContent = pad((diff % 60000)    / 1000);
+            countdownTimer=setTimeout(tick,1000);
         }
 
         tick();
-        setInterval(tick, 1000);
+
 
         // Falling petals
         const container = document.getElementById('petals');

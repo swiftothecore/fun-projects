@@ -1761,11 +1761,16 @@
     }
 
     ssBtn.addEventListener('click', async (e) => {
+      if(ssBtn.disabled)return;
+      ssBtn.disabled=true;
       ssBtn.classList.add('working');
       const isDarkSide = document.getElementById('darkside-section').classList.contains('visible');
       const zone    = isDarkSide ? document.getElementById('ds-capture') : document.getElementById('capture-zone');
       const isDark  = isDarkSide || !root.classList.contains('light');
       const bgColor = isDark ? '#080000' : '#F5F5F7';
+      const hero=zone.querySelector('.hero'), qBadge=zone.querySelector('.q-badge');
+      const oldHeroPadding=hero.style.paddingTop;
+      const oldBadgePadding=qBadge?[qBadge.style.paddingTop,qBadge.style.paddingBottom]:null;
       const PAD     = 24;
       const SCALE   = 2;
 
@@ -1830,6 +1835,9 @@
         showToast('Screenshot failed');
         console.error(err);
       } finally {
+        hero.style.paddingTop=oldHeroPadding;
+        if(qBadge){qBadge.style.paddingTop=oldBadgePadding[0];qBadge.style.paddingBottom=oldBadgePadding[1];}
+        ssBtn.disabled=false;
         ssBtn.classList.remove('working');
       }
     });
@@ -1883,6 +1891,7 @@
 
     // ── Main transition ──────────────────────────────────────────
     function triggerDarkSide() {
+      if(window.matchMedia('(prefers-reduced-motion: reduce)').matches){revealDarkSide();return;}
       lgCanvas.width  = window.innerWidth;
       lgCanvas.height = window.innerHeight;
       lgOverlay.classList.add('visible');
@@ -2076,6 +2085,7 @@
 
     // ── Return-to-light halo transition ─────────────────────────
     function triggerReturn() {
+      if(window.matchMedia('(prefers-reduced-motion: reduce)').matches){returnToLight();return;}
       const haloOverlay = document.getElementById('halo-overlay');
       const haloCanvas  = document.getElementById('halo-canvas');
       haloCanvas.width  = window.innerWidth;
@@ -2230,6 +2240,7 @@
 
     // ── DS lyric animation ───────────────────────────────────────
     function startDsLyrics() {
+      clearTimeout(dsLyricsTimer);
       const words   = dsSection.querySelectorAll('.ds-lyric-words .w');
       // 20 words: "One look, dark room / Meant just for you /
       //            Time moved too fast / You play it back / Buttons on a coat"

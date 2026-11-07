@@ -1,0 +1,852 @@
+{
+  "baselineCommit": "27cceb4",
+  "distinctIssues": 104,
+  "regressionCases": 114,
+  "baselinePassed": 0,
+  "fixedPassed": 114,
+  "cases": [
+    {
+      "case": 1,
+      "area": "reading-room",
+      "behavior": "unavailable storage does not prevent book changes or theme changes",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 2,
+      "area": "reading-room",
+      "behavior": "malformed newest storage falls back to the valid legacy library",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 3,
+      "area": "reading-room",
+      "behavior": "invalid stored records are filtered before rendering",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 4,
+      "area": "reading-room",
+      "behavior": "reopening menus does not retain actions for earlier books",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 5,
+      "area": "reading-room",
+      "behavior": "edition responses cannot fill a different books cover menu",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 6,
+      "area": "reading-room",
+      "behavior": "ISO timestamps produce valid AEST dates and ages",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 7,
+      "area": "reading-room",
+      "behavior": "book years render as text",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 8,
+      "area": "reading-room",
+      "behavior": "undo removal cannot duplicate a book readded to another shelf",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 9,
+      "area": "reading-room",
+      "behavior": "adding a book invalidates removal redo",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 10,
+      "area": "reading-room",
+      "behavior": "cloud partial shelves clear deleted local shelves",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 11,
+      "area": "reading-room",
+      "behavior": "cloud replacement invalidates old removal history",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 12,
+      "area": "reading-room",
+      "behavior": "new search input immediately invalidates pending results",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 13,
+      "area": "reading-room",
+      "behavior": "dismissing search cancels pending debounce and hides spinner",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 14,
+      "area": "reading-room",
+      "behavior": "book cards render while cover downloads are pending",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 15,
+      "area": "album-atlas",
+      "behavior": "invalid saved library shape does not crash startup",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 16,
+      "area": "album-atlas",
+      "behavior": "invalid cover cache does not crash album rendering",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 17,
+      "area": "album-atlas",
+      "behavior": "invalid added date does not crash card rendering",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 18,
+      "area": "album-atlas",
+      "behavior": "album years render as text",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 19,
+      "area": "album-atlas",
+      "behavior": "shifted uppercase Z performs redo",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 20,
+      "area": "album-atlas",
+      "behavior": "arrow keys move the caret inside search text",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 21,
+      "area": "album-atlas",
+      "behavior": "cloud load invalidates obsolete undo snapshots",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 22,
+      "area": "album-atlas",
+      "behavior": "new input invalidates an older running search",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 23,
+      "area": "album-atlas",
+      "behavior": "resizing to mobile selects a supported list view",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 24,
+      "area": "tv-reverie",
+      "behavior": "corrupt saved JSON does not abort startup",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 25,
+      "area": "tv-reverie",
+      "behavior": "blocked storage still permits startup and saving",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 26,
+      "area": "tv-reverie",
+      "behavior": "new search input rejects older responses",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 27,
+      "area": "tv-reverie",
+      "behavior": "newer show selection wins over slower details",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 28,
+      "area": "tv-reverie",
+      "behavior": "closed forms reject pending details",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 29,
+      "area": "tv-reverie",
+      "behavior": "typing a query invalidates pending show selection",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 30,
+      "area": "tv-reverie",
+      "behavior": "selection cancels delayed search",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 31,
+      "area": "tv-reverie",
+      "behavior": "failed detail HTTP response preserves entered title",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 32,
+      "area": "tv-reverie",
+      "behavior": "selecting another show refreshes automatic synopsis",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 33,
+      "area": "tv-reverie",
+      "behavior": "editing a show clears another forms pending TMDB id",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 34,
+      "area": "tv-reverie",
+      "behavior": "clearing episode runtime intentionally removes old value",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 35,
+      "area": "tv-reverie",
+      "behavior": "negative episode counts are not persisted",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 36,
+      "area": "tv-reverie",
+      "behavior": "starting a dropped show restores it from graveyard",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 37,
+      "area": "tv-reverie",
+      "behavior": "bulk watching restores graveyard shows",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 38,
+      "area": "tv-reverie",
+      "behavior": "bulk finished restores graveyard shows",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 39,
+      "area": "tv-reverie",
+      "behavior": "bulk dropping clears watching and finished states",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 40,
+      "area": "tv-reverie",
+      "behavior": "invalid timestamps render unknown dates",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 41,
+      "area": "tv-reverie",
+      "behavior": "prototype-named categories are listed and detach independently",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 42,
+      "area": "tv-reverie",
+      "behavior": "quotes and backslashes in category handler arguments survive round trip",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 43,
+      "area": "tv-reverie",
+      "behavior": "punctuated show ids can open cards",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 44,
+      "area": "tv-reverie",
+      "behavior": "category results honor the text search",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 45,
+      "area": "tv-reverie",
+      "behavior": "repeated selection-mode activation keeps selected shows",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 46,
+      "area": "tv-reverie",
+      "behavior": "selection selectors handle punctuation in ids",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 47,
+      "area": "tv-reverie",
+      "behavior": "repeated Add opening releases scroll lock once",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 48,
+      "area": "tv-reverie",
+      "behavior": "direct Edit opening locks background scroll",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 49,
+      "area": "tv-reverie",
+      "behavior": "remote category settings are applied before render",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 50,
+      "area": "tv-reverie",
+      "behavior": "remote hydration clears obsolete undo and selection",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 51,
+      "area": "tv-reverie",
+      "behavior": "show metadata is escaped in cards and list rows",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 52,
+      "area": "tv-reverie",
+      "behavior": "Enter on focused Cancel does not save the show",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 53,
+      "area": "tv-reverie",
+      "behavior": "editing after a deletion invalidates snapshots that discard the edit",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 54,
+      "area": "tv-reverie",
+      "behavior": "closing an already closed form preserves another modals scroll lock",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 55,
+      "area": "music-videos",
+      "behavior": "corrupt cached JSON does not abort startup",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 56,
+      "area": "music-videos",
+      "behavior": "blocked storage permits editing artists",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 57,
+      "area": "music-videos",
+      "behavior": "latest channel search wins",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 58,
+      "area": "music-videos",
+      "behavior": "closed channel searches cannot populate a reopened modal",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 59,
+      "area": "music-videos",
+      "behavior": "double adding an artist cannot create duplicate records",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 60,
+      "area": "music-videos",
+      "behavior": "refresh cannot resurrect videos for a removed artist",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 61,
+      "area": "music-videos",
+      "behavior": "removing the selected artist resets its filter and selection",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 62,
+      "area": "music-videos",
+      "behavior": "watch-filter changes prune now-hidden selected videos",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 63,
+      "area": "music-videos",
+      "behavior": "adding an overlapping playlist preserves watched entries",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 64,
+      "area": "music-videos",
+      "behavior": "artists added in the same millisecond have distinct ids",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 65,
+      "area": "music-videos",
+      "behavior": "failed refresh does not report all up to date",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 66,
+      "area": "music-videos",
+      "behavior": "incremental refresh includes new videos at the cutoff timestamp",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 67,
+      "area": "music-videos",
+      "behavior": "thumbnail fallback disables its failing error handler",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 68,
+      "area": "music-videos",
+      "behavior": "invalid cloud video payload leaves the entire library intact",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 69,
+      "area": "music-videos",
+      "behavior": "typing during a channel request invalidates its results",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 70,
+      "area": "album-atlas",
+      "behavior": "obsolete plaintext passwords are deleted even without the SDK",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 71,
+      "area": "album-atlas",
+      "behavior": "copied cloud configuration excludes passwords",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 72,
+      "area": "album-atlas",
+      "behavior": "persisted auth sessions restore without a stored password",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 73,
+      "area": "album-atlas",
+      "behavior": "manual sign-in never persists the entered password",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 74,
+      "area": "album-atlas",
+      "behavior": "cloud writes are serialized",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 75,
+      "area": "album-atlas",
+      "behavior": "an older completed write cannot clear newer pending changes",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 76,
+      "area": "album-atlas",
+      "behavior": "manual reconnect preserves existing unsynced local edits",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 77,
+      "area": "album-atlas",
+      "behavior": "edits during initial cloud fetch win over remote data",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 78,
+      "area": "album-atlas",
+      "behavior": "a restored session with no cloud row uploads its local library",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 79,
+      "area": "album-atlas",
+      "behavior": "a failed cloud read never triggers an upload over unknown remote data",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 80,
+      "area": "album-atlas",
+      "behavior": "offline saves persist a pending marker without the SDK",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 81,
+      "area": "album-atlas",
+      "behavior": "failed auth storage writes override stale persisted tokens",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 82,
+      "area": "album-atlas",
+      "behavior": "failed auth removal leaves a memory tombstone",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 83,
+      "area": "album-atlas",
+      "behavior": "pasting configuration never imports passwords into the form",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 84,
+      "area": "album-atlas",
+      "behavior": "copy config works through prompt when clipboard is unavailable",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 85,
+      "area": "album-atlas",
+      "behavior": "cloud setup panel remains available after a CDN failure",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 86,
+      "area": "palette-painter",
+      "behavior": "8-digit colors are not silently truncated to six digits",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 87,
+      "area": "palette-painter",
+      "behavior": "unencoded SVG data URLs retain commas",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 88,
+      "area": "palette-painter",
+      "behavior": "saved filenames and preview attributes render as data",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 89,
+      "area": "palette-painter",
+      "behavior": "invalid gallery records cannot abort gallery rendering",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 90,
+      "area": "palette-painter",
+      "behavior": "invalid collection members do not crash gallery actions",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 91,
+      "area": "palette-painter",
+      "behavior": "saving with blocked storage retains the gallery for the session",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 92,
+      "area": "palette-painter",
+      "behavior": "deletion undo preserves palettes saved later",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 93,
+      "area": "palette-painter",
+      "behavior": "deletion undo preserves later renames of other palettes",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 94,
+      "area": "palette-painter",
+      "behavior": "deletion undo restores favourite membership",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 95,
+      "area": "palette-painter",
+      "behavior": "deletion undo restores custom collection membership",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 96,
+      "area": "palette-painter",
+      "behavior": "reused collection cards act on updated palette data",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 97,
+      "area": "palette-painter",
+      "behavior": "undo loading a palette restores previous input text",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 98,
+      "area": "palette-painter",
+      "behavior": "invalid cloud payload is rejected atomically",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 99,
+      "area": "palette-painter",
+      "behavior": "remote gallery replacement invalidates local deletion history",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 100,
+      "area": "my-watchlist",
+      "behavior": "missing release dates are actually backfilled and persisted",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 101,
+      "area": "thirteen",
+      "behavior": "blocked theme storage does not prevent calendar startup",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 102,
+      "area": "thirteen",
+      "behavior": "arrow keys in the help modal do not change the selected year",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 103,
+      "area": "sotr-countdown",
+      "behavior": "bottom sunburst uses its own gradient",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 104,
+      "area": "sotr-countdown",
+      "behavior": "countdown initializes when canvas rendering is unavailable",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 105,
+      "area": "petal-countdown",
+      "behavior": "release state still renders without canvas rendering",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 106,
+      "area": "petal-countdown",
+      "behavior": "release message is stable after countdown finishes",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 107,
+      "area": "olivia-countdown",
+      "behavior": "reduced-motion setting stops decorative animation",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 108,
+      "area": "home",
+      "behavior": "project navigation cards have accessible names",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 109,
+      "area": "apple-music",
+      "behavior": "screenshot failure restores original custom layout padding",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 110,
+      "area": "apple-music",
+      "behavior": "repeated screenshot activation starts only one capture",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 111,
+      "area": "apple-music",
+      "behavior": "repeated dark-side lyric starts cancel previous animation timer",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 112,
+      "area": "apple-music",
+      "behavior": "reduced-motion setting skips flashing transition overlays",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 113,
+      "area": "palette-painter",
+      "behavior": "ZIP entries remain unique when filenames already contain numbered suffixes",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "case": 114,
+      "area": "thirteen",
+      "behavior": "year navigation fits a mobile viewport when web fonts fail",
+      "baselinePassed": false,
+      "fixedPassed": true
+    }
+  ],
+  "reverification": {
+    "date": "2026-11-07",
+    "timezone": "Australia/Melbourne",
+    "baselineSource": "Fresh git archive of 27cceb4",
+    "fixedSource": "Existing working tree fix set",
+    "issueLedgerCoverage": "104 issues cover cases 1–114 exactly once",
+    "smoke": {
+      "passed": 26,
+      "total": 26,
+      "pages": 13,
+      "viewportWidths": [
+        1280,
+        390
+      ]
+    },
+    "watchlist": {
+      "functional": "passed; optional real SDK checks skipped",
+      "bughunt": {
+        "passed": 40,
+        "total": 40
+      },
+      "formsApi": {
+        "passed": 11,
+        "total": 11
+      },
+      "imports": {
+        "passed": 15,
+        "total": 15
+      },
+      "renderUi": {
+        "passed": 11,
+        "total": 11
+      },
+      "storage": {
+        "passed": 15,
+        "total": 15
+      }
+    },
+    "syntax": {
+      "passed": 38,
+      "total": 38
+    },
+    "diffCheck": "passed",
+    "testCorrection": "Forms/API stale-response fixture waits for the response body request instead of a fixed microtask count; excluded from product bug count."
+  }
+}

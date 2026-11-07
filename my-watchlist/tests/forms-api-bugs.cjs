@@ -27,12 +27,15 @@ test('selection cancels a pending search debounce', async () => {
 
 test('selection invalidates an in-flight search response', async () => {
   openAddModal();
-  let resolveBody;
-  window.fetch = async () => ({ ok: true, json: () => new Promise((resolve) => { resolveBody = resolve; }) });
+  let resolveBody, bodyRequested;
+  const readingBody = new Promise((resolve) => { bodyRequested = resolve; });
+  window.fetch = async () => ({ ok: true, json: () => new Promise((resolve) => {
+    resolveBody = resolve;
+    bodyRequested();
+  }) });
   document.getElementById('searchInput').value = 'Old query';
   const pending = searchTMDB('Old query');
-  await Promise.resolve();
-  await Promise.resolve();
+  await readingBody;
   state._preloadId = 2;
   state._preloadPromise = Promise.resolve({ id: 2, d: { title: 'Selected' }, c: null });
   await selectMovie(2);

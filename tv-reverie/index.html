@@ -742,7 +742,7 @@
 </head>
 <body>
 
-<script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script defer src="https://unpkg.com/@supabase/supabase-js@2.118.0/dist/umd/supabase.js"></script>
 <style>
 #_sb_wrap { font-family: system-ui, sans-serif; font-size: 0.82rem; display: none; position: relative; z-index: 9999; background: #141414; border-bottom: 1px solid #232323; }
 #_sb_main_row { display: flex; align-items: center; gap: 12px; padding: 10px 20px; }
@@ -778,7 +778,7 @@
     <button id="_sb_dismiss_btn" title="Dismiss">&times;</button>
   </div>
   <div id="_sb_form_row">
-    <div id="_sb_paste_row"><textarea id="_sb_paste_area" placeholder="Paste anything here — .env snippet, JSON, or plain text containing your project URL, anon key, email and password. Fields fill automatically."></textarea></div>
+    <div id="_sb_paste_row"><textarea id="_sb_paste_area" placeholder="Paste anything here — .env snippet, JSON, or plain text containing your project URL, anon key, and email. Enter your password separately."></textarea></div>
     <input id="_sb_url_in"   placeholder="Project URL  (https://xxx.supabase.co)">
     <input id="_sb_key_in"   placeholder="Anon public key">
     <input id="_sb_email_in" placeholder="Email">
@@ -790,307 +790,7 @@
   </div>
 </div>
 
-<script>
-(async function () {
-  // Guard: if the supabase CDN script didn't load, exit cleanly.
-  if (typeof supabase === 'undefined') {
-    console.warn('[Sync] Supabase library not loaded — check CDN / network / content blockers.');
-    return;
-  }
-
-  const K = { url:'_sb_url', key:'_sb_key', email:'_sb_email', pass:'_sb_pass', dismissed:'_sb_dismissed' };
-  let _sb = null, _user = null, _pendingSync = false;
-
-  // ── Safe localStorage helper ──
-  // On iOS with certain privacy settings, localStorage.getItem can throw.
-  function _lsGet(k) { try { return localStorage.getItem(k); } catch(e) { return null; } }
-
-  // ── Custom auth storage for supabase-js ──
-  // supabase-js stores its JWT and refresh token in localStorage internally.
-  // If localStorage is blocked or unreliable on mobile, the auth token can't
-  // be persisted/retrieved, silently breaking every API call after sign-in.
-  // This adapter keeps tokens in memory (always works) and mirrors to
-  // localStorage as a best-effort backup.
-  const _sbMem = {};
-  const _sbStore = {
-    getItem:    k => { try { return localStorage.getItem(k) ?? _sbMem[k] ?? null; } catch(e) { return _sbMem[k] ?? null; } },
-    setItem:    (k, v) => { _sbMem[k] = v; try { localStorage.setItem(k, v); } catch(e) {} },
-    removeItem: k => { delete _sbMem[k]; try { localStorage.removeItem(k); } catch(e) {} }
-  };
-
-  function _makeClient(url, key) {
-    return supabase.createClient(url, key, {
-      auth: { storage: _sbStore, persistSession: true, autoRefreshToken: true }
-    });
-  }
-
-  // ── Visible status dot on Cloud Save button ──
-  function _btnStatus(color, tip) {
-    const btn = document.getElementById('_sb_cloud_btn');
-    if (!btn) return;
-    btn.title = tip || '';
-    let dot = btn.querySelector('._sb_dot');
-    if (!dot) {
-      dot = document.createElement('span');
-      dot.className = '_sb_dot';
-      dot.style.cssText = 'width:7px;height:7px;border-radius:50%;flex-shrink:0;display:inline-block;margin-left:2px;transition:background 0.3s';
-      btn.appendChild(dot);
-    }
-    dot.style.background = color;
-    dot.style.boxShadow = `0 0 5px ${color}aa`;
-  }
-
-  const wrap    = document.getElementById('_sb_wrap');
-  const formRow = document.getElementById('_sb_form_row');
-  const status  = document.getElementById('_sb_status');
-  const showBanner = () => { wrap.style.display = 'block'; };
-  const hideBanner = () => { wrap.style.display = 'none';  };
-  const setStatus  = (msg, cls) => { status.textContent = msg; status.className = cls || ''; };
-
-  document.getElementById('_sb_dismiss_btn').onclick = () => {
-    try { localStorage.setItem(K.dismissed, '1'); } catch(e) {}
-    hideBanner();
-  };
-  document.getElementById('_sb_connect_btn').onclick = () => {
-    formRow.style.display = 'flex';
-    document.getElementById('_sb_url_in').value   = _lsGet(K.url)   || '';
-    document.getElementById('_sb_key_in').value   = _lsGet(K.key)   || '';
-    document.getElementById('_sb_email_in').value = _lsGet(K.email) || '';
-    document.getElementById('_sb_pass_in').value  = _lsGet(K.pass)  || '';
-    if (_lsGet(K.url) && _lsGet(K.key)) document.getElementById('_sb_copy_cfg').style.display = 'inline-flex';
-  };
-
-  document.getElementById('_sb_save_btn').onclick = async () => {
-    const url   = document.getElementById('_sb_url_in').value.trim();
-    const key   = document.getElementById('_sb_key_in').value.trim();
-    const email = document.getElementById('_sb_email_in').value.trim();
-    const pass  = document.getElementById('_sb_pass_in').value;
-    if (!url || !key || !email || !pass) { setStatus('Please fill all fields.', 'err'); return; }
-    setStatus('Connecting...', '');
-    try {
-      const client = _makeClient(url, key);
-      const { data, error } = await client.auth.signInWithPassword({ email, password: pass });
-      if (error) { setStatus('Error: ' + error.message, 'err'); return; }
-      try { localStorage.setItem(K.url, url); localStorage.setItem(K.key, key);
-            localStorage.setItem(K.email, email); localStorage.setItem(K.pass, pass);
-            localStorage.removeItem(K.dismissed); } catch(e) {}
-      _sb = client; _user = data.user;
-      setStatus('Connected!', 'ok'); _btnStatus('#5a9e7a', 'Connected');
-      const { data: remoteRow } = await client.from(window._SB_TABLE || '__').select('data').eq('user_id', data.user.id).maybeSingle();
-      if (remoteRow && window._sbOnLoad) {
-        window._sbPaused = true;
-        try { window._sbOnLoad(remoteRow.data); } finally { window._sbPaused = false; }
-      } else { await _syncNow(); }
-      setTimeout(hideBanner, 1500);
-    } catch (e) { setStatus('Error: ' + e.message, 'err'); }
-  };
-
-  // ── Smart paste / copy config ────────────────────────────────────────────
-  function _parseConfig(text) {
-    const r = {};
-    // 1. Try JSON
-    try {
-      const j = JSON.parse(text.trim());
-      const pick = (ps) => { for (const k of Object.keys(j)) { if (ps.some(p => k.toLowerCase().includes(p))) return String(j[k]); } return ''; };
-      r.url = pick(['url']); r.key = pick(['key','anon']); r.email = pick(['email','mail']); r.pass = pick(['pass','pwd','password']);
-      if (r.url || r.key) return r;
-    } catch(e) {}
-    // 2. Try key=value pairs (.env style, handles NEXT_PUBLIC_ / VITE_ / REACT_APP_ prefixes)
-    const kv = {};
-    text.replace(/^([A-Za-z_][A-Za-z0-9_]*)\s*[=:]\s*(.+)$/gm, (_, k, v) => {
-      kv[k.toLowerCase().replace(/^(next_public_|vite_|react_app_)/,'')] = v.trim().replace(/^['"]|['"]$/g,'');
-    });
-    if (Object.keys(kv).length) {
-      const pick = (ps) => { for (const k of Object.keys(kv)) { if (ps.some(p => k.includes(p))) return kv[k]; } return ''; };
-      const u = pick(['supabase_url','project_url']) || pick(['url']);
-      const k = pick(['anon_key','anon','key']);
-      const e = pick(['email','mail','user']);
-      const p = pick(['password','pass','pwd']);
-      if (u || k) { r.url=u; r.key=k; r.email=e; r.pass=p; return r; }
-    }
-    // 3. Magic detection by pattern
-    const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
-    const um = text.match(/https:\/\/[a-z0-9]{8,}\.supabase\.co/i);
-    // Matches JWT-style keys (old format: eyJ...) and new sb_publishable_/sb_secret_ style keys
-    const jm = text.match(/eyJ[A-Za-z0-9_\-]{30,}\.[A-Za-z0-9_\-]{30,}\.[A-Za-z0-9_\-]{10,}/) ||
-               text.match(/sb_[a-z]+_[A-Za-z0-9_\-]{10,}/i);
-    const em = text.match(/[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/);
-    if (um) r.url = um[0]; if (jm) r.key = jm[0]; if (em) r.email = em[0];
-    // Labelled password line
-    const pm = text.match(/(?:pass(?:word)?|pwd|sb[_\-]pass)\s*[=:]\s*(.+)/i);
-    if (pm) r.pass = pm[1].trim().replace(/^['"]|['"]$/g,'');
-    // Leftover strategy: if there's exactly one line we couldn\'t identify, it must be the password
-    if (!r.pass) {
-      const leftover = lines.filter(l => l !== r.url && l !== r.key && l !== r.email);
-      if (leftover.length === 1) r.pass = leftover[0];
-    }
-    return r;
-  }
-
-  function _applyConfig(cfg) {
-    if (cfg.url)   document.getElementById('_sb_url_in').value   = cfg.url;
-    if (cfg.key)   document.getElementById('_sb_key_in').value   = cfg.key;
-    if (cfg.email) document.getElementById('_sb_email_in').value = cfg.email;
-    if (cfg.pass)  document.getElementById('_sb_pass_in').value  = cfg.pass;
-    const n = [cfg.url,cfg.key,cfg.email,cfg.pass].filter(Boolean).length;
-    setStatus(n === 4 ? 'All fields filled — save to connect.' : n + '/4 fields detected — fill the rest manually.', n === 4 ? 'ok' : '');
-  }
-
-  const pasteRow    = document.getElementById('_sb_paste_row');
-  const pasteArea   = document.getElementById('_sb_paste_area');
-  const pasteToggle = document.getElementById('_sb_paste_toggle');
-  const copyCfgBtn  = document.getElementById('_sb_copy_cfg');
-
-  pasteToggle.onclick = () => {
-    const open = pasteRow.style.display === 'block';
-    pasteRow.style.display = open ? 'none' : 'block';
-    pasteToggle.textContent = open ? 'Paste config' : 'Hide paste';
-    if (!open) pasteArea.focus();
-  };
-
-  function _tryApplyPaste() {
-    const cfg = _parseConfig(pasteArea.value);
-    if (cfg.url || cfg.key || cfg.email) {
-      _applyConfig(cfg);
-      // Auto-collapse paste area after successful fill
-      setTimeout(() => { pasteRow.style.display='none'; pasteToggle.textContent='Paste config'; pasteArea.value=''; }, 400);
-    }
-  }
-
-  pasteArea.addEventListener('paste', () => setTimeout(_tryApplyPaste, 30));
-  pasteArea.addEventListener('input', () => { if (pasteArea.value.trim().length > 30) _tryApplyPaste(); });
-
-  copyCfgBtn.onclick = () => {
-    const url = _lsGet(K.url)||'', key = _lsGet(K.key)||'', email = _lsGet(K.email)||'', pass = _lsGet(K.pass)||'';
-    const snippet = `SUPABASE_URL=${url}\nSUPABASE_ANON_KEY=${key}\nSUPABASE_EMAIL=${email}\nSUPABASE_PASS=${pass}`;
-    navigator.clipboard.writeText(snippet)
-      .then(() => { copyCfgBtn.textContent = 'Copied ✓'; setTimeout(() => { copyCfgBtn.textContent = 'Copy config'; }, 2200); })
-      .catch(() => { const t = prompt('Copy this config and paste it on your other device:', snippet); });
-  };
-  // ─────────────────────────────────────────────────────────────────────────
-
-  async function _tryConnect() {
-    const url = _lsGet(K.url), key = _lsGet(K.key), email = _lsGet(K.email), pass = _lsGet(K.pass);
-    if (!url || !key || !email || !pass) return false;
-    try {
-      const client = _makeClient(url, key);
-      const { data, error } = await client.auth.signInWithPassword({ email, password: pass });
-      if (error) return false;
-      _sb = client; _user = data.user; return true;
-    } catch { return false; }
-  }
-
-  // Persist pending state across page reloads: if an upsert fails we mark
-  // _sb_pending in localStorage so that on the next load we know to push
-  // local data rather than blindly loading (potentially older) remote data.
-  function _setPending(on) {
-    _pendingSync = on;
-    try { on ? localStorage.setItem('_sb_pending','1') : localStorage.removeItem('_sb_pending'); } catch(e) {}
-  }
-
-  async function _upsert(table, payload) {
-    if (!_sb || !_user) { _setPending(true); return false; }
-    try {
-      _btnStatus('#d97706', 'Syncing...');
-      const row = { user_id: _user.id, data: payload, updated_at: new Date().toISOString() };
-      const { error } = await _sb.from(table).upsert(row, { onConflict: 'user_id' });
-      if (error) {
-        console.warn('[Sync] Upsert failed:', error.message);
-        _btnStatus('#c0392b', 'Sync failed: ' + error.message);
-        _setPending(true);
-        // Short retry after 2 s — catches the "user reloads immediately after a
-        // quick action" scenario without waiting 15 s.
-        setTimeout(async () => { if (_pendingSync && _sb && _user) { _pendingSync = false; await _syncNow(); } }, 2000);
-        return false;
-      }
-      _setPending(false);
-      _btnStatus('#5a9e7a', 'Saved to cloud \u2713'); return true;
-    } catch(e) {
-      console.warn('[Sync] Upsert error:', e.message);
-      _btnStatus('#c0392b', 'Sync error: ' + e.message);
-      _setPending(true);
-      setTimeout(async () => { if (_pendingSync && _sb && _user) { _pendingSync = false; await _syncNow(); } }, 2000);
-      return false;
-    }
-  }
-
-  async function _syncNow() {
-    if (!window._SB_TABLE) return;
-    const payload = window._sbGetData ? window._sbGetData()
-                  : window._SB_LS_KEY ? JSON.parse(_lsGet(window._SB_LS_KEY) || 'null')
-                  : null;
-    if (payload != null) await _upsert(window._SB_TABLE, payload);
-  }
-
-  window._sbSyncNow = _syncNow;
-  // Call window._sbForceSync() from the browser console to test manually
-  window._sbForceSync = async () => {
-    console.log('[Sync] Force sync...');
-    if (!_sb || !_user) { const ok = await _tryConnect(); if (!ok) { console.error('[Sync] Cannot connect'); return; } }
-    await _syncNow();
-    console.log('[Sync] Done');
-  };
-  window._sbOpenPanel = function() {
-    try { localStorage.removeItem('_sb_dismissed'); } catch(e) {}
-    wrap.style.display = 'block'; formRow.style.display = 'flex';
-    document.getElementById('_sb_url_in').value   = _lsGet(K.url)   || '';
-    document.getElementById('_sb_key_in').value   = _lsGet(K.key)   || '';
-    document.getElementById('_sb_email_in').value = _lsGet(K.email) || '';
-    document.getElementById('_sb_pass_in').value  = _lsGet(K.pass)  || '';
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-  window._sbPaused = false;
-
-  const connected = await _tryConnect();
-  if (connected) {
-    hideBanner();
-    _btnStatus('#d97706', 'Loading...');
-
-    // Check if a previous session left an unsynced save.
-    const persistedPending = _lsGet('_sb_pending') === '1';
-
-    // Take a snapshot of local data before the remote fetch so we can detect
-    // any save that fires while the network request is in-flight.
-    const _snapBefore = window._sbGetData ? JSON.stringify(window._sbGetData()) : null;
-    const { data: row } = await _sb.from(window._SB_TABLE || '__').select('data').eq('user_id', _user.id).maybeSingle();
-    const _snapAfter = window._sbGetData ? JSON.stringify(window._sbGetData()) : null;
-
-    const changedDuringFetch = _snapBefore !== null && _snapBefore !== _snapAfter;
-
-    if (_pendingSync || persistedPending || changedDuringFetch) {
-      // Local has unsaved changes (from this session, a previous session, or
-      // a save that snuck in mid-fetch) — push local up as the source of truth.
-      _pendingSync = false;
-      await _syncNow();
-    } else {
-      // No known local changes — trust remote.
-      if (row && window._sbOnLoad) {
-        window._sbPaused = true;
-        try { window._sbOnLoad(row.data); } finally { window._sbPaused = false; }
-        _btnStatus('#5a9e7a', 'Loaded from cloud');
-      } else {
-        _btnStatus('#5a9e7a', 'Connected');
-      }
-    }
-  } else {
-    _btnStatus('#4a4440', 'Not connected — tap to set up');
-    if (!_lsGet(K.dismissed)) showBanner();
-  }
-
-  // Retry every 5 s (down from 15 s); also attempt reconnect if session dropped.
-  setInterval(async () => {
-    if (!_pendingSync) return;
-    if (!_sb || !_user) { const ok = await _tryConnect(); if (!ok) return; }
-    _pendingSync = false; _syncNow();
-  }, 5000);
-
-  document.addEventListener('visibilitychange', () => {
-    if (!_sb || !_user) return;
-    if (document.visibilityState === 'hidden') _syncNow();
-    else if (_pendingSync) { _pendingSync = false; _syncNow(); }
-  });
-})();
-</script>
+<script defer src="../shared/cloud-sync.js"></script>
 
 <!-- TMDB API Banner -->
 <div id="apiBanner">
@@ -1352,18 +1052,30 @@ const TMDB_SM='https://image.tmdb.org/t/p/w92';
 // show IDs to inject the correct result directly. Add new entries as found.
 const TMDB_SEARCH_ALIASES={};
 
-var shows=JSON.parse(localStorage.getItem('tvshows_v1')||'[]');
+function tvStorageGet(key) { try { return localStorage.getItem(key); } catch { return null; } }
+function tvStorageSet(key, value) { try { localStorage.setItem(key, value); } catch {} }
+function tvParse(key, fallback) { try { return JSON.parse(tvStorageGet(key)) ?? fallback; } catch { return fallback; } }
+function validShows(data) { return Array.isArray(data) && data.every(m => m && typeof m.id === 'string' && typeof m.title === 'string'); }
+function tvDictionary(data) { return Object.assign(Object.create(null), data && typeof data === 'object' && !Array.isArray(data) ? data : {}); }
+let searchSequence = 0, selectionSequence = 0;
+function resetShowSearch() {
+  clearTimeout(searchTimer); searchSequence++; selectionSequence++;
+  document.getElementById('searchSpinner').classList.remove('active');
+}
+function positiveInteger(value) { const n = Number(value); return Number.isInteger(n) && n > 0 ? n : null; }
+var shows=tvParse('tvshows_v1', []);
+if (!validShows(shows)) shows = [];
 let currentFilter='all',currentCategory=null,currentDetailId=null,editingId=null,searchTimer=null,searchHighlightIndex=-1,_pendingTmdbId=null;
 let _pendingEpisodeRuntime=null,_pendingEpisodeCount=null;
-let currentView=localStorage.getItem('tvshows_view')||'grid';
-let currentSort=localStorage.getItem('tvshows_sort')||'dateAdded-asc';
+let currentView=tvStorageGet('tvshows_view')||'grid';
+let currentSort=tvStorageGet('tvshows_sort')||'dateAdded-asc';
 let searchQuery='';
 let selectionMode=false;
 let selectedIds=new Set();
-let tmdbKey=localStorage.getItem('tmdb_api_key')||'';
+let tmdbKey=tvStorageGet('tmdb_api_key')||'';
 let undoStack=[],redoStack=[];
-let categorySettings=JSON.parse(localStorage.getItem('category_settings_tvshows_v1')||'{}');
-let categoryOptionsDismissed=localStorage.getItem('category_options_tvshows_dismissed')==='1';
+let categorySettings=tvDictionary(tvParse('category_settings_tvshows_v1', {}));
+let categoryOptionsDismissed=tvStorageGet('category_options_tvshows_dismissed')==='1';
 let _categoryNames=[],categoryHighlightIndex=-1,_filterBarResizeTimer=null;
 
 const SERVICE_META={
@@ -1396,7 +1108,7 @@ window.addEventListener('resize',()=>{
   _filterBarResizeTimer=setTimeout(adjustFilterBar,80);
 });
 
-function setView(v){currentView=v;localStorage.setItem('tvshows_view',v);applyViewToggleUI();render();}
+function setView(v){currentView=v;tvStorageSet('tvshows_view',v);applyViewToggleUI();render();}
 function applyViewToggleUI(){
   document.getElementById('viewGrid')?.classList.toggle('active',currentView==='grid');
   document.getElementById('viewCompact')?.classList.toggle('active',currentView==='compact');
@@ -1406,7 +1118,7 @@ function applyViewToggleUI(){
 
 function updateBanner(){document.getElementById('apiBanner').classList.toggle('hidden',!!tmdbKey);}
 function updateSearchSection(){const h=!!tmdbKey;document.getElementById('searchOrNotice').style.display=h?'block':'none';document.getElementById('noApiNotice').style.display=h?'none':'block';}
-function saveApiKey(){const v=document.getElementById('apiKeyInput').value.trim();if(!v)return;tmdbKey=v;localStorage.setItem('tmdb_api_key',tmdbKey);updateBanner();updateSearchSection();}
+function saveApiKey(){const v=document.getElementById('apiKeyInput').value.trim();if(!v)return;tmdbKey=v;tvStorageSet('tmdb_api_key',tmdbKey);updateBanner();updateSearchSection();}
 function showApiSettings(){
   const banner=document.getElementById('apiBanner');
   if(!banner.classList.contains('hidden')){banner.classList.add('hidden');return;}
@@ -1430,6 +1142,7 @@ function updateSearchHighlight(items){
   items.forEach((el,i)=>{el.classList.toggle('keyboard-active',i===searchHighlightIndex);if(i===searchHighlightIndex)el.scrollIntoView({block:'nearest'});});
 }
 function onSearchInput(val){
+  searchSequence++; selectionSequence++;
   clearTimeout(searchTimer);
   const r=document.getElementById('searchResults'),h=document.getElementById('searchHint');
   if(!val.trim()){r.classList.remove('open');h.classList.remove('visible');document.getElementById('searchSpinner').classList.remove('active');searchHighlightIndex=-1;return;}
@@ -1437,6 +1150,7 @@ function onSearchInput(val){
   searchTimer=setTimeout(()=>searchTMDB(val.trim()),400);
 }
 async function searchTMDB(q){
+  const sequence = ++searchSequence;
   const sp=document.getElementById('searchSpinner'),r=document.getElementById('searchResults');
   // Normalise hyphens/dashes to spaces — TMDB's tokeniser treats them as
   // separators anyway, and some titles use unusual punctuation that breaks
@@ -1450,13 +1164,15 @@ async function searchTMDB(q){
     const fetches=[fetch(`https://api.themoviedb.org/3/search/tv?api_key=${encodeURIComponent(tmdbKey)}&query=${encodeURIComponent(normalisedQ)}&include_adult=false`)];
     if(aliasId)fetches.push(fetch(`https://api.themoviedb.org/3/tv/${aliasId}?api_key=${encodeURIComponent(tmdbKey)}`));
     const [res,aliasRes]=await Promise.all(fetches);
-    if(!res.ok){if(res.status===401)r.innerHTML=`<div class="search-no-results">Invalid API key. <a href="#" onclick="showApiSettings();return false;" style="color:var(--gold)">Update it here.</a></div>`;r.classList.add('open');sp.classList.remove('active');return;}
+    if(sequence !== searchSequence) return;
+    if(!res.ok){if(res.status===401)r.innerHTML=`<div class="search-no-results">Invalid API key. <a href="#" onclick="showApiSettings();return false;" style="color:var(--gold)">Update it here.</a></div>`;else r.innerHTML=`<div class="search-no-results">Search failed (${res.status}).</div>`;r.classList.add('open');sp.classList.remove('active');return;}
     const d=await res.json();sp.classList.remove('active');
     let results=d.results||[];
     if(aliasRes&&aliasRes.ok){
       const aliasShow=await aliasRes.json();
       results=[aliasShow,...results.filter(m=>m.id!==aliasShow.id)];
     }
+    if(sequence !== searchSequence) return;
     if(!results.length){r.innerHTML=`<div class="search-no-results">No results for "${esc(q)}"</div>`;r.classList.add('open');return;}
     r.innerHTML=results.slice(0,8).map(m=>{
       const yr=m.first_air_date?m.first_air_date.slice(0,4):'?';
@@ -1469,15 +1185,20 @@ async function searchTMDB(q){
       return`<div class="search-result-item${alreadyCls}" data-show-id="${m.id}" onclick="selectShow(${m.id})">${th}<div class="result-info"><div class="result-title">${esc(name)}</div><div class="result-meta">${yr}${m.vote_average?' &middot; &#9733; '+m.vote_average.toFixed(1):''}</div>${ov}${inListBadge}</div></div>`;
     }).join('');
     searchHighlightIndex=-1;r.classList.add('open');
-  }catch{sp.classList.remove('active');r.innerHTML=`<div class="search-no-results">Search failed.</div>`;r.classList.add('open');}
+  }catch{if(sequence !== searchSequence) return;sp.classList.remove('active');r.innerHTML=`<div class="search-no-results">Search failed.</div>`;r.classList.add('open');}
 }
 
 async function selectShow(id){
+  clearTimeout(searchTimer); searchSequence++;
+  const sequence = ++selectionSequence;
+  const isCurrent = () => sequence === selectionSequence && document.getElementById('addModal').classList.contains('open');
   const r=document.getElementById('searchResults'),h=document.getElementById('searchHint');
   r.classList.remove('open');document.getElementById('searchSpinner').classList.add('active');
   try{
     const dr=await fetch(`https://api.themoviedb.org/3/tv/${id}?api_key=${encodeURIComponent(tmdbKey)}`);
+    if (!dr.ok) throw new Error('Details request failed');
     const d=await dr.json();
+    if (!isCurrent()) return;
     document.getElementById('searchSpinner').classList.remove('active');
     document.getElementById('fTitle').value=d.name||d.title||'';
     document.getElementById('fYear').value=d.first_air_date?d.first_air_date.slice(0,4):'';
@@ -1489,12 +1210,13 @@ async function selectShow(id){
     document.getElementById('fEpisodeCount').value=d.number_of_episodes||'';
     const p=d.poster_path?TMDB_IMG+d.poster_path:'';
     document.getElementById('fPoster').value=p;updatePosterPreview(p);
-    if(!document.getElementById('fNotes').value)document.getElementById('fNotes').value=d.overview||'';
+    const notes=document.getElementById('fNotes');
+    if(!notes.value || notes.value===notes.dataset.tmdbOverview) { notes.value=d.overview||''; notes.dataset.tmdbOverview=notes.value; }
     document.getElementById('searchInput').value='';
     _pendingTmdbId=id;
     h.textContent=`Filled from TMDB: "${d.name||d.title}". Edit details below.`;h.classList.add('visible');
     updateModalJustWatch();collapseMovieDetails();
-  }catch{document.getElementById('searchSpinner').classList.remove('active');const h=document.getElementById('searchHint');h.textContent='Could not load details. Fill in manually.';h.classList.add('visible');}
+  }catch{if(!isCurrent())return;document.getElementById('searchSpinner').classList.remove('active');const h=document.getElementById('searchHint');h.textContent='Could not load details. Fill in manually.';h.classList.add('visible');}
 }
 
 function syncCollapsedTitle(){
@@ -1531,7 +1253,7 @@ function updatePosterPreview(url){
 
 // ── Date helpers ──
 function formatDateAdded(dateStr){
-  if(!dateStr)return'Added: unknown';
+  if(!dateStr || !Number.isFinite(new Date(dateStr).getTime()))return'Added: unknown';
   const todayStr=localDateStr(new Date()),addedStr=localDateStr(new Date(dateStr));
   const days=Math.round((new Date(todayStr)-new Date(addedStr))/86400000);
   if(days===0)return'Added today';if(days===1)return'Added yesterday';
@@ -1540,7 +1262,7 @@ function formatDateAdded(dateStr){
   return`Added ~${Math.floor(days/365)} years ago`;
 }
 function formatDateWatched(dateStr){
-  if(!dateStr)return'Finished: unknown';
+  if(!dateStr || !Number.isFinite(new Date(dateStr).getTime()))return'Finished: unknown';
   const todayStr=localDateStr(new Date()),watchedStr=localDateStr(new Date(dateStr));
   const days=Math.round((new Date(todayStr)-new Date(watchedStr))/86400000);
   if(days===0)return'Finished today';if(days===1)return'Finished yesterday';
@@ -1624,16 +1346,16 @@ function buildCard(m,i){
   else if(m.watched&&m.watchStatus==='finished_for_good')ov=`<div class="card-finished-overlay"><span class="finished-stamp">✓ Finished</span></div>`;
   const tooltip=m.watched?formatDateWatched(m.dateWatched):formatDateAdded(m.dateAdded);
   const binge=getBingeTime(m);
-  const clickFn=`selectionMode?toggleSelectShow('${m.id}'):openDetail('${m.id}')`;
+  const clickFn=`selectionMode?toggleSelectShow(${jsAttr(m.id)}):openDetail(${jsAttr(m.id)})`;
   const exemptPip=(currentFilter==='categories'&&m.detachExempt&&categorySettings[m.category]?.detached)?`<div class="detach-exempt-pip">Visible</div>`:'';
-  return`<div class="card${stale}${graveyardCls}${finishedCls}${selectedCls}" onclick="${clickFn}" data-id="${m.id}" data-tooltip="${tooltip}" style="animation-delay:${i*0.03}s">${ph}${ov}${exemptPip}<div class="card-body"><div class="card-title">${esc(m.title)}</div><div class="card-meta">${[m.year,m.genre].filter(Boolean).join(' &middot; ')}</div>${binge?`<div class="card-meta" style="color:var(--text-muted);font-size:0.68rem;margin-top:1px;">⏱ ${binge}</div>`:''}<div class="card-services">${buildBadges(m,true)}</div></div></div>`;
+  return`<div class="card${stale}${graveyardCls}${finishedCls}${selectedCls}" onclick="${clickFn}" data-id="${esc(m.id)}" data-tooltip="${tooltip}" style="animation-delay:${i*0.03}s">${ph}${ov}${exemptPip}<div class="card-body"><div class="card-title">${esc(m.title)}</div><div class="card-meta">${[m.year,m.genre].filter(Boolean).map(esc).join(' &middot; ')}</div>${binge?`<div class="card-meta" style="color:var(--text-muted);font-size:0.68rem;margin-top:1px;">⏱ ${binge}</div>`:''}<div class="card-services">${buildBadges(m,true)}</div></div></div>`;
 }
 
 function buildWatchingCard(m,i){
   const img=m.poster
     ?`<img class="watching-card-poster" src="${esc(m.poster)}" alt="${esc(m.title)}" loading="lazy" onerror="this.style.display='none';this.nextSibling.style.display='flex'"><div class="watching-card-placeholder" style="display:none">📺</div>`
     :`<div class="watching-card-placeholder">📺</div>`;
-  return`<div class="watching-card" onclick="openDetail('${m.id}')" style="animation-delay:${i*0.04}s"><div class="watching-pip"></div>${img}<div class="watching-card-body"><div class="watching-card-title">${esc(m.title)}</div>${m.year?`<div class="watching-card-year">${esc(m.year)}</div>`:''}</div></div>`;
+  return`<div class="watching-card" onclick="openDetail(${jsAttr(m.id)})" style="animation-delay:${i*0.04}s"><div class="watching-pip"></div>${img}<div class="watching-card-body"><div class="watching-card-title">${esc(m.title)}</div>${m.year?`<div class="watching-card-year">${esc(m.year)}</div>`:''}</div></div>`;
 }
 
 function getOtherShort(name){
@@ -1880,7 +1602,7 @@ function isDetachedShow(m){
 }
 
 function getCategoryNames(){
-  const map={};
+  const map=Object.create(null);
   for(const m of shows){
     if(!m.category)continue;
     const t=m.dateAdded?new Date(m.dateAdded).getTime():Infinity;
@@ -1890,7 +1612,7 @@ function getCategoryNames(){
 }
 
 function saveCategorySettings(){
-  localStorage.setItem('category_settings_tvshows_v1',JSON.stringify(categorySettings));
+  tvStorageSet('category_settings_tvshows_v1',JSON.stringify(categorySettings));
   if(window._sbSyncNow&&!window._sbPaused)window._sbSyncNow();
 }
 
@@ -1900,15 +1622,15 @@ function renderCategoriesView(){
   const opts=document.getElementById('categoryOptions');
   const cats=getCategoryNames();
 
-  const addPill=`<button class="category-pill" style="border-color:var(--text-muted);gap:5px;" onclick="openAddModalWithCategory('${currentCategory?currentCategory.replace(/'/g,"\\'"):''}')">&#43; Add Show</button>`;
+  const addPill=`<button class="category-pill" style="border-color:var(--text-muted);gap:5px;" onclick="openAddModalWithCategory(${jsAttr(currentCategory||'')})">&#43; Add Show</button>`;
   strip.innerHTML=addPill+cats.map(c=>{
     const count=shows.filter(m=>m.category===c).length;
     const active=currentCategory===c?'active':'';
     const detached=categorySettings[c]?.detached;
     const detachedCls=detached?'detached':'';
     const lockPrefix=detached?'🔒 ':'';
-    const menuBtn=active?`<span class="pill-menu-btn" onclick="openPillMenu(event,this,'${c.replace(/'/g,"\\'")}')" title="Category options">&middot;&middot;&middot;</span>`:'';
-    return`<button class="category-pill ${active} ${detachedCls}" onclick="selectCategory('${c.replace(/'/g,"\\'")}') " oncontextmenu="openPillMenu(event,this,'${c.replace(/'/g,"\\'")}');return false;">${lockPrefix}${esc(c)}<span class="category-pill-count">${count}</span>${menuBtn}</button>`;
+    const menuBtn=active?`<span class="pill-menu-btn" onclick="openPillMenu(event,this,${jsAttr(c)})" title="Category options">&middot;&middot;&middot;</span>`:'';
+    return`<button class="category-pill ${active} ${detachedCls}" onclick="selectCategory(${jsAttr(c)}) " oncontextmenu="openPillMenu(event,this,${jsAttr(c)});return false;">${lockPrefix}${esc(c)}<span class="category-pill-count">${count}</span>${menuBtn}</button>`;
   }).join('');
 
   if(!cats.length){
@@ -1944,7 +1666,7 @@ function renderCategoriesView(){
     opts.classList.remove('visible');opts.innerHTML='';
   }
 
-  const inCat=shows.filter(m=>m.category===currentCategory);
+  const inCat=_postFilter(shows.filter(m=>m.category===currentCategory));
   const sorted=inCat.slice().sort((a,b)=>(parseInt(a.year)||Infinity)-(parseInt(b.year)||Infinity));
   if(!sorted.length){
     g.className='grid';
@@ -1989,7 +1711,7 @@ function toggleDetachExempt(id){
 
 function dismissCategoryOptions(){
   categoryOptionsDismissed=true;
-  localStorage.setItem('category_options_tvshows_dismissed','1');
+  tvStorageSet('category_options_tvshows_dismissed','1');
   document.getElementById('categoryOptions').classList.remove('visible');
   document.getElementById('categoryOptions').innerHTML='';
 }
@@ -2000,7 +1722,7 @@ function openPillMenu(e,btn,name){
   const pop=document.getElementById('categoryPillPopover');
   pop.innerHTML=`<div class="popover-label">Category options</div>
     <label class="toggle-row" style="gap:10px;cursor:pointer;">
-      <input type="checkbox" onchange="toggleCategoryDetachedByName('${name.replace(/'/g,"\\'")}')" ${isDetached?'checked':''}>
+      <input type="checkbox" onchange="toggleCategoryDetachedByName(${jsAttr(name)})" ${isDetached?'checked':''}>
       <span class="track"></span>
       <span class="toggle-label" style="text-transform:none;letter-spacing:0.03em;font-size:0.8rem;">Detached</span>
     </label>`;
@@ -2033,7 +1755,7 @@ function filterCategorySuggestions(){
   const matches=q?_categoryNames.filter(n=>n.toLowerCase().includes(q)):_categoryNames;
   categoryHighlightIndex=-1;
   if(!matches.length){dd.style.display='none';return;}
-  dd.innerHTML=matches.map(n=>`<div class="cat-suggestion" data-name="${esc(n)}" onmousedown="pickCategory('${n.replace(/'/g,"\\'")}')"><span class="cat-icon">&#128196;</span>${esc(n)}</div>`).join('');
+  dd.innerHTML=matches.map(n=>`<div class="cat-suggestion" data-name="${esc(n)}" onmousedown="pickCategory(${jsAttr(n)})"><span class="cat-icon">&#128196;</span>${esc(n)}</div>`).join('');
   dd.style.display='';
 }
 
@@ -2157,6 +1879,7 @@ document.addEventListener('keydown',e=>{
 
 // ── Bulk selection ──
 function enterSelectMode(){
+  if(selectionMode)return;
   selectionMode=true;
   selectedIds.clear();
   document.getElementById('selectModeBtn').classList.add('active');
@@ -2176,7 +1899,7 @@ function toggleSelectShow(id){
   else selectedIds.add(id);
   updateBulkBar();
   // Update just the affected card's selected class without full re-render
-  document.querySelectorAll(`[data-id="${id}"]`).forEach(el=>{
+  document.querySelectorAll(`[data-id="${CSS.escape(id)}"]`).forEach(el=>{
     el.classList.toggle('selected',selectedIds.has(id));
   });
 }
@@ -2201,7 +1924,7 @@ function bulkToggleWatching(){
     const m=shows.find(x=>x.id===id);
     if(!m)return;
     m.watching=!allWatching;
-    if(!allWatching){m.watched=false;m.watchStatus='';}
+    if(!allWatching){m.watched=false;m.watchStatus='';m.graveyard=false;}
   });
   save();exitSelectMode();
 }
@@ -2210,7 +1933,7 @@ function bulkSetStatus(status){
   [...selectedIds].forEach(id=>{
     const m=shows.find(x=>x.id===id);
     if(!m)return;
-    m.watched=true;m.watching=false;m.watchStatus=status;
+    m.watched=true;m.watching=false;m.watchStatus=status;m.graveyard=false;
     if(!m.dateWatched)m.dateWatched=new Date().toISOString();
   });
   save();exitSelectMode();
@@ -2220,7 +1943,7 @@ function bulkGraveyard(){
   const allIn=[...selectedIds].every(id=>shows.find(m=>m.id===id)?.graveyard);
   [...selectedIds].forEach(id=>{
     const m=shows.find(x=>x.id===id);
-    if(m)m.graveyard=!allIn;
+    if(m){m.graveyard=!allIn;if(m.graveyard){m.watching=false;m.watched=false;m.watchStatus=null;}}
   });
   save();exitSelectMode();
 }
@@ -2256,7 +1979,7 @@ function closeSortMenu(){
 function setSort(val){
   if(currentSort===val){closeSortMenu();return;}
   currentSort=val;
-  localStorage.setItem('tvshows_sort',val);
+  tvStorageSet('tvshows_sort',val);
   closeSortMenu();
   document.getElementById('sortBtnLabel').textContent=SORT_LABELS[val]||'Sort';
   render();
@@ -2367,7 +2090,7 @@ function buildListRow(m,i){
     :`<div class="list-thumb-placeholder">📺</div>`;
   const watchingPip=m.watching?`<span class="list-soon-pip"></span>`:'';
   const binge=getBingeTime(m);
-  const metaWithBinge=[m.year,binge?`⏱ ${binge}`:null,m.rating?`★ ${esc(m.rating)}`:null,m.genre,m.creator].filter(Boolean).join(' · ');
+  const metaWithBinge=[esc(m.year),binge?`⏱ ${binge}`:null,m.rating?`★ ${esc(m.rating)}`:null,esc(m.genre),esc(m.creator)].filter(Boolean).join(' · ');
   const badges=buildBadges(m,true);
   const staleClass=getStaleClass(m);
   let statusTag='';
@@ -2379,8 +2102,8 @@ function buildListRow(m,i){
   const exemptTag=(currentFilter==='categories'&&m.detachExempt&&categorySettings[m.category]?.detached)?`<span class="list-status" style="background:rgba(96,165,250,0.08);color:#60a5fa;border:1px solid rgba(96,165,250,0.22);">👁 Visible</span>`:'';
   const selectedCls=selectedIds.has(m.id)?' selected':'';
   const rowClass=`list-row${m.graveyard?' list-row-graveyard':''}${staleClass?staleClass.replace('card-stale','list-stale'):''}${selectedCls}`;
-  const clickFn=`selectionMode?toggleSelectShow('${m.id}'):openDetail('${m.id}')`;
-  return`<div class="${rowClass}" onclick="${clickFn}" data-id="${m.id}" style="animation-delay:${i*0.02}s">
+  const clickFn=`selectionMode?toggleSelectShow(${jsAttr(m.id)}):openDetail(${jsAttr(m.id)})`;
+  return`<div class="${rowClass}" onclick="${clickFn}" data-id="${esc(m.id)}" style="animation-delay:${i*0.02}s">
     <div class="list-thumb-wrap">${thumb}${watchingPip}</div>
     <div class="list-info">
       <div class="list-title">${esc(m.title)}</div>
@@ -2413,13 +2136,13 @@ function openDetail(id){
   // Poster with context-sensitive overlay button (ported from film app, adapted for TV statuses)
   let posterOverlayBtn='';
   if(m.watched&&m.watchStatus==='finished_for_good'){
-    posterOverlayBtn=`<button class="detail-watched-btn" onclick="setShowStatus('${m.id}','unwatched');openDetail('${m.id}')">Finished for Good</button>`;
+    posterOverlayBtn=`<button class="detail-watched-btn" onclick="setShowStatus(${jsAttr(m.id)},'unwatched');openDetail(${jsAttr(m.id)})">Finished for Good</button>`;
   }else if(m.watched&&m.watchStatus==='more_to_come'){
-    posterOverlayBtn=`<button class="detail-more-btn" onclick="setShowStatus('${m.id}','watching');openDetail('${m.id}')">More to Come</button>`;
+    posterOverlayBtn=`<button class="detail-more-btn" onclick="setShowStatus(${jsAttr(m.id)},'watching');openDetail(${jsAttr(m.id)})">More to Come</button>`;
   }else if(m.watching){
-    posterOverlayBtn=`<button class="detail-soon-btn active" onclick="showDetailStatusPicker('${m.id}')">Watching</button>`;
+    posterOverlayBtn=`<button class="detail-soon-btn active" onclick="showDetailStatusPicker(${jsAttr(m.id)})">Watching</button>`;
   }else{
-    posterOverlayBtn=`<button class="detail-soon-btn" onclick="setShowStatus('${m.id}','watching');openDetail('${m.id}')">Start Watching</button>`;
+    posterOverlayBtn=`<button class="detail-soon-btn" onclick="setShowStatus(${jsAttr(m.id)},'watching');openDetail(${jsAttr(m.id)})">Start Watching</button>`;
   }
 
   const ph=m.graveyard
@@ -2443,16 +2166,16 @@ function openDetail(id){
   // Date — if watched show the finished date, otherwise show added date (matches film app logic)
   const isDone=m.watched&&(m.watchStatus==='more_to_come'||m.watchStatus==='finished_for_good');
   const dateSpan=isDone&&m.dateWatched
-    ?`<span id="detailDateWatched" onclick="editDateWatched('${m.id}')" title="Click to edit" style="cursor:pointer;font-size:0.68rem;color:var(--text-muted);letter-spacing:0.05em;border-bottom:1px dashed var(--border-hi);padding-bottom:1px;transition:color 0.15s;" onmouseover="this.style.color='var(--text-dim)'" onmouseout="this.style.color='var(--text-muted)'">${formatDateWatched(m.dateWatched)}</span>`
-    :`<span id="detailDateAdded" onclick="editDateAdded('${m.id}')" title="Click to edit" style="cursor:pointer;font-size:0.68rem;color:var(--text-muted);letter-spacing:0.05em;border-bottom:1px dashed var(--border-hi);padding-bottom:1px;transition:color 0.15s;" onmouseover="this.style.color='var(--text-dim)'" onmouseout="this.style.color='var(--text-muted)'">${formatDateAdded(m.dateAdded)}</span>`;
+    ?`<span id="detailDateWatched" onclick="editDateWatched(${jsAttr(m.id)})" title="Click to edit" style="cursor:pointer;font-size:0.68rem;color:var(--text-muted);letter-spacing:0.05em;border-bottom:1px dashed var(--border-hi);padding-bottom:1px;transition:color 0.15s;" onmouseover="this.style.color='var(--text-dim)'" onmouseout="this.style.color='var(--text-muted)'">${formatDateWatched(m.dateWatched)}</span>`
+    :`<span id="detailDateAdded" onclick="editDateAdded(${jsAttr(m.id)})" title="Click to edit" style="cursor:pointer;font-size:0.68rem;color:var(--text-muted);letter-spacing:0.05em;border-bottom:1px dashed var(--border-hi);padding-bottom:1px;transition:color 0.15s;" onmouseover="this.style.color='var(--text-dim)'" onmouseout="this.style.color='var(--text-muted)'">${formatDateAdded(m.dateAdded)}</span>`;
 
   // Primary action button — three distinct states
   const primaryBtn=m.graveyard?''
     :m.watching
-      ?`<button class="btn btn-primary" onclick="showDetailStatusPicker('${m.id}')">Mark Watched</button>`
+      ?`<button class="btn btn-primary" onclick="showDetailStatusPicker(${jsAttr(m.id)})">Mark Watched</button>`
       :m.watched
-        ?`<button class="btn btn-primary" onclick="setShowStatus('${m.id}','unwatched');openDetail('${m.id}')">Mark Unwatched</button>`
-        :`<button class="btn btn-primary" onclick="setShowStatus('${m.id}','watching');openDetail('${m.id}')">Start Watching</button>`;
+        ?`<button class="btn btn-primary" onclick="setShowStatus(${jsAttr(m.id)},'unwatched');openDetail(${jsAttr(m.id)})">Mark Unwatched</button>`
+        :`<button class="btn btn-primary" onclick="setShowStatus(${jsAttr(m.id)},'watching');openDetail(${jsAttr(m.id)})">Start Watching</button>`;
 
   // Graveyard button label (matches film app)
   const graveyardBtnStyle=m.graveyard?'color:#c084fc;border-color:rgba(124,58,237,0.4);':'color:var(--text-muted);';
@@ -2468,14 +2191,14 @@ function openDetail(id){
       <div style="margin-top:8px;">${dateSpan}</div>
     </div></div>
     <div class="detail-services-section"><div class="detail-services-title">Where to Watch</div><div class="detail-services-grid">${svc}</div></div>
-    ${categorySettings[m.category]?.detached?`<div style="margin-top:12px;display:flex;align-items:center;gap:12px;padding:9px 14px;background:rgba(96,165,250,0.04);border:1px solid rgba(96,165,250,0.12);border-radius:var(--radius);"><div style="flex:1;"><div style="font-size:0.68rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-dim);">Show in main list</div><div style="font-size:0.62rem;color:var(--text-muted);margin-top:1px;">Exception to detached category</div></div><label class="toggle-row" style="margin:0;flex-shrink:0;"><input type="checkbox" ${m.detachExempt?'checked':''} onchange="toggleDetachExempt('${m.id}')"><span class="track"></span></label></div>`:''}
+    ${categorySettings[m.category]?.detached?`<div style="margin-top:12px;display:flex;align-items:center;gap:12px;padding:9px 14px;background:rgba(96,165,250,0.04);border:1px solid rgba(96,165,250,0.12);border-radius:var(--radius);"><div style="flex:1;"><div style="font-size:0.68rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-dim);">Show in main list</div><div style="font-size:0.62rem;color:var(--text-muted);margin-top:1px;">Exception to detached category</div></div><label class="toggle-row" style="margin:0;flex-shrink:0;"><input type="checkbox" ${m.detachExempt?'checked':''} onchange="toggleDetachExempt(${jsAttr(m.id)})"><span class="track"></span></label></div>`:''}
     <div id="detailActionBar" style="margin-top:20px;display:flex;gap:10px;justify-content:space-between;align-items:center;flex-wrap:wrap;">
       <div style="display:flex;gap:8px;align-items:center;">
         <a class="btn-justwatch" href="${jw}" target="_blank" rel="noopener" style="text-decoration:none"><span class="jw-dot"></span>JustWatch AU</a>
-        <button class="btn btn-ghost btn-sm" onclick="toggleGraveyard('${m.id}')" title="${m.graveyard?'Restore from graveyard':'Move to graveyard'}" style="${graveyardBtnStyle}">${graveyardBtnLabel}</button>
+        <button class="btn btn-ghost btn-sm" onclick="toggleGraveyard(${jsAttr(m.id)})" title="${m.graveyard?'Restore from graveyard':'Move to graveyard'}" style="${graveyardBtnStyle}">${graveyardBtnLabel}</button>
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;">
-        <button class="btn btn-ghost" onclick="openEditFromDetail('${m.id}')">Edit</button>
+        <button class="btn btn-ghost" onclick="openEditFromDetail(${jsAttr(m.id)})">Edit</button>
         ${primaryBtn}
       </div>
     </div>`;
@@ -2500,9 +2223,9 @@ function showDetailStatusPicker(id){
   bar.innerHTML=`
     <span style="font-size:0.7rem;color:var(--text-muted);letter-spacing:0.08em;text-transform:uppercase;">Finished watching?</span>
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-left:auto;">
-      <button class="btn btn-ghost btn-sm" onclick="setShowStatus('${id}','more_to_come');closeDetail();">🔁 More to Come</button>
-      <button class="btn btn-ghost btn-sm" onclick="setShowStatus('${id}','finished_for_good');closeDetail();">✅ Finished for Good</button>
-      <button class="btn btn-ghost btn-sm" onclick="openDetail('${id}')">Cancel</button>
+      <button class="btn btn-ghost btn-sm" onclick="setShowStatus(${jsAttr(id)},'more_to_come');closeDetail();">🔁 More to Come</button>
+      <button class="btn btn-ghost btn-sm" onclick="setShowStatus(${jsAttr(id)},'finished_for_good');closeDetail();">✅ Finished for Good</button>
+      <button class="btn btn-ghost btn-sm" onclick="openDetail(${jsAttr(id)})">Cancel</button>
     </div>`;
 }
 
@@ -2514,7 +2237,7 @@ function toggleDetailNotes(){
   if(btn)btn.textContent=w.classList.contains('clamped')?'...':'Less';
 }
 
-function closeDetail(){document.getElementById('detailModal').classList.remove('open');currentDetailId=null;unlockScroll();}
+function closeDetail(){const el=document.getElementById('detailModal');if(!el.classList.contains('open'))return;el.classList.remove('open');currentDetailId=null;unlockScroll();}
 function handleDetailOverlay(e){if(e.target===document.getElementById('detailModal'))closeDetail();}
 function openEditFromDetail(id){closeDetail();setTimeout(()=>openEditModal(id),100);}
 
@@ -2539,6 +2262,8 @@ function unlockScroll() {
 
 // ── Add/Edit modal ──
 function closeAddModal(){
+  resetShowSearch();
+  if(!document.getElementById('addModal').classList.contains('open'))return;
   document.getElementById('addModal').classList.remove('open');
   document.getElementById('searchResults').classList.remove('open');
   document.getElementById('searchHint').classList.remove('visible');
@@ -2549,6 +2274,7 @@ function handleOverlayClick(e){if(e.target===document.getElementById('addModal')
 function setShowStatus(id,status){
   const m=shows.find(x=>x.id===id);if(!m)return;
   m.watching=false;m.watched=false;m.watchStatus=null;
+  if(status!=='unwatched')m.graveyard=false;
   if(status==='watching'){m.watching=true;}
   else if(status==='more_to_come'){m.watched=true;m.watchStatus='more_to_come';m.dateWatched=m.dateWatched||new Date().toISOString();}
   else if(status==='finished_for_good'){m.watched=true;m.watchStatus='finished_for_good';m.dateWatched=m.dateWatched||new Date().toISOString();}
@@ -2571,8 +2297,8 @@ function editDateWatched(id){
   const today=localDateStr(new Date());
   el.outerHTML=`<div id="detailDateInput" style="display:flex;align-items:center;gap:8px;margin-top:6px;flex-wrap:wrap;">
     <input type="date" id="dateWatchedPicker" value="${cur}" max="${today}" style="background:var(--bg);border:1px solid var(--gold-dim);border-radius:var(--radius);color:var(--text);padding:5px 9px;font-family:'DM Sans',sans-serif;font-size:0.78rem;color-scheme:dark;">
-    <button onclick="saveDateWatched('${id}')" style="background:var(--gold);color:#0c0b0a;border:none;border-radius:var(--radius);padding:5px 12px;font-family:'DM Sans',sans-serif;font-size:0.72rem;font-weight:500;letter-spacing:0.06em;text-transform:uppercase;cursor:pointer;">Save</button>
-    <button onclick="openDetail('${id}')" style="background:transparent;color:var(--text-muted);border:1px solid var(--border);border-radius:var(--radius);padding:5px 12px;font-family:'DM Sans',sans-serif;font-size:0.72rem;letter-spacing:0.06em;text-transform:uppercase;cursor:pointer;">Cancel</button>
+    <button onclick="saveDateWatched(${jsAttr(id)})" style="background:var(--gold);color:#0c0b0a;border:none;border-radius:var(--radius);padding:5px 12px;font-family:'DM Sans',sans-serif;font-size:0.72rem;font-weight:500;letter-spacing:0.06em;text-transform:uppercase;cursor:pointer;">Save</button>
+    <button onclick="openDetail(${jsAttr(id)})" style="background:transparent;color:var(--text-muted);border:1px solid var(--border);border-radius:var(--radius);padding:5px 12px;font-family:'DM Sans',sans-serif;font-size:0.72rem;letter-spacing:0.06em;text-transform:uppercase;cursor:pointer;">Cancel</button>
   </div>`;
   document.getElementById('dateWatchedPicker').focus();
 }
@@ -2589,8 +2315,8 @@ function editDateAdded(id){
   const today=localDateStr(new Date());
   el.outerHTML=`<div id="detailDateInput" style="display:flex;align-items:center;gap:8px;margin-top:6px;flex-wrap:wrap;">
     <input type="date" id="dateAddedPicker" value="${cur}" max="${today}" style="background:var(--bg);border:1px solid var(--gold-dim);border-radius:var(--radius);color:var(--text);padding:5px 9px;font-family:'DM Sans',sans-serif;font-size:0.78rem;color-scheme:dark;">
-    <button onclick="saveDateAdded('${id}')" style="background:var(--gold);color:#0c0b0a;border:none;border-radius:var(--radius);padding:5px 12px;font-family:'DM Sans',sans-serif;font-size:0.72rem;font-weight:500;letter-spacing:0.06em;text-transform:uppercase;cursor:pointer;">Save</button>
-    <button onclick="openDetail('${id}')" style="background:transparent;color:var(--text-muted);border:1px solid var(--border);border-radius:var(--radius);padding:5px 12px;font-family:'DM Sans',sans-serif;font-size:0.72rem;letter-spacing:0.06em;text-transform:uppercase;cursor:pointer;">Cancel</button>
+    <button onclick="saveDateAdded(${jsAttr(id)})" style="background:var(--gold);color:#0c0b0a;border:none;border-radius:var(--radius);padding:5px 12px;font-family:'DM Sans',sans-serif;font-size:0.72rem;font-weight:500;letter-spacing:0.06em;text-transform:uppercase;cursor:pointer;">Save</button>
+    <button onclick="openDetail(${jsAttr(id)})" style="background:transparent;color:var(--text-muted);border:1px solid var(--border);border-radius:var(--radius);padding:5px 12px;font-family:'DM Sans',sans-serif;font-size:0.72rem;letter-spacing:0.06em;text-transform:uppercase;cursor:pointer;">Cancel</button>
   </div>`;
   document.getElementById('dateAddedPicker').focus();
 }
@@ -2602,23 +2328,29 @@ function saveDateAdded(id){
 }
 
 function openAddModal(){
+  const wasOpen=document.getElementById('addModal').classList.contains('open');
   editingId=null;document.getElementById('modalTitle').textContent='Add Show';clearForm();
   document.getElementById('deleteRow').style.display='none';
   document.getElementById('addModal').classList.add('open');
-  lockScroll();
+  if(!wasOpen)lockScroll();
   updateModalJustWatch();expandMovieDetails();populateCategorySuggestions();
   if(tmdbKey)setTimeout(()=>document.getElementById('searchInput').focus(),80);
   else document.getElementById('fTitle').focus();
 }
 function openEditModal(id){
   const m=shows.find(x=>x.id===id);if(!m)return;
+  const wasOpen=document.getElementById('addModal').classList.contains('open');
+  clearForm();
   editingId=id;document.getElementById('modalTitle').textContent='Edit Show';
   document.getElementById('deleteRow').style.display='flex';
   populateForm(m);document.getElementById('addModal').classList.add('open');updateModalJustWatch();populateCategorySuggestions();
+  if(!wasOpen)lockScroll();
   expandMovieDetails();
 }
 
 function clearForm(){
+  resetShowSearch();
+  delete document.getElementById('fNotes').dataset.tmdbOverview;
   ['fTitle','fYear','fGenre','fCreator','fRating','fSeasons','fEpisodeRuntime','fEpisodeCount','fPoster','fNotes','fOtherName','fCategory','searchInput'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''});
   const uw=document.querySelector('input[name="showStatus"][value="unwatched"]');
   if(uw)uw.checked=true;
@@ -2692,14 +2424,15 @@ function saveShow(){
     otherName:document.getElementById('fOtherName').value.trim(),
     category:document.getElementById('fCategory').value.trim(),
     tmdbId:_pendingTmdbId||existing?.tmdbId||null,
-    episodeRuntime:parseInt(document.getElementById('fEpisodeRuntime').value)||existing?.episodeRuntime||null,
-    episodeCount:parseInt(document.getElementById('fEpisodeCount').value)||existing?.episodeCount||null,
+    episodeRuntime:positiveInteger(document.getElementById('fEpisodeRuntime').value),
+    episodeCount:positiveInteger(document.getElementById('fEpisodeCount').value),
     watching,watched,watchStatus,streaming,
     dateAdded:existing?.dateAdded||new Date().toISOString(),
     dateWatched:watched?(existing?.dateWatched||(existing?.watched?undefined:new Date().toISOString())):undefined,
-    graveyard:existing?.graveyard||false,
+    graveyard:!(watching||watched)&&(existing?.graveyard||false),
     detachExempt:existing?.detachExempt||false,
   };
+  undoStack=[];redoStack=[];
   if(editingId){const i=shows.findIndex(m=>m.id===editingId);if(i!==-1)shows[i]=show;}
   else shows.push(show);
   save();closeAddModal();render();
@@ -2744,13 +2477,14 @@ function showInfoToast(msg,dur=3000){
 
 // ── Save ──
 function save(){
-  localStorage.setItem('tvshows_v1',JSON.stringify(shows));
+  tvStorageSet('tvshows_v1',JSON.stringify(shows));
   // Belt-and-suspenders: also trigger sync directly in case the monkey-patch
   // doesn't fire (e.g. if localStorage.setItem throws before reaching it).
   if(window._sbSyncNow&&!window._sbPaused)window._sbSyncNow();
 }
 
-function esc(s){if(!s)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function jsAttr(value){return esc(JSON.stringify(value));}
+function esc(s){if(s==null)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 
 // Forward trackpad/wheel scroll on the backdrop into the modal.
 // On desktop the scrollable element is .modal (the card); on mobile it's .modal-body.
@@ -2782,7 +2516,7 @@ document.addEventListener('keydown',e=>{
     const modalOpen=document.getElementById('addModal').classList.contains('open');
     if(modalOpen){
       const active=document.activeElement;
-      if(active&&active.tagName==='TEXTAREA')return;
+      if(active&&active.matches('textarea,button,a,input[type=checkbox],input[type=radio],select,[contenteditable]'))return;
       if(document.getElementById('searchResults').classList.contains('open'))return;
       if(document.getElementById('categoryDropdown').style.display!=='none')return;
       e.preventDefault();
@@ -2799,7 +2533,7 @@ document.addEventListener('keydown',e=>{
         if(jw)jw.click();
         return;
       }
-      if(e.key==='Enter'){
+      if(e.key==='Enter' && !document.activeElement.matches('button,a,select,[contenteditable]')){
         const m=currentDetailId?shows.find(x=>x.id===currentDetailId):null;
         if(m&&!m.graveyard){
           e.preventDefault();
@@ -2848,11 +2582,11 @@ document.addEventListener('keydown',e=>{
     if(e.key==='2'){e.preventDefault();setView('compact');return;}
     if(e.key==='3'){e.preventDefault();setView('list');return;}
   }
-  if(e.key==='z'&&(e.metaKey||e.ctrlKey)&&!e.shiftKey&&!inField){
+  if(e.key.toLowerCase()==='z'&&(e.metaKey||e.ctrlKey)&&!e.shiftKey&&!inField){
     e.preventDefault();
     if(undoStack.length){redoStack.push(JSON.parse(JSON.stringify(shows)));shows=undoStack.pop();save();render();document.querySelectorAll('.toast').forEach(t=>dismissToast(t));showInfoToast('Deletion undone.',3000);}
   }
-  if(e.key==='z'&&(e.metaKey||e.ctrlKey)&&e.shiftKey&&!inField){e.preventDefault();redoDelete();}
+  if(e.key.toLowerCase()==='z'&&(e.metaKey||e.ctrlKey)&&e.shiftKey&&!inField){e.preventDefault();redoDelete();}
 });
 
 // ── Tooltip ──
@@ -2898,42 +2632,30 @@ init();
 window._SB_TABLE  = 'tvshows';
 window._SB_LS_KEY = 'tvshows_v1';
 
-const __sbOrigSet = localStorage.setItem.bind(localStorage);
-localStorage.setItem = function(key, value) {
-  // Wrap in try-catch: on iOS with "Block All Cookies" enabled, localStorage
-  // throws a SecurityError. We still want the Supabase sync to fire.
-  try { __sbOrigSet(key, value); } catch(e) { console.warn('[Storage] localStorage write failed:', e.message); }
-  if (key === 'tvshows_v1' || key === 'category_settings_tvshows_v1') {
-    // Stamp the local modification time so the conflict resolver knows
-    // when THIS device last saved. Used by the IIFE to decide push vs. pull.
-    try { __sbOrigSet('_sb_local_ts', String(Date.now())); } catch(e) {}
-    if (window._sbSyncNow && !window._sbPaused) window._sbSyncNow();
-  }
-};
+const __sbOrigSet = tvStorageSet;
 
 // Read from the live in-memory array rather than localStorage.
 // If localStorage writes are failing (iOS restrictions etc.), the in-memory
 // array still has the correct current state, so Supabase gets accurate data.
 window._sbGetData = function() {
-  const tvshows = (typeof shows !== 'undefined' && Array.isArray(shows)) ? shows : JSON.parse(localStorage.getItem('tvshows_v1') || '[]');
-  const cats = (typeof categorySettings !== 'undefined') ? categorySettings : JSON.parse(localStorage.getItem('category_settings_tvshows_v1') || '{}');
+  const tvshows = (typeof shows !== 'undefined' && Array.isArray(shows)) ? shows : JSON.parse(tvStorageGet('tvshows_v1') || '[]');
+  const cats = (typeof categorySettings !== 'undefined') ? categorySettings : JSON.parse(tvStorageGet('category_settings_tvshows_v1') || '{}');
   return { tvshows, categorySettings: cats };
 };
 
 window._sbOnLoad = function(data) {
-  try {
-    // Support both legacy (plain array) and new ({ tvshows, categorySettings }) formats
-    const incoming = Array.isArray(data) ? data : (Array.isArray(data?.tvshows) ? data.tvshows : null);
-    if (incoming !== null) {
-      const incomingStr = JSON.stringify(incoming);
-      if (JSON.stringify(shows) !== incomingStr) { shows = incoming; render(); }
-      try { __sbOrigSet('tvshows_v1', incomingStr); } catch(e) {}
-    }
-    if (data?.categorySettings && typeof data.categorySettings === 'object') {
-      categorySettings = data.categorySettings;
-      try { __sbOrigSet('category_settings_tvshows_v1', JSON.stringify(data.categorySettings)); } catch(e) {}
-    }
-  } catch(e) { console.warn('Supabase load error:', e); }
+  const incoming = Array.isArray(data) ? data : data?.tvshows;
+  if (!validShows(incoming)) return false;
+  if (!Array.isArray(data) && data.categorySettings !== undefined &&
+      (!data.categorySettings || typeof data.categorySettings !== 'object' || Array.isArray(data.categorySettings))) return false;
+  closeAddModal(); closeDetail(); exitSelectMode(false);
+  undoStack=[]; redoStack=[];
+  shows=incoming;
+  categorySettings=tvDictionary(Array.isArray(data) ? categorySettings : data.categorySettings);
+  __sbOrigSet('tvshows_v1', JSON.stringify(shows));
+  __sbOrigSet('category_settings_tvshows_v1', JSON.stringify(categorySettings));
+  render();
+  return true;
 };
 
 // ── Drag-to-dismiss for mobile bottom sheets ─────────────────────────────

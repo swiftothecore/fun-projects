@@ -414,6 +414,10 @@ html.dark .modal-overlay { background: rgba(6,4,2,.7); }
 
 /* ══════════════════════ RESPONSIVE ══════════════════════════ */
 @media (max-width: 780px) {
+  .year-nav { gap: .4rem; }
+  .pills, .pill { min-width: 0; }
+  .pill { padding: .48rem .2rem .42rem; }
+  .nav-btn { padding: .46rem .4rem; font-size: .75rem; }
   .date-grid { grid-template-columns: 1fr 1fr; gap: .72rem; }
   .c-day-num { font-size: 1.95rem; } h1 { letter-spacing: .04em; } .hd-sep { display: none; }
 }
@@ -500,15 +504,16 @@ html.dark .modal-overlay { background: rgba(6,4,2,.7); }
 
 <script>
 /* ── Theme ── */
+function getThemePreference(){try{return localStorage.getItem('thirteen-theme');}catch{return null;}}
 (function initTheme() {
-  const stored  = localStorage.getItem('thirteen-theme');
+  const stored  = getThemePreference();
   const sysDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
   const isDark  = stored === 'dark' || (!stored && sysDark);
   document.documentElement.classList.toggle('dark',  isDark);
   document.documentElement.classList.toggle('light', !isDark && stored === 'light');
   document.getElementById('theme-toggle').textContent = isDark ? '☀' : '☾';
   window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
-    if (!localStorage.getItem('thirteen-theme')) {
+    if (!getThemePreference()) {
       document.documentElement.classList.toggle('dark',  e.matches);
       document.documentElement.classList.toggle('light', !e.matches);
       document.getElementById('theme-toggle').textContent = e.matches ? '☀' : '☾';
@@ -519,7 +524,7 @@ document.getElementById('theme-toggle').addEventListener('click', () => {
   const nowDark = document.documentElement.classList.contains('dark');
   document.documentElement.classList.toggle('dark',  !nowDark);
   document.documentElement.classList.toggle('light',  nowDark);
-  localStorage.setItem('thirteen-theme', nowDark ? 'light' : 'dark');
+  try { localStorage.setItem('thirteen-theme', nowDark ? 'light' : 'dark'); } catch {}
   document.getElementById('theme-toggle').textContent = nowDark ? '☾' : '☀';
 });
 
@@ -841,6 +846,7 @@ document.getElementById('btn-prev').addEventListener('click',()=>selectYear(sel-
 document.getElementById('btn-next').addEventListener('click',()=>selectYear(sel+getPad()));
 document.addEventListener('keydown',e=>{
   if(e.key==='Escape')    closeModal();
+  if(!modal.classList.contains('hidden') || e.target.closest('input,textarea,select,[contenteditable]'))return;
   if(e.key==='ArrowLeft') selectYear(sel-1);
   if(e.key==='ArrowRight')selectYear(sel+1);
 });

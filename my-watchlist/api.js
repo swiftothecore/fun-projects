@@ -484,7 +484,36 @@ async function backfillRtRatings() {
   }
 }
 
-async function backfillReleaseDates() {}
+async function backfillReleaseDates() {
+  if (!state.tmdbKey) return;
+  const list = state.movies;
+  const target = state.christmasMode ? 'christmas' : 'normal';
+  let changed = false;
+  await runPool(list.filter((m) => m.tmdbId && !m.releaseDate), 4, async (m) => {
+    try {
+      const response = await tmdbFetch(
+        `https://api.themoviedb.org/3/movie/${encodeURIComponent(m.tmdbId)}?api_key=${encodeURIComponent(state.tmdbKey)}`
+      );
+      if (!response.ok) return;
+      const details = await response.json();
+      if (
+        !/^\d{4}-\d{2}-\d{2}$/.test(details.release_date || '') ||
+        !Number.isFinite(new Date(details.release_date).getTime())
+      ) return;
+      // Preserve a date entered by the user while this request was running.
+      if (!m.releaseDate) {
+        m.releaseDate = details.release_date;
+        changed = true;
+      }
+    } catch {
+      // Leave the date missing so a later backfill can retry.
+    }
+  });
+  if (changed && (list === getNormalList() || list === getChristmasList())) {
+    save(target, true);
+    if (list === state.movies) render();
+  }
+}
 
 // ── Trailer button: fetch TMDB videos and open the best YouTube match ─────
 async function openTrailer(tmdbId, btnEl) {

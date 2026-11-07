@@ -9,21 +9,27 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link id="gfonts" href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@700&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&family=DM+Mono:wght@400&display=swap" rel="stylesheet">
   <script>
+    function mvGet(key) { try { return localStorage.getItem(key); } catch { return null; } }
+    function mvSet(key,value) { try { localStorage.setItem(key,value); } catch {} }
+    function mvRemove(key) { try { localStorage.removeItem(key); } catch {} }
+    function mvParse(key,fallback) { try { return JSON.parse(mvGet(key)) ?? fallback; } catch { return fallback; } }
+    function mvMap(value) { return value && typeof value==='object' && !Array.isArray(value) ? value : {}; }
+
     // Runs synchronously before any paint — prevents flash of setup screen,
     // wrong colour scheme, and font-swap reflow.
     (function () {
-      if (localStorage.getItem('ytmv_api_key')) {
+      if (mvGet('ytmv_api_key')) {
         document.documentElement.classList.add('ytmv-authed');
       }
-      var theme = localStorage.getItem('ytmv_theme');
+      var theme = mvGet('ytmv_theme');
       if (theme) document.documentElement.setAttribute('data-theme', theme);
 
       // Font caching: if we have a warm cache, inject the @font-face CSS
       // synchronously so fonts are available before the first paint.
       // The version stamp lets us bust the cache if fonts ever change.
       var FONT_VER = '1';
-      var fonts    = localStorage.getItem('ytmv_fonts');
-      var fontVer  = localStorage.getItem('ytmv_fonts_ver');
+      var fonts    = mvGet('ytmv_fonts');
+      var fontVer  = mvGet('ytmv_fonts_ver');
       if (fonts && fontVer === FONT_VER) {
         try {
           var link = document.getElementById('gfonts');
@@ -33,7 +39,7 @@
           document.head.appendChild(s);
         } catch (e) {
           // Bad cache entry — clear it so it re-fetches this session
-          try { localStorage.removeItem('ytmv_fonts'); localStorage.removeItem('ytmv_fonts_ver'); } catch (_) {}
+          try { mvRemove('ytmv_fonts'); mvRemove('ytmv_fonts_ver'); } catch (_) {}
         }
       }
     }());
@@ -593,7 +599,7 @@
 </head>
 <body>
 
-<script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script defer src="https://unpkg.com/@supabase/supabase-js@2.118.0/dist/umd/supabase.js"></script>
 <style>
 #_sb_wrap { font-family: system-ui, sans-serif; font-size: 0.82rem; display: none; position: relative; z-index: 9999; background: #141414; border-bottom: 1px solid #232323; }
 #_sb_main_row { display: flex; align-items: center; gap: 12px; padding: 10px 20px; }
@@ -629,7 +635,7 @@
     <button id="_sb_dismiss_btn" title="Dismiss">&times;</button>
   </div>
   <div id="_sb_form_row">
-    <div id="_sb_paste_row"><textarea id="_sb_paste_area" placeholder="Paste anything here — .env snippet, JSON, or plain text containing your project URL, anon key, email and password. Fields fill automatically."></textarea></div>
+    <div id="_sb_paste_row"><textarea id="_sb_paste_area" placeholder="Paste anything here — .env snippet, JSON, or plain text containing your project URL, anon key, and email. Enter your password separately."></textarea></div>
     <input id="_sb_url_in"   placeholder="Project URL  (https://xxx.supabase.co)">
     <input id="_sb_key_in"   placeholder="Anon public key">
     <input id="_sb_email_in" placeholder="Email">
@@ -641,273 +647,7 @@
   </div>
 </div>
 
-<script>
-(async function () {
-  if (typeof supabase === 'undefined') {
-    console.warn('[Sync] Supabase library not loaded — check CDN / network / content blockers.');
-    return;
-  }
-
-  const K = { url:'_sb_url', key:'_sb_key', email:'_sb_email', pass:'_sb_pass', dismissed:'_sb_dismissed' };
-  let _sb = null, _user = null, _pendingSync = false;
-
-  function _lsGet(k) { try { return localStorage.getItem(k); } catch(e) { return null; } }
-
-  const _sbMem = {};
-  const _sbStore = {
-    getItem:    k => { try { return localStorage.getItem(k) ?? _sbMem[k] ?? null; } catch(e) { return _sbMem[k] ?? null; } },
-    setItem:    (k, v) => { _sbMem[k] = v; try { localStorage.setItem(k, v); } catch(e) {} },
-    removeItem: k => { delete _sbMem[k]; try { localStorage.removeItem(k); } catch(e) {} }
-  };
-  function _makeClient(url, key) {
-    return supabase.createClient(url, key, { auth: { storage: _sbStore, persistSession: true, autoRefreshToken: true } });
-  }
-
-  function _btnStatus(color, tip) {
-    const btn = document.getElementById('_sb_cloud_btn') || document.getElementById('cloud-save-btn');
-    if (!btn) return;
-    btn.title = tip || '';
-    let dot = btn.querySelector('._sb_dot');
-    if (!dot) {
-      dot = document.createElement('span');
-      dot.className = '_sb_dot';
-      dot.style.cssText = 'width:7px;height:7px;border-radius:50%;flex-shrink:0;display:inline-block;margin-left:2px;transition:background 0.3s';
-      btn.appendChild(dot);
-    }
-    dot.style.background = color;
-    dot.style.boxShadow = `0 0 5px ${color}aa`;
-  }
-
-  const wrap    = document.getElementById('_sb_wrap');
-  const formRow = document.getElementById('_sb_form_row');
-  const status  = document.getElementById('_sb_status');
-  const showBanner = () => { wrap.style.display = 'block'; };
-  const hideBanner = () => { wrap.style.display = 'none';  };
-  const setStatus  = (msg, cls) => { status.textContent = msg; status.className = cls || ''; };
-
-  document.getElementById('_sb_dismiss_btn').onclick = () => {
-    try { localStorage.setItem(K.dismissed, '1'); } catch(e) {}
-    hideBanner();
-  };
-  document.getElementById('_sb_connect_btn').onclick = () => {
-    formRow.style.display = 'flex';
-    document.getElementById('_sb_url_in').value   = _lsGet(K.url)   || '';
-    document.getElementById('_sb_key_in').value   = _lsGet(K.key)   || '';
-    document.getElementById('_sb_email_in').value = _lsGet(K.email) || '';
-    document.getElementById('_sb_pass_in').value  = _lsGet(K.pass)  || '';
-    if (_lsGet(K.url) && _lsGet(K.key)) document.getElementById('_sb_copy_cfg').style.display = 'inline-flex';
-  };
-
-  document.getElementById('_sb_save_btn').onclick = async () => {
-    const url   = document.getElementById('_sb_url_in').value.trim();
-    const key   = document.getElementById('_sb_key_in').value.trim();
-    const email = document.getElementById('_sb_email_in').value.trim();
-    const pass  = document.getElementById('_sb_pass_in').value;
-    if (!url || !key || !email || !pass) { setStatus('Please fill all fields.', 'err'); return; }
-    setStatus('Connecting...', '');
-    try {
-      const client = _makeClient(url, key);
-      const { data, error } = await client.auth.signInWithPassword({ email, password: pass });
-      if (error) { setStatus('Error: ' + error.message, 'err'); return; }
-      try { localStorage.setItem(K.url, url); localStorage.setItem(K.key, key);
-            localStorage.setItem(K.email, email); localStorage.setItem(K.pass, pass);
-            localStorage.removeItem(K.dismissed); } catch(e) {}
-      _sb = client; _user = data.user;
-      setStatus('Connected!', 'ok'); _btnStatus('#5a9e7a', 'Connected');
-      const { data: remoteRow } = await client.from(window._SB_TABLE || '__').select('data').eq('user_id', data.user.id).maybeSingle();
-      if (remoteRow && window._sbOnLoad) {
-        window._sbPaused = true;
-        try { window._sbOnLoad(remoteRow.data); } finally { window._sbPaused = false; }
-      } else { await _syncNow(); }
-      setTimeout(hideBanner, 1500);
-    } catch (e) { setStatus('Error: ' + e.message, 'err'); }
-  };
-
-  // ── Smart paste / copy config ────────────────────────────────────────────
-  function _parseConfig(text) {
-    const r = {};
-    // 1. Try JSON
-    try {
-      const j = JSON.parse(text.trim());
-      const pick = (ps) => { for (const k of Object.keys(j)) { if (ps.some(p => k.toLowerCase().includes(p))) return String(j[k]); } return ''; };
-      r.url = pick(['url']); r.key = pick(['key','anon']); r.email = pick(['email','mail']); r.pass = pick(['pass','pwd','password']);
-      if (r.url || r.key) return r;
-    } catch(e) {}
-    // 2. Try key=value pairs (.env style, handles NEXT_PUBLIC_ / VITE_ / REACT_APP_ prefixes)
-    const kv = {};
-    text.replace(/^([A-Za-z_][A-Za-z0-9_]*)\s*[=:]\s*(.+)$/gm, (_, k, v) => {
-      kv[k.toLowerCase().replace(/^(next_public_|vite_|react_app_)/,'')] = v.trim().replace(/^['"]|['"]$/g,'');
-    });
-    if (Object.keys(kv).length) {
-      const pick = (ps) => { for (const k of Object.keys(kv)) { if (ps.some(p => k.includes(p))) return kv[k]; } return ''; };
-      const u = pick(['supabase_url','project_url']) || pick(['url']);
-      const k = pick(['anon_key','anon','key']);
-      const e = pick(['email','mail','user']);
-      const p = pick(['password','pass','pwd']);
-      if (u || k) { r.url=u; r.key=k; r.email=e; r.pass=p; return r; }
-    }
-    // 3. Magic detection by pattern
-    const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
-    const um = text.match(/https:\/\/[a-z0-9]{8,}\.supabase\.co/i);
-    // Matches JWT-style keys (old format: eyJ...) and new sb_publishable_/sb_secret_ style keys
-    const jm = text.match(/eyJ[A-Za-z0-9_\-]{30,}\.[A-Za-z0-9_\-]{30,}\.[A-Za-z0-9_\-]{10,}/) ||
-               text.match(/sb_[a-z]+_[A-Za-z0-9_\-]{10,}/i);
-    const em = text.match(/[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/);
-    if (um) r.url = um[0]; if (jm) r.key = jm[0]; if (em) r.email = em[0];
-    // Labelled password line
-    const pm = text.match(/(?:pass(?:word)?|pwd|sb[_\-]pass)\s*[=:]\s*(.+)/i);
-    if (pm) r.pass = pm[1].trim().replace(/^['"]|['"]$/g,'');
-    // Leftover strategy: if there's exactly one line we couldn\'t identify, it must be the password
-    if (!r.pass) {
-      const leftover = lines.filter(l => l !== r.url && l !== r.key && l !== r.email);
-      if (leftover.length === 1) r.pass = leftover[0];
-    }
-    return r;
-  }
-
-  function _applyConfig(cfg) {
-    if (cfg.url)   document.getElementById('_sb_url_in').value   = cfg.url;
-    if (cfg.key)   document.getElementById('_sb_key_in').value   = cfg.key;
-    if (cfg.email) document.getElementById('_sb_email_in').value = cfg.email;
-    if (cfg.pass)  document.getElementById('_sb_pass_in').value  = cfg.pass;
-    const n = [cfg.url,cfg.key,cfg.email,cfg.pass].filter(Boolean).length;
-    setStatus(n === 4 ? 'All fields filled — save to connect.' : n + '/4 fields detected — fill the rest manually.', n === 4 ? 'ok' : '');
-  }
-
-  const pasteRow    = document.getElementById('_sb_paste_row');
-  const pasteArea   = document.getElementById('_sb_paste_area');
-  const pasteToggle = document.getElementById('_sb_paste_toggle');
-  const copyCfgBtn  = document.getElementById('_sb_copy_cfg');
-
-  pasteToggle.onclick = () => {
-    const open = pasteRow.style.display === 'block';
-    pasteRow.style.display = open ? 'none' : 'block';
-    pasteToggle.textContent = open ? 'Paste config' : 'Hide paste';
-    if (!open) pasteArea.focus();
-  };
-
-  function _tryApplyPaste() {
-    const cfg = _parseConfig(pasteArea.value);
-    if (cfg.url || cfg.key || cfg.email) {
-      _applyConfig(cfg);
-      // Auto-collapse paste area after successful fill
-      setTimeout(() => { pasteRow.style.display='none'; pasteToggle.textContent='Paste config'; pasteArea.value=''; }, 400);
-    }
-  }
-
-  pasteArea.addEventListener('paste', () => setTimeout(_tryApplyPaste, 30));
-  pasteArea.addEventListener('input', () => { if (pasteArea.value.trim().length > 30) _tryApplyPaste(); });
-
-  copyCfgBtn.onclick = () => {
-    const url = _lsGet(K.url)||'', key = _lsGet(K.key)||'', email = _lsGet(K.email)||'', pass = _lsGet(K.pass)||'';
-    const snippet = `SUPABASE_URL=${url}\nSUPABASE_ANON_KEY=${key}\nSUPABASE_EMAIL=${email}\nSUPABASE_PASS=${pass}`;
-    navigator.clipboard.writeText(snippet)
-      .then(() => { copyCfgBtn.textContent = 'Copied ✓'; setTimeout(() => { copyCfgBtn.textContent = 'Copy config'; }, 2200); })
-      .catch(() => { const t = prompt('Copy this config and paste it on your other device:', snippet); });
-  };
-  // ─────────────────────────────────────────────────────────────────────────
-
-  async function _tryConnect() {
-    const url = _lsGet(K.url), key = _lsGet(K.key), email = _lsGet(K.email), pass = _lsGet(K.pass);
-    if (!url || !key || !email || !pass) return false;
-    try {
-      const client = _makeClient(url, key);
-      const { data, error } = await client.auth.signInWithPassword({ email, password: pass });
-      if (error) return false;
-      _sb = client; _user = data.user; return true;
-    } catch { return false; }
-  }
-
-  function _setPending(on) {
-    _pendingSync = on;
-    try { on ? localStorage.setItem('_sb_pending','1') : localStorage.removeItem('_sb_pending'); } catch(e) {}
-  }
-
-  async function _upsert(table, payload) {
-    if (!_sb || !_user) { _setPending(true); return false; }
-    try {
-      _btnStatus('#d97706', 'Syncing...');
-      const row = { user_id: _user.id, data: payload, updated_at: new Date().toISOString() };
-      const { error } = await _sb.from(table).upsert(row, { onConflict: 'user_id' });
-      if (error) {
-        console.warn('[Sync] Upsert failed:', error.message);
-        _btnStatus('#c0392b', 'Sync failed: ' + error.message);
-        _setPending(true);
-        setTimeout(async () => { if (_pendingSync && _sb && _user) { _pendingSync = false; await _syncNow(); } }, 2000);
-        return false;
-      }
-      _setPending(false);
-      _btnStatus('#5a9e7a', 'Saved to cloud \u2713'); return true;
-    } catch(e) {
-      console.warn('[Sync] Upsert error:', e.message);
-      _btnStatus('#c0392b', 'Sync error: ' + e.message);
-      _setPending(true);
-      setTimeout(async () => { if (_pendingSync && _sb && _user) { _pendingSync = false; await _syncNow(); } }, 2000);
-      return false;
-    }
-  }
-
-  async function _syncNow() {
-    if (!window._SB_TABLE) return;
-    const payload = window._sbGetData ? window._sbGetData()
-                  : window._SB_LS_KEY ? JSON.parse(_lsGet(window._SB_LS_KEY) || 'null')
-                  : null;
-    if (payload != null) await _upsert(window._SB_TABLE, payload);
-  }
-
-  window._sbSyncNow = _syncNow;
-  window._sbForceSync = async () => {
-    console.log('[Sync] Force sync...');
-    if (!_sb || !_user) { const ok = await _tryConnect(); if (!ok) { console.error('[Sync] Cannot connect'); return; } }
-    await _syncNow(); console.log('[Sync] Done');
-  };
-  window._sbOpenPanel = function() {
-    try { localStorage.removeItem('_sb_dismissed'); } catch(e) {}
-    wrap.style.display = 'block'; formRow.style.display = 'flex';
-    document.getElementById('_sb_url_in').value   = _lsGet(K.url)   || '';
-    document.getElementById('_sb_key_in').value   = _lsGet(K.key)   || '';
-    document.getElementById('_sb_email_in').value = _lsGet(K.email) || '';
-    document.getElementById('_sb_pass_in').value  = _lsGet(K.pass)  || '';
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-  window._sbPaused = false;
-
-  const connected = await _tryConnect();
-  if (connected) {
-    hideBanner();
-    _btnStatus('#d97706', 'Loading...');
-    const persistedPending = _lsGet('_sb_pending') === '1';
-    const _snapBefore = window._sbGetData ? JSON.stringify(window._sbGetData()) : null;
-    const { data: row } = await _sb.from(window._SB_TABLE || '__').select('data').eq('user_id', _user.id).maybeSingle();
-    const _snapAfter = window._sbGetData ? JSON.stringify(window._sbGetData()) : null;
-    const changedDuringFetch = _snapBefore !== null && _snapBefore !== _snapAfter;
-    if (_pendingSync || persistedPending || changedDuringFetch) {
-      _pendingSync = false; await _syncNow();
-    } else {
-      if (row && window._sbOnLoad) {
-        window._sbPaused = true;
-        try { window._sbOnLoad(row.data); } finally { window._sbPaused = false; }
-        _btnStatus('#5a9e7a', 'Loaded from cloud');
-      } else { _btnStatus('#5a9e7a', 'Connected'); }
-    }
-  } else {
-    _btnStatus('#4a4440', 'Not connected — tap to set up');
-    if (!_lsGet(K.dismissed)) showBanner();
-  }
-
-  setInterval(async () => {
-    if (!_pendingSync) return;
-    if (!_sb || !_user) { const ok = await _tryConnect(); if (!ok) return; }
-    _pendingSync = false; _syncNow();
-  }, 5000);
-
-  document.addEventListener('visibilitychange', () => {
-    if (!_sb || !_user) return;
-    if (document.visibilityState === 'hidden') _syncNow();
-    else if (_pendingSync) { _pendingSync = false; _syncNow(); }
-  });
-})();
-</script>
+<script defer src="../shared/cloud-sync.js"></script>
 
 <!-- ── SETUP ──────────────────────────────────────────────── -->
 <div id="setup">
@@ -1096,13 +836,18 @@ const K = {
   THEME:      'ytmv_theme',
 };
 
-let apiKey    = localStorage.getItem(K.KEY)        || '';
-let artists   = JSON.parse(localStorage.getItem(K.ARTISTS)    || '[]');
-let videos    = JSON.parse(localStorage.getItem(K.VIDEOS)     || '{}');
-let lastFetch = JSON.parse(localStorage.getItem(K.LAST_FETCH) || '{}');
+let apiKey    = mvGet(K.KEY)        || '';
+let artists   = mvParse(K.ARTISTS, []);
+let videos    = mvMap(mvParse(K.VIDEOS, {}));
+let lastFetch = mvMap(mvParse(K.LAST_FETCH, {}));
 
-const prevVisit = localStorage.getItem(K.LAST_VISIT) || null;
-localStorage.setItem(K.LAST_VISIT, new Date().toISOString());
+if (!Array.isArray(artists)) artists=[];
+artists=artists.filter(a=>a&&typeof a.id==='string'&&typeof a.name==='string');
+videos=Object.fromEntries(Object.entries(videos).filter(([id,v])=>v&&typeof v.videoId==='string'&&typeof v.title==='string'));
+let channelSequence=0;
+const addingChannels=new Set();
+const prevVisit = mvGet(K.LAST_VISIT) || null;
+mvSet(K.LAST_VISIT, new Date().toISOString());
 
 let activeArtist   = null;
 let watchFilter    = 'all';
@@ -1116,7 +861,7 @@ let lastSelectedIdx = -1;
 
 // ── THEME ──────────────────────────────────────────────────
 function initTheme() {
-  const saved = localStorage.getItem(K.THEME);
+  const saved = mvGet(K.THEME);
   if (saved) document.documentElement.setAttribute('data-theme', saved);
   updateThemeBtn();
 }
@@ -1129,7 +874,7 @@ function isDarkActive() {
 function toggleTheme() {
   const next = isDarkActive() ? 'light' : 'dark';
   document.documentElement.setAttribute('data-theme', next);
-  localStorage.setItem(K.THEME, next);
+  mvSet(K.THEME, next);
   updateThemeBtn();
 }
 function updateThemeBtn() {
@@ -1142,9 +887,9 @@ function updateThemeBtn() {
 function triggerSync() {
   if (window._sbSyncNow && !window._sbPaused) window._sbSyncNow();
 }
-const saveArtists   = () => { localStorage.setItem(K.ARTISTS,    JSON.stringify(artists));   triggerSync(); };
-const saveVideos    = () => { localStorage.setItem(K.VIDEOS,     JSON.stringify(videos));    triggerSync(); };
-const saveLastFetch = () => { localStorage.setItem(K.LAST_FETCH, JSON.stringify(lastFetch)); triggerSync(); };
+const saveArtists   = () => { mvSet(K.ARTISTS,    JSON.stringify(artists));   triggerSync(); };
+const saveVideos    = () => { mvSet(K.VIDEOS,     JSON.stringify(videos));    triggerSync(); };
+const saveLastFetch = () => { mvSet(K.LAST_FETCH, JSON.stringify(lastFetch)); triggerSync(); };
 
 // ── MUSIC VIDEO FILTER ─────────────────────────────────────
 function isMusicVideo(title) {
@@ -1241,7 +986,7 @@ async function fetchPlaylistSince(playlistId, artistId, artistName, cutoffDate) 
       if (!id || !title || title === 'Private video' || title === 'Deleted video') continue;
 
       // Stop the moment we reach content older than our newest stored video
-      if (cutoffDate && new Date(pub) <= cutoffDate) { done = true; break; }
+      if (cutoffDate && new Date(pub) < cutoffDate) { done = true; break; }
 
       if (!isMusicVideo(title)) continue;
       const thumbs = item.snippet?.thumbnails || {};
@@ -1259,23 +1004,25 @@ async function fetchPlaylistSince(playlistId, artistId, artistName, cutoffDate) 
 
 // ── ARTIST MANAGEMENT ──────────────────────────────────────
 async function addArtist(channel) {
+  if (addingChannels.has(channel.channelId)) return;
   if (artists.find(a => a.channelId === channel.channelId)) {
     showToast('This artist is already in your list.', 'err');
     closeModal(); return;
   }
+  addingChannels.add(channel.channelId);
   document.getElementById('modal-form').classList.add('hidden');
   document.getElementById('modal-progress').classList.remove('hidden');
   try {
     setFetchMsg(`Finding ${channel.name}'s uploads...`);
     const uploadsId = await getUploadsPlaylistId(channel.channelId);
     if (!uploadsId) throw new Error("Couldn't find this channel's uploads playlist.");
-    const artistId = 'a_' + Date.now();
+    const artistId = 'a_' + crypto.randomUUID();
     const newVids  = await fetchPlaylist(
       uploadsId, artistId, channel.name,
       (page, n) => setFetchMsg(`Scanning page ${page}... ${n} music video${n !== 1 ? 's' : ''} found`)
     );
     artists.push({ id:artistId, name:channel.name, channelId:channel.channelId, uploadsPlaylistId:uploadsId, addedAt:new Date().toISOString() });
-    Object.assign(videos, newVids);
+    for (const [id,video] of Object.entries(newVids)) if (!videos[id]) videos[id]=video;
     lastFetch[artistId] = new Date().toISOString();
     saveArtists(); saveVideos(); saveLastFetch();
     const n = Object.keys(newVids).length;
@@ -1285,7 +1032,7 @@ async function addArtist(channel) {
     console.error(err);
     showToast('Error: ' + err.message, 'err');
     closeModal();
-  }
+  } finally { addingChannels.delete(channel.channelId); }
 }
 
 async function removeArtist(artistId) {
@@ -1295,6 +1042,8 @@ async function removeArtist(artistId) {
     if (videos[vid].artistId === artistId) delete videos[vid];
   }
   delete lastFetch[artistId];
+  if (activeArtist===artistId) activeArtist=null;
+  clearSelection();
   saveArtists(); saveVideos(); saveLastFetch();
   renderAll();
   showToast('Artist removed.', 'ok');
@@ -1315,6 +1064,7 @@ async function refreshOne(artist, silent = false) {
   try {
     const newVids = await fetchPlaylistSince(artist.uploadsPlaylistId, artist.id, artist.name, cutoff);
 
+    if (!artists.some(a=>a.id===artist.id)) return 0;
     // Merge — never overwrite an existing entry so watched state is preserved
     let added = 0;
     for (const [id, v] of Object.entries(newVids)) {
@@ -1328,7 +1078,7 @@ async function refreshOne(artist, silent = false) {
     return added;
   } catch (err) {
     if (!silent) showToast(`Error refreshing ${artist.name}: ${err.message}`, 'err');
-    return 0;
+    return null;
   }
 }
 
@@ -1336,14 +1086,14 @@ async function refreshAll() {
   if (!artists.length) { showToast('No artists to refresh.'); return; }
   const btn = document.getElementById('refresh-btn');
   btn.disabled = true; btn.textContent = 'Refreshing...';
-  let total = 0;
-  for (const a of artists) total += await refreshOne(a, true);
+  let total = 0, failed = 0;
+  for (const a of [...artists]) { const result=await refreshOne(a,true); if(result===null)failed++; else total+=result; }
   btn.disabled = false;
   btn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg> Refresh All`;
   renderAll();
   showToast(
-    total > 0 ? `${total} new video${total !== 1 ? 's' : ''} across all artists.` : 'All up to date.',
-    total > 0 ? 'ok' : ''
+    failed ? `Refresh failed for ${failed} artist(s). ${total} new video(s) found.` : total > 0 ? `${total} new video${total !== 1 ? 's' : ''} across all artists.` : 'All up to date.',
+    failed ? 'err' : total > 0 ? 'ok' : ''
   );
 }
 
@@ -1401,7 +1151,7 @@ function renderChips() {
   let html  = `<div class="chip ${activeArtist === null ? 'active' : ''}" onclick="setArtist(null)">All Artists</div>`;
   for (const a of artists) {
     const n = Object.values(videos).filter(v => v.artistId === a.id).length;
-    html += `<div class="chip ${activeArtist === a.id ? 'active' : ''}" onclick="setArtist('${a.id}')">
+    html += `<div class="chip ${activeArtist === a.id ? 'active' : ''}" onclick="setArtist(${jsAttr(a.id)})">
       ${esc(a.name)} <span class="chip-count">${n}</span>
     </div>`;
   }
@@ -1425,10 +1175,15 @@ function fmtDate(iso) {
 }
 
 function esc(s) {
-  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
+function jsAttr(value) { return esc(JSON.stringify(value)); }
 
 function renderGrid() {
+  const visibleIds=new Set(getFiltered().map(v=>v.videoId));
+  for(const id of selectedIds) if(!visibleIds.has(id)) selectedIds.delete(id);
+  if(!selectedIds.size) lastSelectedIdx=-1;
+  updateSelectionUI();
   const grid   = document.getElementById('video-grid');
   const empty  = document.getElementById('empty-state');
   const fempty = document.getElementById('filter-empty');
@@ -1453,13 +1208,13 @@ function renderGrid() {
     const w   = v.watched;
     const nw  = isNew(v);
     const sel = selectedIds.has(v.videoId);
-    return `<div class="v-card${w ? ' watched' : ''}${sel ? ' selected' : ''}" data-videoid="${esc(v.videoId)}" onclick="handleCardClick('${esc(v.videoId)}',event)">
+    return `<div class="v-card${w ? ' watched' : ''}${sel ? ' selected' : ''}" data-videoid="${esc(v.videoId)}" onclick="handleCardClick(${jsAttr(v.videoId)},event)">
       <div class="thumb-wrap">
-        <img class="thumb-img" src="${esc(v.thumbnail)}" onerror="this.src='${fb(v.videoId)}'" loading="lazy" alt="${esc(v.title)}">
+        <img class="thumb-img" src="${esc(v.thumbnail)}" onerror="this.onerror=null;this.src=${jsAttr(fb(v.videoId))}" loading="lazy" alt="${esc(v.title)}">
         <div class="thumb-overlay"></div>
         ${nw ? '<div class="badge-new">New</div>' : ''}
         <div class="sel-box">${selCheck}</div>
-        <button class="seen-pill" onclick="toggleWatched('${esc(v.videoId)}',event)" title="${w ? 'Mark as unwatched' : 'Mark as watched'}">${w ? 'Seen' : 'Mark seen'}</button>
+        <button class="seen-pill" onclick="toggleWatched(${jsAttr(v.videoId)},event)" title="${w ? 'Mark as unwatched' : 'Mark as watched'}">${w ? 'Seen' : 'Mark seen'}</button>
       </div>
       <div class="card-body">
         <div class="card-meta">
@@ -1483,7 +1238,7 @@ function renderSettingsArtists() {
     return `<div class="artist-item">
       <div class="artist-item-name">${esc(a.name)}</div>
       <div class="artist-item-count">${n}</div>
-      <button class="btn btn-icon" onclick="removeArtist('${a.id}')" title="Remove" style="padding:4px;color:var(--hot);">${trash}</button>
+      <button class="btn btn-icon" onclick="removeArtist(${jsAttr(a.id)})" title="Remove" style="padding:4px;color:var(--hot);">${trash}</button>
     </div>`;
   }).join('');
 }
@@ -1599,6 +1354,10 @@ function selDelete() {
 
 // ── ADD ARTIST MODAL ───────────────────────────────────────
 function openAddModal() {
+  channelSequence++;
+  _searchResults=[];
+  document.getElementById('search-btn').disabled=false;
+  document.getElementById('search-btn').textContent='Search YouTube Channels';
   searchComplete = false;
   document.getElementById('modal-form').classList.remove('hidden');
   document.getElementById('modal-progress').classList.add('hidden');
@@ -1610,6 +1369,7 @@ function openAddModal() {
 }
 
 function closeModal() {
+  channelSequence++;
   document.getElementById('add-modal').classList.remove('open');
   searchComplete = false;
 }
@@ -1646,6 +1406,7 @@ function renderChannelResults() {
 }
 
 async function doChannelSearch() {
+  const sequence=++channelSequence;
   const q = document.getElementById('artist-input').value.trim();
   if (!q) return;
   searchComplete = false;
@@ -1654,15 +1415,18 @@ async function doChannelSearch() {
   document.getElementById('ch-results').innerHTML = '';
   document.getElementById('modal-hint').textContent = '';
   try {
-    _searchResults = await searchChannels(q);
+    const results = await searchChannels(q);
+    if(sequence!==channelSequence || !modalOpen()) return;
+    _searchResults=results;
     searchComplete = _searchResults.length > 0;
     renderChannelResults();
   } catch (err) {
+    if(sequence!==channelSequence || !modalOpen()) return;
     document.getElementById('ch-results').innerHTML =
       `<p style="color:var(--hot);font-size:13px;text-align:center;padding:14px;">Error: ${esc(err.message)}</p>`;
     searchComplete = false;
   }
-  btn.disabled = false; btn.textContent = 'Search YouTube Channels';
+  if(sequence===channelSequence){btn.disabled = false; btn.textContent = 'Search YouTube Channels';}
 }
 
 function pickChannel(i) { const ch = _searchResults[i]; if (ch) addArtist(ch); }
@@ -1683,12 +1447,12 @@ function updateKey() {
   const k = document.getElementById('s-key').value.trim();
   if (!k) { showToast('Please enter a key.', 'err'); return; }
   apiKey = k;
-  localStorage.setItem(K.KEY, apiKey);
+  mvSet(K.KEY, apiKey);
   showToast('API key updated.', 'ok');
 }
 function clearData() {
   if (!confirm('This will delete all artists, videos, and your API key. This cannot be undone.')) return;
-  Object.values(K).forEach(k => localStorage.removeItem(k));
+  Object.values(K).forEach(k => mvRemove(k));
   location.reload();
 }
 
@@ -1746,6 +1510,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
   input.addEventListener('input', () => {
+    channelSequence++;
+    document.getElementById('search-btn').disabled=false;
+    document.getElementById('search-btn').textContent='Search YouTube Channels';
     if (searchComplete) { searchComplete = false; renderChannelResults(); }
   });
 });
@@ -1758,7 +1525,7 @@ function initSetup() {
     const k = keyInp.value.trim();
     if (!k) { showToast('Please enter your API key.', 'err'); return; }
     apiKey = k;
-    localStorage.setItem(K.KEY, apiKey);
+    mvSet(K.KEY, apiKey);
     document.documentElement.classList.add('ytmv-authed');
     document.getElementById('setup').classList.add('hidden');
     renderAll();
@@ -1789,7 +1556,7 @@ function bufToBase64(buf) {
 
 async function cacheFontsIfNeeded() {
   const FONT_VER = '1';
-  if (localStorage.getItem('ytmv_fonts_ver') === FONT_VER) return; // already cached
+  if (mvGet('ytmv_fonts_ver') === FONT_VER) return; // already cached
 
   try {
     // Use the live link href if still in DOM; fall back to the hardcoded URL
@@ -1814,8 +1581,8 @@ async function cacheFontsIfNeeded() {
       } catch (_) {}
     }));
 
-    localStorage.setItem('ytmv_fonts', css);
-    localStorage.setItem('ytmv_fonts_ver', FONT_VER);
+    mvSet('ytmv_fonts', css);
+    mvSet('ytmv_fonts_ver', FONT_VER);
   } catch (_) {
     // Silently fail — Google Fonts network delivery continues as normal
   }
@@ -1842,22 +1609,18 @@ window._sbGetData = function() {
 };
 
 window._sbOnLoad = function(data) {
-  try {
-    if (!data || typeof data !== 'object') return;
-    if (Array.isArray(data.artists)) {
-      artists = data.artists;
-      localStorage.setItem(K.ARTISTS, JSON.stringify(artists));
-    }
-    if (data.videos && typeof data.videos === 'object') {
-      videos = data.videos;
-      localStorage.setItem(K.VIDEOS, JSON.stringify(videos));
-    }
-    if (data.lastFetch && typeof data.lastFetch === 'object') {
-      lastFetch = data.lastFetch;
-      localStorage.setItem(K.LAST_FETCH, JSON.stringify(lastFetch));
-    }
-    renderAll();
-  } catch(e) { console.warn('[MusicVideos] Supabase load error:', e); }
+  if (!data || !Array.isArray(data.artists) || !data.artists.every(a=>a&&typeof a.id==='string'&&typeof a.name==='string') ||
+      !data.videos || typeof data.videos!=='object' || Array.isArray(data.videos) ||
+      !Object.values(data.videos).every(v=>v&&typeof v.videoId==='string'&&typeof v.title==='string') ||
+      (data.lastFetch!==undefined && (!data.lastFetch || typeof data.lastFetch!=='object' || Array.isArray(data.lastFetch)))) return false;
+  artists=data.artists; videos=data.videos; lastFetch=data.lastFetch||{};
+  if(activeArtist && !artists.some(a=>a.id===activeArtist))activeArtist=null;
+  clearSelection();
+  mvSet(K.ARTISTS, JSON.stringify(artists));
+  mvSet(K.VIDEOS, JSON.stringify(videos));
+  mvSet(K.LAST_FETCH, JSON.stringify(lastFetch));
+  renderAll();
+  return true;
 };
 </script>
 </body>
