@@ -315,7 +315,11 @@
       .sep       { font-size: clamp(1.2rem, 5vw, 2rem);
                    padding-bottom: clamp(0.5rem, 1.5vw, 0.9rem); }
     }
-  </style>
+  @media (prefers-reduced-motion: reduce) {
+  *,*::before,*::after { animation: none !important; transition: none !important; }
+  #embers { display: none; }
+}
+</style>
 </head>
 <body>
 
@@ -352,7 +356,7 @@
     <h1 class="title"><a href="https://www.youtube.com/watch?v=CINFIAohu4U" target="_blank" rel="noopener" style="color:inherit;text-decoration:none;cursor:pointer;transition:opacity 0.2s ease;" onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">Sunrise on the&nbsp;Reaping</a></h1>
     <div class="rule"></div>
 
-    <div class="countdown" id="countdown">
+    <div class="countdown" id="countdown" role="timer" aria-live="off" aria-label="Countdown to cinema release">
       <div class="unit">
         <span class="num" id="days">000</span>
         <span class="lbl">Days</span>
@@ -424,7 +428,7 @@
     });
 
     (function frame() {
-      if(!cx2)return;
+      if(!cx2 || window.matchMedia('(prefers-reduced-motion: reduce)').matches)return;
       cx2.clearRect(0, 0, cv.width, cv.height);
       if (pts.length < 28 && Math.random() < 0.07) pts.push(mkPt());
       pts = pts.filter(p => {
@@ -472,6 +476,8 @@
     (function tick() {
       const diff = TARGET - Date.now();
       if (diff <= 0) {
+        document.getElementById('countdown').setAttribute('role','status');
+        document.getElementById('countdown').setAttribute('aria-live','polite');
         document.getElementById('countdown').innerHTML =
           '<p class="zero">The Reaping Has Begun</p>';
         document.title = 'Sunrise on the Reaping — Now in Cinemas';

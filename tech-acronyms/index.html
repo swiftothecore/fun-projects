@@ -491,7 +491,7 @@
             { a: "VR", m: "Virtual Reality", c: "AI & Future" },
             { a: "AR", m: "Augmented Reality", c: "AI & Future" },
             { a: "NFT", m: "Non-Fungible Token", c: "AI & Future" },
-            { a: "CI/CD", m: "Continuous Integration / Continuous Deployment", c: "AI & Future" },
+            { a: "CI/CD", m: "Continuous Integration / Continuous Deployment", alternatives: ["Continuous Integration / Continuous Delivery"], c: "AI & Future" },
             { a: "DevOps", m: "Development and Operations", c: "AI & Future" },
             // 10. Miscellaneous
             { a: "FOSS", m: "Free and Open-Source Software", c: "Misc" },
@@ -604,6 +604,7 @@
             $("quizSection").classList.add("hidden");
             $("resultSection").classList.add("hidden");
             $("setupSection").classList.remove("hidden");
+            $("startBtn").focus({preventScroll:true});
         }
 
         function renderQuestion() {
@@ -652,12 +653,13 @@
             $("skipBtn").disabled = true;
             $("skipBtn").classList.add("hidden");
 
-            if (isFuzzyMatch(rawUserValue, currentItem.m)) {
+            const matchedAnswer=[currentItem.m,...(currentItem.alternatives||[])].find(answer=>isFuzzyMatch(rawUserValue,answer));
+            if (matchedAnswer) {
                 correctAnswersCount++;
                 $("feedbackDisplay").innerHTML = '<span class="success-text">Correct!</span>';
 
-                if (cleanAnswer(rawUserValue) !== cleanAnswer(currentItem.m)) {
-                    $("feedbackDisplay").innerHTML += `<div class="info-text">Close enough. Exact wording: <strong>${escapeHtml(currentItem.m)}</strong></div>`;
+                if (cleanAnswer(rawUserValue) !== cleanAnswer(matchedAnswer)) {
+                    $("feedbackDisplay").innerHTML += `<div class="info-text">Close enough. Exact wording: <strong>${escapeHtml(matchedAnswer)}</strong></div>`;
                 }
 
                 answerHistory.push({ item: currentItem, result: "correct", userAnswer: rawUserValue });
@@ -723,6 +725,7 @@
             $("retryMissedBtn").disabled = missed.length === 0;
             $("retryMissedBtn").textContent = missed.length ? `Retry Missed (${missed.length})` : "Nothing to Retry";
             $("reviewBox").classList.toggle("hidden", missed.length === 0);
+            const heading=$("resultSection").querySelector("h2");heading.tabIndex=-1;heading.focus({preventScroll:true});
         }
 
         function buildReviewList() {
@@ -767,6 +770,7 @@
         $("newQuizBtn").addEventListener("click", showSetup);
 
         $("userInput").addEventListener("keydown", (event) => {
+            if(event.isComposing || event.keyCode===229)return;
             if (event.key === "Enter") {
                 event.preventDefault();
                 if (event.repeat) return;
@@ -775,6 +779,7 @@
         });
 
         document.addEventListener("keydown", (event) => {
+            if(event.isComposing)return;
             if ($("quizSection").classList.contains("hidden")) return;
 
             const activeTag = document.activeElement?.tagName;
@@ -790,6 +795,10 @@
                 skipQuestion();
             }
         });
+
+        document.addEventListener("keydown",event=>{
+            if(!$("quizSection").classList.contains("hidden")&&event.key==="Enter"&&event.repeat)event.preventDefault();
+        },true);
 
         window.addEventListener("load", () => {
             populateCategories();

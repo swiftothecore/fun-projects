@@ -5699,3 +5699,5 @@ header > div.header-actions {
 .service-section-rule {
   background: var(--service-rule);
 }
+
+.card:focus-visible,.list-row:focus-visible,.soon-card:focus-visible,.rewatch-soon-card:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }

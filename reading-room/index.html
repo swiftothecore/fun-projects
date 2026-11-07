@@ -1042,6 +1042,7 @@ function applyTheme(dark) {
   const btn = document.getElementById('theme-toggle');
   btn.textContent = dark ? '☀️' : '🌙';
   btn.title = dark ? 'Switch to light mode' : 'Switch to dark mode';
+  btn.setAttribute('aria-label', btn.title);
 }
 
 document.getElementById('theme-toggle').addEventListener('click', () => {
@@ -1252,6 +1253,7 @@ function openFloatingMenu(btn, bookId, sectionId) {
           btn.className = 'fmenu-cover-thumb' + (book.coverId === id && !book.customCoverUrl ? ' selected' : '');
           btn.dataset.action = 'pick-cover';
           btn.dataset.coverId = id;
+          btn.setAttribute('aria-label', `Use edition cover ${id}`);
           const img = document.createElement('img');
           img.src = `https://covers.openlibrary.org/b/id/${id}-S.jpg`;
           img.alt = '';
@@ -1346,7 +1348,7 @@ function openFloatingMenu(btn, bookId, sectionId) {
       floatingMenu.removeEventListener('click', handler);
       closeFloatingMenu();
       saveState();
-      resolveCoverUrl(newId).then(() => renderSectionBody(sectionId));
+      renderSectionBody(sectionId);
       showToast('Cover updated');
 
     } else if (action === 'remove-cover') {
@@ -1411,7 +1413,7 @@ function renderSectionBody(sectionId) {
   const books = state[sectionId];
 
   /* Count books per author in this section */
-  const authorCounts = {};
+  const authorCounts = Object.create(null);
   books.forEach(b => {
     if (b.author) authorCounts[b.author] = (authorCounts[b.author] || 0) + 1;
   });
@@ -1462,6 +1464,7 @@ function getAESTDaysAgo(addedAt) {
 }
 
 function getAgeInfo(addedAt) {
+  if (addedAt == null || !Number.isFinite(new Date(addedAt).getTime())) return { cls: '', label: 'Added date unknown' };
   const days = getAESTDaysAgo(addedAt);
   let label;
   if      (days === 0)   label = 'Added today';
@@ -1828,8 +1831,7 @@ function hideResults() {
 }
 
 function debounceSearch() {
-  searchSequence++;
-  clearTimeout(searchTimer);
+  hideResults();
   const title = titleInput.value.trim(), author = authorInput.value.trim();
   if (!title && !author) { hideResults(); return; }
   showSpinner(true);
@@ -1849,6 +1851,7 @@ async function doSearch(title, author) {
     renderResults((data.docs || []).slice(0, 9));
   } catch(e) {
     if (sequence !== searchSequence) return;
+    lastResults = []; highlightedIndex = -1;
     resultsWrap.innerHTML = '<div class="results-msg">Could not reach Open Library — check your connection.</div>';
     resultsWrap.style.display = 'block';
   } finally {
@@ -1954,7 +1957,7 @@ titleInput.addEventListener('keydown', e => {
   }
 
   /* ArrowRight — move to author field */
-  if (e.key === 'ArrowRight' && titleInput.selectionStart === titleInput.value.length) {
+  if (e.key === 'ArrowRight' && titleInput.selectionStart === titleInput.value.length && titleInput.selectionEnd === titleInput.value.length) {
     e.preventDefault();
     authorInput.focus();
     return;
@@ -1991,7 +1994,7 @@ authorInput.addEventListener('keydown', e => {
   }
 
   /* ArrowLeft — move back to title field */
-  if (e.key === 'ArrowLeft' && authorInput.selectionStart === 0) {
+  if (e.key === 'ArrowLeft' && authorInput.selectionStart === 0 && authorInput.selectionEnd === 0) {
     e.preventDefault();
     titleInput.focus();
     titleInput.setSelectionRange(titleInput.value.length, titleInput.value.length);
@@ -2001,10 +2004,10 @@ authorInput.addEventListener('keydown', e => {
 
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') closeFloatingMenu();
-  if (e.key === '/' && !document.activeElement.matches('input, textarea')) {
+  if (e.key === '/' && !document.activeElement.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"])')) {
     e.preventDefault(); titleInput.focus();
   }
-  if (e.key.toLowerCase() === 'z' && (e.metaKey || e.ctrlKey) && !document.activeElement.matches('input, textarea')) {
+  if (e.key.toLowerCase() === 'z' && (e.metaKey || e.ctrlKey) && !document.activeElement.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"])')) {
     e.preventDefault();
     if (e.shiftKey) redoRemove(); else undoRemove();
   }

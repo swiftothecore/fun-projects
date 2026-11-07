@@ -798,8 +798,8 @@ async function auth() {
     getNormalList()[0].notes = 'Retry this edit';
     save();
   });
-  await p.waitForFunction(() => localStorage.getItem('_sb_pending') === '1');
-  await p.waitForFunction(() => localStorage.getItem('_sb_pending') === null);
+  await p.waitForFunction(() => localStorage.getItem('_sb_pending_watchlist') === '1');
+  await p.waitForFunction(() => localStorage.getItem('_sb_pending_watchlist') === null);
   assert.equal(row.data.watchlist[0].notes, 'Retry this edit');
   // Persisted pending data wins over the older remote row on reload.
   failNextWrite = true;
@@ -807,7 +807,7 @@ async function auth() {
     getNormalList()[0].notes = 'Pending across reload';
     save();
   });
-  await p.waitForFunction(() => localStorage.getItem('_sb_pending') === '1');
+  await p.waitForFunction(() => localStorage.getItem('_sb_pending_watchlist') === '1');
   await p.reload();
   await p.waitForFunction(() => document.getElementById('_sb_cloud_btn').title.includes('Saved'));
   assert.equal((await getData(p)).watchlist[0].notes, 'Pending across reload');

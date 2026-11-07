@@ -10,7 +10,10 @@
   const el = id => document.getElementById('_sb_' + id);
   const wrap = el('wrap'), form = el('form_row'), status = el('status');
   let client = null, user = null, loading = true, readReady = false, revision = 0, running = null;
-  let pending = get('_sb_pending') === '1', retry = null, connecting = false;
+  const pendingKey='_sb_pending_'+window._SB_TABLE;
+  // Claim a legacy marker once; future edits stay isolated to their table.
+  if(get(pendingKey)===null && get('_sb_pending')==='1'){put(pendingKey,'1');remove('_sb_pending');}
+  let pending = get(pendingKey) === '1', retry = null, connecting = false;
   const overrides = new Map();
   const authStorage = {
     getItem(key) { return overrides.has(key) ? overrides.get(key) : get(key); },
@@ -37,7 +40,7 @@
   }
   function markPending(value) {
     pending=value;
-    if (value) put('_sb_pending','1'); else remove('_sb_pending');
+    if (value) put(pendingKey,'1'); else remove(pendingKey);
   }
   function scheduleRetry() {
     if (retry) return;
@@ -73,9 +76,14 @@
     revision++; markPending(true); put('_sb_local_ts',String(Date.now()));
     return drain();
   };
+  let authClient=null,authUrl=null,authKey=null;
   function makeClient(url,key) {
+    if(authClient && authUrl===url && authKey===key)return authClient;
     if(typeof supabase==='undefined')throw new Error('Cloud library unavailable. Check your connection.');
-    return supabase.createClient(url,key,{auth:{storage:authStorage,persistSession:true,autoRefreshToken:true}});
+    if(authClient && authClient!==client)authClient.auth.stopAutoRefresh?.();
+    authUrl=url;authKey=key;
+    authClient=supabase.createClient(url,key,{auth:{storage:authStorage,persistSession:true,autoRefreshToken:true}});
+    return authClient;
   }
   async function hydrate() {
     loading=true; readReady=false;
@@ -83,7 +91,6 @@
     try {
       const {data:row,error}=await client.from(window._SB_TABLE).select('data').eq('user_id',user.id).maybeSingle();
       if(error)throw error;
-      readReady=true;
       if(pending || revision!==startRevision || before!==JSON.stringify(window._sbGetData())) {
         markPending(true);
       } else if(row) {
@@ -92,8 +99,10 @@
         finally { window._sbPaused=false; }
         indicator('Loaded from cloud','#5a9e7a');
       } else { markPending(true); }
+      readReady=true;
       setStatus('Connected!'); wrap.style.display='none';
     } catch(error) {
+      readReady=false;
       setStatus('Cloud read failed: '+error.message,true); indicator('Cloud read failed','#c0392b');
       // A failed read is never an empty remote library. Retry the read before writing.
       if(!retry)retry=setTimeout(()=>{retry=null;if(client&&user)hydrate();},5000);
@@ -102,7 +111,10 @@
     await drain();
   }
   function updatePasswordField() { el('pass_in').style.display=user?'none':''; }
+  const subscribedClients=new WeakSet();
   function subscribe(owner) {
+    if(subscribedClients.has(owner))return;
+    subscribedClients.add(owner);
     owner.auth.onAuthStateChange?.((event,session) => {
       if(owner!==client)return;
       user=session?.user||null;
@@ -117,12 +129,13 @@
       const owner=makeClient(url,key);
       const {data,error}=await owner.auth.getSession();
       if(error||!data?.session?.user)return false;
+      if(client&&client!==owner)client.auth.stopAutoRefresh?.();
       client=owner;user=data.session.user;subscribe(owner);updatePasswordField();
       await hydrate();return true;
     } catch(error) { setStatus(error.message,true); return false; }
   }
   window._sbForceSync=async () => {
-    if(!client||!user){if(!await restore())return;}
+    if(!client||!user){await restore();return;}
     if(retry){clearTimeout(retry);retry=null;}
     await hydrate();
   };
@@ -152,6 +165,7 @@
         session=data.session || (data.user ? {user:data.user} : null);
       }
       if(!session?.user)throw new Error('Authentication returned no user');
+      if(client&&client!==owner)client.auth.stopAutoRefresh?.();
       client=owner;user=session.user;subscribe(owner);
       for(const [field,value] of Object.entries({url,key,email}))put('_sb_'+field,value);
       el('pass_in').value='';remove('_sb_pass');updatePasswordField();
@@ -164,8 +178,10 @@
     try { config=JSON.parse(text); } catch { config={}; text.replace(/^([\w]+)\s*[=:]\s*(.+)$/gm,(_,key,value)=>{config[key]=value.trim().replace(/^['"]|['"]$/g,'');}); }
     if(!config || typeof config!=='object')return {};
     const entries=Object.entries(config);
-    const pick=pattern=>entries.find(([key])=>pattern.test(key))?.[1];
-    return {url:pick(/url/i)||text.match(/https:\/\/[a-z0-9-]+\.supabase\.co/i)?.[0],key:pick(/anon|key/i)||text.match(/eyJ[\w-]+\.[\w-]+\.[\w-]+|sb_publishable_[\w-]+/)?.[0],email:pick(/email|mail/i)||text.match(/[\w.%+-]+@[\w.-]+\.[a-z]{2,}/i)?.[0]};
+    const unsafe=(key,value)=>/service[_-]?role|secret/i.test(key)||/^sb_secret_/i.test(String(value));
+    const safeText=entries.reduce((remaining,[key,value])=>unsafe(key,value)?remaining.split(String(value)).join(''):remaining,text);
+    const pick=pattern=>entries.find(([key,value])=>!unsafe(key,value)&&pattern.test(key))?.[1];
+    return {url:pick(/url/i)||text.match(/https:\/\/[a-z0-9-]+\.supabase\.co/i)?.[0],key:pick(/anon|publishable|public|key/i)||safeText.match(/eyJ[\w-]+\.[\w-]+\.[\w-]+|sb_publishable_[\w-]+/)?.[0],email:pick(/email|mail/i)||text.match(/[\w.%+-]+@[\w.-]+\.[a-z]{2,}/i)?.[0]};
   }
   el('paste_toggle').onclick=()=>{const row=el('paste_row');const open=row.style.display==='block';row.style.display=open?'none':'block';el('paste_toggle').textContent=open?'Paste config':'Hide paste';if(!open)el('paste_area').focus();};
   function applyPaste() {

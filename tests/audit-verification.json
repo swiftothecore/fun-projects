@@ -1,0 +1,715 @@
+{
+  "baselineCommit": "1ef9219",
+  "distinctIssues": 101,
+  "baselinePassed": 0,
+  "fixedPassed": 101,
+  "cases": [
+    {
+      "issue": 1,
+      "area": "reading-room",
+      "behavior": "unknown book dates are not labelled added today",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "issue": 2,
+      "area": "reading-room",
+      "behavior": "typing hides previously clickable book results immediately",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "issue": 3,
+      "area": "reading-room",
+      "behavior": "failed searches clear the previous keyboard selection model",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "issue": 4,
+      "area": "reading-room",
+      "behavior": "arrow navigation preserves a text selection",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "issue": 5,
+      "area": "reading-room",
+      "behavior": "global shortcuts preserve contenteditable typing",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "issue": 6,
+      "area": "reading-room",
+      "behavior": "a selected edition cover renders before its cache request finishes",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "issue": 7,
+      "area": "reading-room",
+      "behavior": "author grouping handles prototype-named authors",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "issue": 8,
+      "area": "reading-room",
+      "behavior": "theme action label follows the active theme",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "issue": 9,
+      "area": "reading-room",
+      "behavior": "cover chooser buttons identify their cover to screen readers",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "issue": 10,
+      "area": "album-atlas",
+      "behavior": "new album input hides old clickable search results",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "issue": 11,
+      "area": "album-atlas",
+      "behavior": "album search result years render as text",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "issue": 12,
+      "area": "album-atlas",
+      "behavior": "album search cover IDs cannot inject attributes",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "issue": 13,
+      "area": "album-atlas",
+      "behavior": "Escape closes album search and card menus",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "issue": 14,
+      "area": "album-atlas",
+      "behavior": "search shortcut does not steal textarea input",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "issue": 15,
+      "area": "album-atlas",
+      "behavior": "sort control describes its current direction",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "issue": 16,
+      "area": "album-atlas",
+      "behavior": "album search labels are associated with their fields",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "issue": 17,
+      "area": "album-atlas",
+      "behavior": "desktop view toggle icon matches its destination",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "issue": 18,
+      "area": "album-atlas",
+      "behavior": "malformed cached artwork falls back to the cover service",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "issue": 19,
+      "area": "album-atlas",
+      "behavior": "album context actions are keyboard focusable",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "issue": 20,
+      "area": "album-atlas",
+      "behavior": "cloud replacement dismisses obsolete search results",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "issue": 21,
+      "area": "tv-reverie",
+      "behavior": "typing a TV query immediately removes old selectable results",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "issue": 22,
+      "area": "tv-reverie",
+      "behavior": "an older response body cannot hide a newer search spinner",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "issue": 23,
+      "area": "tv-reverie",
+      "behavior": "prototype-named TV searches do not invoke bogus alias lookups",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "issue": 24,
+      "area": "tv-reverie",
+      "behavior": "detail metadata is escaped",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "issue": 25,
+      "area": "tv-reverie",
+      "behavior": "binge estimates reject negative episode metadata",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "issue": 26,
+      "area": "tv-reverie",
+      "behavior": "invalid saved dates remain editable",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "issue": 27,
+      "area": "tv-reverie",
+      "behavior": "binge durations retain minutes beyond one day",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "issue": 28,
+      "area": "tv-reverie",
+      "behavior": "malformed category settings do not crash detach controls",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "issue": 29,
+      "area": "tv-reverie",
+      "behavior": "one invalid stored show does not discard the valid library",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "issue": 30,
+      "area": "tv-reverie",
+      "behavior": "changing filters clears hidden bulk selections",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "issue": 31,
+      "area": "tv-reverie",
+      "behavior": "invalid stored view preferences fall back to a supported view",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "issue": 32,
+      "area": "tv-reverie",
+      "behavior": "reopening a show form dismisses stale category suggestions",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "issue": 33,
+      "area": "tv-reverie",
+      "behavior": "status changes cannot be discarded by an older deletion undo",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "issue": 34,
+      "area": "tv-reverie",
+      "behavior": "TV form labels identify their inputs",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "issue": 35,
+      "area": "tv-reverie",
+      "behavior": "streaming tiles support keyboard activation",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "issue": 36,
+      "area": "tv-reverie",
+      "behavior": "show cards can be opened with the keyboard",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "issue": 37,
+      "area": "tv-reverie",
+      "behavior": "global TV shortcuts preserve contenteditable text",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "issue": 38,
+      "area": "tv-reverie",
+      "behavior": "future watched dates are rejected by the Save action",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "issue": 39,
+      "area": "music-videos",
+      "behavior": "editing a channel query removes old clickable results",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "issue": 40,
+      "area": "music-videos",
+      "behavior": "cloud replacement invalidates an in-progress artist import",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "issue": 41,
+      "area": "music-videos",
+      "behavior": "finishing an older import cannot dismiss a newer Add dialog",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "issue": 42,
+      "area": "music-videos",
+      "behavior": "range selection keeps its anchor when refresh inserts earlier videos",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "issue": 43,
+      "area": "music-videos",
+      "behavior": "touch users can start video selection with a dedicated control",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "issue": 44,
+      "area": "music-videos",
+      "behavior": "cloud rejects mismatched video dictionary keys atomically",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "issue": 45,
+      "area": "music-videos",
+      "behavior": "official video detection handles square-bracketed titles",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "issue": 46,
+      "area": "music-videos",
+      "behavior": "channel search field has an associated accessible label",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "issue": 47,
+      "area": "music-videos",
+      "behavior": "video cards support keyboard opening",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "issue": 48,
+      "area": "music-videos",
+      "behavior": "artist filter chips support keyboard activation",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "issue": 49,
+      "area": "music-videos",
+      "behavior": "invalid video dates render an unknown-date label",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "issue": 50,
+      "area": "music-videos",
+      "behavior": "deleting selected videos refreshes artist counts",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "issue": 51,
+      "area": "palette-painter",
+      "behavior": "ZIP headers mark filenames as UTF-8",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "issue": 52,
+      "area": "palette-painter",
+      "behavior": "extension-only filenames use a usable default basename",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "issue": 53,
+      "area": "palette-painter",
+      "behavior": "saved palettes restore their flipped colour order",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "issue": 54,
+      "area": "palette-painter",
+      "behavior": "PNG export records the palette from capture time",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "issue": 55,
+      "area": "palette-painter",
+      "behavior": "save feedback cannot reenable Save for an empty canvas",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "issue": 56,
+      "area": "palette-painter",
+      "behavior": "PNG clipboard captures cannot overlap",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "issue": 57,
+      "area": "palette-painter",
+      "behavior": "saving a palette preserves custom gallery order",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "issue": 58,
+      "area": "palette-painter",
+      "behavior": "selected collection downloads use collection order",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "issue": 59,
+      "area": "palette-painter",
+      "behavior": "unencoded SVG data URLs support literal percentages",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "issue": 60,
+      "area": "palette-painter",
+      "behavior": "malformed stored colour codes cannot break or inject comparison markup",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "issue": 61,
+      "area": "palette-painter",
+      "behavior": "collection tabs do not nest interactive buttons",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "issue": 62,
+      "area": "palette-painter",
+      "behavior": "gallery filenames can be renamed with the keyboard",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "issue": 63,
+      "area": "palette-painter",
+      "behavior": "gallery palettes can be loaded with the keyboard",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "issue": 64,
+      "area": "palette-painter",
+      "behavior": "comparison colour copy controls are keyboard focusable",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "issue": 65,
+      "area": "palette-painter",
+      "behavior": "collection membership handles punctuation in record IDs",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "issue": 66,
+      "area": "palette-painter",
+      "behavior": "Escape dismisses the collection popover",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "issue": 67,
+      "area": "palette-painter",
+      "behavior": "comparison focuses its dialog and returns focus when closed",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "issue": 68,
+      "area": "palette-painter",
+      "behavior": "collection reorder ignores cards animating out of the collection",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "issue": 69,
+      "area": "palette-painter",
+      "behavior": "deletion undo restores collection item order",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "issue": 70,
+      "area": "palette-painter",
+      "behavior": "starring a gallery item preserves the other selected palettes",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "issue": 71,
+      "area": "my-watchlist",
+      "behavior": "typing a movie query hides old selectable results immediately",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "issue": 72,
+      "area": "my-watchlist",
+      "behavior": "prototype-named movie queries avoid bogus alias requests",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "issue": 73,
+      "area": "my-watchlist",
+      "behavior": "runtime backfill preserves a manual value entered while awaiting TMDB",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "issue": 74,
+      "area": "my-watchlist",
+      "behavior": "unknown API runtimes remain eligible for later backfill",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "issue": 75,
+      "area": "my-watchlist",
+      "behavior": "watched-date Save rejects dates beyond its maximum",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "issue": 76,
+      "area": "my-watchlist",
+      "behavior": "invalid stored dates remain editable",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "issue": 77,
+      "area": "my-watchlist",
+      "behavior": "movie cards support keyboard opening",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "issue": 78,
+      "area": "my-watchlist",
+      "behavior": "movie form labels are associated with their inputs",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "issue": 79,
+      "area": "my-watchlist",
+      "behavior": "prototype-named VPN countries render the unknown-country marker",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "issue": 80,
+      "area": "my-watchlist",
+      "behavior": "a corrupt stored movie does not discard valid movies beside it",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "issue": 81,
+      "area": "shared cloud",
+      "behavior": "force sync restores and reads once when starting disconnected",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "issue": 82,
+      "area": "shared cloud",
+      "behavior": "reconnecting to the same project reuses its auth client",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "issue": 83,
+      "area": "shared cloud",
+      "behavior": "pending sync state is scoped to its app",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "issue": 84,
+      "area": "shared cloud",
+      "behavior": "invalid remote data blocks writes until a successful read",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "issue": 85,
+      "area": "shared cloud",
+      "behavior": "config paste chooses the public key over a service-role secret",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "issue": 86,
+      "area": "tech-acronyms",
+      "behavior": "CI/CD accepts Continuous Delivery as a valid expansion",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "issue": 87,
+      "area": "tech-acronyms",
+      "behavior": "finishing or leaving a quiz moves focus into the visible screen",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "issue": 88,
+      "area": "tech-acronyms",
+      "behavior": "IME composition Enter does not submit an unfinished answer",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "issue": 89,
+      "area": "tech-acronyms",
+      "behavior": "holding Enter after an answer cannot dismiss its feedback",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "issue": 90,
+      "area": "apple-music",
+      "behavior": "dark-side controls initialize without canvas support",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "issue": 91,
+      "area": "apple-music",
+      "behavior": "reduced-motion mode suppresses ambient lightning after entering dark side",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "issue": 92,
+      "area": "apple-music",
+      "behavior": "screenshot remains busy until clipboard completion",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "issue": 93,
+      "area": "sotr-countdown",
+      "behavior": "reduced motion stops embers and decorative countdown animation",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "issue": 94,
+      "area": "sotr-countdown",
+      "behavior": "release status is announced to screen readers",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "issue": 95,
+      "area": "petal-countdown",
+      "behavior": "reduced motion stops falling petals and reveals the title immediately",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "issue": 96,
+      "area": "olivia-countdown",
+      "behavior": "seconds do not trigger continuous polite screen-reader announcements",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "issue": 97,
+      "area": "thirteen",
+      "behavior": "calendar calculations work for years before 100",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "issue": 98,
+      "area": "thirteen",
+      "behavior": "Friday filters expose their selected state to screen readers",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "issue": 99,
+      "area": "thirteen",
+      "behavior": "rules dialog manages focus and returns it to its trigger",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "issue": 100,
+      "area": "project directory",
+      "behavior": "project cards retain visible project names if preview images fail",
+      "baselinePassed": false,
+      "fixedPassed": true
+    },
+    {
+      "issue": 101,
+      "area": "project directory",
+      "behavior": "Tech Acronyms is reachable from the project directory",
+      "baselinePassed": false,
+      "fixedPassed": true
+    }
+  ]
+}

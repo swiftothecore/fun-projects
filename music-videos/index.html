@@ -595,7 +595,12 @@
     @media (max-width: 380px) {
       .video-grid { grid-template-columns: 1fr; }
     }
-  </style>
+  button.chip { font: inherit; }
+.sel-box { cursor: pointer; padding: 0; }
+.v-card:focus-visible, .chip:focus-visible, .sel-box:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.v-card:focus-within .sel-box, .v-card:hover .sel-box { opacity: 1; }
+@media (hover: none) { .sel-box { opacity: 1; } }
+</style>
 </head>
 <body>
 
@@ -759,8 +764,8 @@
     </div>
     <div id="modal-form">
       <div class="form-group">
-        <label class="form-label">Artist Name</label>
-        <input class="form-input" type="text" id="artist-input" placeholder="e.g. Olivia Rodrigo" autocomplete="off">
+        <label class="form-label" for="artist-input">Artist Name</label>
+        <input class="form-input" type="text" id="artist-input" aria-label="Artist or YouTube channel" placeholder="e.g. Olivia Rodrigo" autocomplete="off">
       </div>
       <button class="btn btn-primary btn-full" id="search-btn" onclick="doChannelSearch()">
         Search YouTube Channels
@@ -844,7 +849,7 @@ let lastFetch = mvMap(mvParse(K.LAST_FETCH, {}));
 if (!Array.isArray(artists)) artists=[];
 artists=artists.filter(a=>a&&typeof a.id==='string'&&typeof a.name==='string');
 videos=Object.fromEntries(Object.entries(videos).filter(([id,v])=>v&&typeof v.videoId==='string'&&typeof v.title==='string'));
-let channelSequence=0;
+let channelSequence=0, libraryGeneration=0, addDialogSession=0;
 const addingChannels=new Set();
 const prevVisit = mvGet(K.LAST_VISIT) || null;
 mvSet(K.LAST_VISIT, new Date().toISOString());
@@ -858,6 +863,7 @@ let searchComplete = false;
 // Selection state
 let selectedIds     = new Set();
 let lastSelectedIdx = -1;
+let lastSelectedId = null;
 
 // ── THEME ──────────────────────────────────────────────────
 function initTheme() {
@@ -893,7 +899,7 @@ const saveLastFetch = () => { mvSet(K.LAST_FETCH, JSON.stringify(lastFetch)); tr
 
 // ── MUSIC VIDEO FILTER ─────────────────────────────────────
 function isMusicVideo(title) {
-  const t = title.toLowerCase();
+  const t = String(title || '').toLowerCase().replace(/\[/g,'(').replace(/\]/g,')');
   const exclude = [
     '(official lyric video)', '(lyric video)',
     '(official audio)',        '(audio)',
@@ -1009,6 +1015,7 @@ async function addArtist(channel) {
     showToast('This artist is already in your list.', 'err');
     closeModal(); return;
   }
+  const generation=libraryGeneration, dialogSession=addDialogSession;
   addingChannels.add(channel.channelId);
   document.getElementById('modal-form').classList.add('hidden');
   document.getElementById('modal-progress').classList.remove('hidden');
@@ -1019,19 +1026,22 @@ async function addArtist(channel) {
     const artistId = 'a_' + crypto.randomUUID();
     const newVids  = await fetchPlaylist(
       uploadsId, artistId, channel.name,
-      (page, n) => setFetchMsg(`Scanning page ${page}... ${n} music video${n !== 1 ? 's' : ''} found`)
+      (page, n) => {if(dialogSession===addDialogSession)setFetchMsg(`Scanning page ${page}... ${n} music video${n !== 1 ? 's' : ''} found`);}
     );
+    if (generation!==libraryGeneration) return;
     artists.push({ id:artistId, name:channel.name, channelId:channel.channelId, uploadsPlaylistId:uploadsId, addedAt:new Date().toISOString() });
     for (const [id,video] of Object.entries(newVids)) if (!videos[id]) videos[id]=video;
     lastFetch[artistId] = new Date().toISOString();
     saveArtists(); saveVideos(); saveLastFetch();
     const n = Object.keys(newVids).length;
     showToast(`Added ${channel.name} — ${n} music video${n !== 1 ? 's' : ''} found.`, 'ok');
-    closeModal(); renderAll();
+    if (dialogSession===addDialogSession) closeModal();
+    renderAll();
   } catch (err) {
     console.error(err);
+    if (generation!==libraryGeneration) return;
     showToast('Error: ' + err.message, 'err');
-    closeModal();
+    if (dialogSession===addDialogSession) closeModal();
   } finally { addingChannels.delete(channel.channelId); }
 }
 
@@ -1148,12 +1158,12 @@ function renderAll() { renderChips(); renderGrid(); renderSettingsArtists(); }
 
 function renderChips() {
   const row = document.getElementById('artist-chips');
-  let html  = `<div class="chip ${activeArtist === null ? 'active' : ''}" onclick="setArtist(null)">All Artists</div>`;
+  let html  = `<button type="button" class="chip ${activeArtist === null ? 'active' : ''}" aria-pressed="${activeArtist===null}" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}" onclick="setArtist(null)">All Artists</button>`;
   for (const a of artists) {
     const n = Object.values(videos).filter(v => v.artistId === a.id).length;
-    html += `<div class="chip ${activeArtist === a.id ? 'active' : ''}" onclick="setArtist(${jsAttr(a.id)})">
+    html += `<button type="button" class="chip ${activeArtist === a.id ? 'active' : ''}" aria-pressed="${activeArtist===a.id}" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}" onclick="setArtist(${jsAttr(a.id)})">
       ${esc(a.name)} <span class="chip-count">${n}</span>
-    </div>`;
+    </button>`;
   }
   row.innerHTML = html;
 }
@@ -1171,6 +1181,7 @@ function getFiltered() {
 }
 
 function fmtDate(iso) {
+  if(!iso || !Number.isFinite(new Date(iso).getTime()))return 'Date unknown';
   return new Date(iso).toLocaleDateString('en-AU', { day:'numeric', month:'short', year:'numeric' });
 }
 
@@ -1208,12 +1219,12 @@ function renderGrid() {
     const w   = v.watched;
     const nw  = isNew(v);
     const sel = selectedIds.has(v.videoId);
-    return `<div class="v-card${w ? ' watched' : ''}${sel ? ' selected' : ''}" data-videoid="${esc(v.videoId)}" onclick="handleCardClick(${jsAttr(v.videoId)},event)">
+    return `<div class="v-card${w ? ' watched' : ''}${sel ? ' selected' : ''}" role="group" aria-label="${esc(v.title)}" tabindex="0" onkeydown="if(event.target===this&&(event.key==='Enter'||event.key===' ')){event.preventDefault();handleCardClick(${jsAttr(v.videoId)},event)}" data-videoid="${esc(v.videoId)}" onclick="handleCardClick(${jsAttr(v.videoId)},event)">
       <div class="thumb-wrap">
         <img class="thumb-img" src="${esc(v.thumbnail)}" onerror="this.onerror=null;this.src=${jsAttr(fb(v.videoId))}" loading="lazy" alt="${esc(v.title)}">
         <div class="thumb-overlay"></div>
         ${nw ? '<div class="badge-new">New</div>' : ''}
-        <div class="sel-box">${selCheck}</div>
+        <button type="button" class="sel-box" aria-label="Select ${esc(v.title)}" aria-pressed="${sel}" onclick="event.stopPropagation();toggleSelect(${jsAttr(v.videoId)})">${selCheck}</button>
         <button class="seen-pill" onclick="toggleWatched(${jsAttr(v.videoId)},event)" title="${w ? 'Mark as unwatched' : 'Mark as watched'}">${w ? 'Seen' : 'Mark seen'}</button>
       </div>
       <div class="card-body">
@@ -1292,6 +1303,7 @@ function toggleSelect(videoId) {
     selectedIds.delete(videoId);
   } else {
     selectedIds.add(videoId);
+    lastSelectedId = videoId;
     lastSelectedIdx = vids.findIndex(v => v.videoId === videoId);
   }
   updateSelectionUI();
@@ -1302,23 +1314,24 @@ function rangeSelect(videoId) {
   const idx  = vids.findIndex(v => v.videoId === videoId);
   if (idx === -1) return;
 
+  lastSelectedIdx=vids.findIndex(v=>v.videoId===lastSelectedId);
   if (lastSelectedIdx === -1 || selectedIds.size === 0) {
     selectedIds.add(videoId);
-    lastSelectedIdx = idx;
+    lastSelectedIdx = idx; lastSelectedId=videoId;
   } else {
     const from = Math.min(lastSelectedIdx, idx);
     const to   = Math.max(lastSelectedIdx, idx);
     for (let i = from; i <= to; i++) selectedIds.add(vids[i].videoId);
-    lastSelectedIdx = idx;
+    lastSelectedIdx = idx; lastSelectedId=videoId;
   }
   updateSelectionUI();
 }
 
 function clearSelection() {
   selectedIds.clear();
-  lastSelectedIdx = -1;
+  lastSelectedIdx = -1; lastSelectedId=null;
   document.documentElement.classList.remove('ytmv-selecting');
-  document.querySelectorAll('.v-card.selected').forEach(c => c.classList.remove('selected'));
+  document.querySelectorAll('.v-card.selected').forEach(c => {c.classList.remove('selected');c.querySelector('.sel-box')?.setAttribute('aria-pressed','false');});
   document.getElementById('selection-bar').classList.remove('visible');
   document.getElementById('sel-count').textContent = '';
 }
@@ -1328,6 +1341,7 @@ function updateSelectionUI() {
   document.documentElement.classList.toggle('ytmv-selecting', n > 0);
   document.querySelectorAll('.v-card[data-videoid]').forEach(card => {
     card.classList.toggle('selected', selectedIds.has(card.dataset.videoid));
+    card.querySelector('.sel-box')?.setAttribute('aria-pressed',String(selectedIds.has(card.dataset.videoid)));
   });
   const bar = document.getElementById('selection-bar');
   bar.classList.toggle('visible', n > 0);
@@ -1349,11 +1363,12 @@ function selDelete() {
   const n = selectedIds.size;
   if (!confirm(`Remove ${n} video${n !== 1 ? 's' : ''} from your tracker?\n\nThis only affects your local list — nothing is changed on YouTube.`)) return;
   selectedIds.forEach(id => { delete videos[id]; });
-  saveVideos(); clearSelection(); renderGrid();
+  saveVideos(); clearSelection(); renderAll();
 }
 
 // ── ADD ARTIST MODAL ───────────────────────────────────────
 function openAddModal() {
+  addDialogSession++;
   channelSequence++;
   _searchResults=[];
   document.getElementById('search-btn').disabled=false;
@@ -1369,6 +1384,7 @@ function openAddModal() {
 }
 
 function closeModal() {
+  addDialogSession++;
   channelSequence++;
   document.getElementById('add-modal').classList.remove('open');
   searchComplete = false;
@@ -1513,7 +1529,9 @@ document.addEventListener('DOMContentLoaded', () => {
     channelSequence++;
     document.getElementById('search-btn').disabled=false;
     document.getElementById('search-btn').textContent='Search YouTube Channels';
-    if (searchComplete) { searchComplete = false; renderChannelResults(); }
+    searchComplete=false; _searchResults=[];
+    document.getElementById('ch-results').innerHTML='';
+    document.getElementById('modal-hint').textContent='';
   });
 });
 
@@ -1611,8 +1629,9 @@ window._sbGetData = function() {
 window._sbOnLoad = function(data) {
   if (!data || !Array.isArray(data.artists) || !data.artists.every(a=>a&&typeof a.id==='string'&&typeof a.name==='string') ||
       !data.videos || typeof data.videos!=='object' || Array.isArray(data.videos) ||
-      !Object.values(data.videos).every(v=>v&&typeof v.videoId==='string'&&typeof v.title==='string') ||
+      !Object.entries(data.videos).every(([id,v])=>v&&typeof v.videoId==='string'&&id===v.videoId&&typeof v.title==='string') ||
       (data.lastFetch!==undefined && (!data.lastFetch || typeof data.lastFetch!=='object' || Array.isArray(data.lastFetch)))) return false;
+  libraryGeneration++; closeModal();
   artists=data.artists; videos=data.videos; lastFetch=data.lastFetch||{};
   if(activeArtist && !artists.some(a=>a.id===activeArtist))activeArtist=null;
   clearSelection();

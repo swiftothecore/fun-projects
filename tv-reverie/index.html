@@ -921,52 +921,52 @@
       <div id="movieDetailsCollapsible">
         <div class="form-grid">
           <div class="field full">
-            <label>Title <span style="color:var(--danger)">*</span></label>
+            <label for="fTitle">Title <span style="color:var(--danger)">*</span></label>
             <input type="text" id="fTitle" placeholder="e.g. Severance" oninput="syncCollapsedTitle();updateModalJustWatch();">
           </div>
-          <div class="field"><label>First Aired</label><input type="number" id="fYear" placeholder="2022" min="1900" max="2099" oninput="syncCollapsedTitle()"></div>
-          <div class="field"><label>Genre</label><input type="text" id="fGenre" placeholder="Sci-Fi, Drama..." oninput="syncCollapsedTitle()"></div>
-          <div class="field"><label>Creator</label><input type="text" id="fCreator" placeholder="Creator / Showrunner"></div>
-          <div class="field"><label>Rating</label><input type="text" id="fRating" placeholder="e.g. 8.5/10"></div>
-          <div class="field"><label>Seasons</label><input type="number" id="fSeasons" placeholder="e.g. 3" min="1" max="99"></div>
-          <div class="field"><label>Ep. runtime <span style="font-weight:400;color:var(--text-muted)">(mins)</span></label><input type="number" id="fEpisodeRuntime" placeholder="e.g. 45" min="1" max="600"></div>
-          <div class="field"><label>Total episodes</label><input type="number" id="fEpisodeCount" placeholder="e.g. 24" min="1"></div>
+          <div class="field"><label for="fYear">First Aired</label><input type="number" id="fYear" placeholder="2022" min="1900" max="2099" oninput="syncCollapsedTitle()"></div>
+          <div class="field"><label for="fGenre">Genre</label><input type="text" id="fGenre" placeholder="Sci-Fi, Drama..." oninput="syncCollapsedTitle()"></div>
+          <div class="field"><label for="fCreator">Creator</label><input type="text" id="fCreator" placeholder="Creator / Showrunner"></div>
+          <div class="field"><label for="fRating">Rating</label><input type="text" id="fRating" placeholder="e.g. 8.5/10"></div>
+          <div class="field"><label for="fSeasons">Seasons</label><input type="number" id="fSeasons" placeholder="e.g. 3" min="1" max="99"></div>
+          <div class="field"><label for="fEpisodeRuntime">Ep. runtime <span style="font-weight:400;color:var(--text-muted)">(mins)</span></label><input type="number" id="fEpisodeRuntime" placeholder="e.g. 45" min="1" max="600"></div>
+          <div class="field"><label for="fEpisodeCount">Total episodes</label><input type="number" id="fEpisodeCount" placeholder="e.g. 24" min="1"></div>
           <div class="field" style="position:relative;">
-            <label>Category</label>
+            <label for="fCategory">Category</label>
             <input type="text" id="fCategory" placeholder="e.g. Sci-Fi, Date Night..." autocomplete="off"
               oninput="filterCategorySuggestions()" onfocus="filterCategorySuggestions()" onblur="setTimeout(hideCategorySuggestions,150)" onkeydown="onCategoryKeyDown(event)">
             <div id="categoryDropdown" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:9999;background:var(--surface2);border:1px solid var(--border-hi);border-radius:var(--radius);margin-top:4px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,0.5);"></div>
           </div>
           <div class="field full">
-            <label>Poster Image URL</label>
+            <label for="fPoster">Poster Image URL</label>
             <div class="poster-preview-row">
               <div class="poster-preview-thumb" id="posterThumb">📺</div>
               <input type="url" id="fPoster" placeholder="https://..." oninput="updatePosterPreview(this.value)" style="flex:1">
             </div>
           </div>
-          <div class="field full"><label>Notes</label><textarea id="fNotes" placeholder="Why you want to watch it, who recommended it, etc."></textarea></div>
+          <div class="field full"><label for="fNotes">Notes</label><textarea id="fNotes" placeholder="Why you want to watch it, who recommended it, etc."></textarea></div>
         </div>
       </div>
 
       <div class="streaming-section">
         <div class="form-section-label" style="margin-top:0;">Where to Watch</div>
         <div class="streaming-grid">
-          <div class="streaming-tile tile-half netflix" onclick="toggleTile(this)" data-service="netflix">
+          <div class="streaming-tile tile-half netflix" role="button" tabindex="0" aria-pressed="false" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();event.stopPropagation();toggleTile(this)}" onclick="toggleTile(this)" data-service="netflix">
             <span class="tile-label netflix">Netflix</span>
           </div>
-          <div class="streaming-tile tile-half disney" onclick="toggleTile(this)" data-service="disney">
+          <div class="streaming-tile tile-half disney" role="button" tabindex="0" aria-pressed="false" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();event.stopPropagation();toggleTile(this)}" onclick="toggleTile(this)" data-service="disney">
             <span class="tile-label disney">Disney+</span>
           </div>
-          <div class="streaming-tile tile-third prime" onclick="toggleTile(this)" data-service="prime">
+          <div class="streaming-tile tile-third prime" role="button" tabindex="0" aria-pressed="false" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();event.stopPropagation();toggleTile(this)}" onclick="toggleTile(this)" data-service="prime">
             <span class="tile-label prime">Prime Video</span>
           </div>
-          <div class="streaming-tile tile-third hbomax" onclick="toggleTile(this)" data-service="hbomax">
+          <div class="streaming-tile tile-third hbomax" role="button" tabindex="0" aria-pressed="false" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();event.stopPropagation();toggleTile(this)}" onclick="toggleTile(this)" data-service="hbomax">
             <span class="tile-label hbomax">HBO Max</span>
           </div>
-          <div class="streaming-tile tile-third appletv" onclick="toggleTile(this)" data-service="appletv">
+          <div class="streaming-tile tile-third appletv" role="button" tabindex="0" aria-pressed="false" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();event.stopPropagation();toggleTile(this)}" onclick="toggleTile(this)" data-service="appletv">
             <span class="tile-label appletv">Apple TV+</span>
           </div>
-          <div class="streaming-tile tile-full other" onclick="toggleTile(this)" data-service="other">
+          <div class="streaming-tile tile-full other" role="button" tabindex="0" aria-pressed="false" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();event.stopPropagation();toggleTile(this)}" onclick="toggleTile(this)" data-service="other">
             <span class="tile-label other">Other</span>
           </div>
         </div>
@@ -1056,7 +1056,7 @@ function tvStorageGet(key) { try { return localStorage.getItem(key); } catch { r
 function tvStorageSet(key, value) { try { localStorage.setItem(key, value); } catch {} }
 function tvParse(key, fallback) { try { return JSON.parse(tvStorageGet(key)) ?? fallback; } catch { return fallback; } }
 function validShows(data) { return Array.isArray(data) && data.every(m => m && typeof m.id === 'string' && typeof m.title === 'string'); }
-function tvDictionary(data) { return Object.assign(Object.create(null), data && typeof data === 'object' && !Array.isArray(data) ? data : {}); }
+function tvDictionary(data) { return Object.assign(Object.create(null), Object.fromEntries(Object.entries(data && typeof data === 'object' && !Array.isArray(data) ? data : {}).filter(([,value]) => value && typeof value === 'object' && !Array.isArray(value)))); }
 let searchSequence = 0, selectionSequence = 0;
 function resetShowSearch() {
   clearTimeout(searchTimer); searchSequence++; selectionSequence++;
@@ -1064,10 +1064,12 @@ function resetShowSearch() {
 }
 function positiveInteger(value) { const n = Number(value); return Number.isInteger(n) && n > 0 ? n : null; }
 var shows=tvParse('tvshows_v1', []);
-if (!validShows(shows)) shows = [];
+if (!Array.isArray(shows)) shows = [];
+shows = shows.filter(m => m && typeof m.id === 'string' && typeof m.title === 'string');
 let currentFilter='all',currentCategory=null,currentDetailId=null,editingId=null,searchTimer=null,searchHighlightIndex=-1,_pendingTmdbId=null;
 let _pendingEpisodeRuntime=null,_pendingEpisodeCount=null;
 let currentView=tvStorageGet('tvshows_view')||'grid';
+if (!['grid','compact','list'].includes(currentView)) currentView='grid';
 let currentSort=tvStorageGet('tvshows_sort')||'dateAdded-asc';
 let searchQuery='';
 let selectionMode=false;
@@ -1089,6 +1091,7 @@ const SERVICE_META={
 
 const USER_TZ=(()=>{try{return Intl.DateTimeFormat().resolvedOptions().timeZone||'Australia/Sydney';}catch(e){return'Australia/Sydney';}})();
 function localDateStr(date){
+  if (!Number.isFinite(date.getTime())) date=new Date();
   return new Intl.DateTimeFormat('en-CA',{timeZone:USER_TZ,year:'numeric',month:'2-digit',day:'2-digit'}).format(date);
 }
 
@@ -1145,6 +1148,7 @@ function onSearchInput(val){
   searchSequence++; selectionSequence++;
   clearTimeout(searchTimer);
   const r=document.getElementById('searchResults'),h=document.getElementById('searchHint');
+  r.classList.remove('open'); r.innerHTML=''; searchHighlightIndex=-1; h.classList.remove('visible');
   if(!val.trim()){r.classList.remove('open');h.classList.remove('visible');document.getElementById('searchSpinner').classList.remove('active');searchHighlightIndex=-1;return;}
   document.getElementById('searchSpinner').classList.add('active');
   searchTimer=setTimeout(()=>searchTMDB(val.trim()),400);
@@ -1159,20 +1163,22 @@ async function searchTMDB(q){
   // Alias lookup: route known-broken queries directly to a TV show ID.
   const aliasKey=normalisedQ.toLowerCase();
   const aliasKeyStripped=aliasKey.replace(/\s+/g,'');
-  const aliasId=TMDB_SEARCH_ALIASES[aliasKey]||TMDB_SEARCH_ALIASES[aliasKeyStripped]||null;
+  const aliasId=(Object.hasOwn(TMDB_SEARCH_ALIASES,aliasKey)?TMDB_SEARCH_ALIASES[aliasKey]:null)||(Object.hasOwn(TMDB_SEARCH_ALIASES,aliasKeyStripped)?TMDB_SEARCH_ALIASES[aliasKeyStripped]:null);
   try{
     const fetches=[fetch(`https://api.themoviedb.org/3/search/tv?api_key=${encodeURIComponent(tmdbKey)}&query=${encodeURIComponent(normalisedQ)}&include_adult=false`)];
     if(aliasId)fetches.push(fetch(`https://api.themoviedb.org/3/tv/${aliasId}?api_key=${encodeURIComponent(tmdbKey)}`));
     const [res,aliasRes]=await Promise.all(fetches);
     if(sequence !== searchSequence) return;
     if(!res.ok){if(res.status===401)r.innerHTML=`<div class="search-no-results">Invalid API key. <a href="#" onclick="showApiSettings();return false;" style="color:var(--gold)">Update it here.</a></div>`;else r.innerHTML=`<div class="search-no-results">Search failed (${res.status}).</div>`;r.classList.add('open');sp.classList.remove('active');return;}
-    const d=await res.json();sp.classList.remove('active');
+    const d=await res.json();
+    if(sequence !== searchSequence) return;
     let results=d.results||[];
     if(aliasRes&&aliasRes.ok){
       const aliasShow=await aliasRes.json();
       results=[aliasShow,...results.filter(m=>m.id!==aliasShow.id)];
     }
     if(sequence !== searchSequence) return;
+    sp.classList.remove('active');
     if(!results.length){r.innerHTML=`<div class="search-no-results">No results for "${esc(q)}"</div>`;r.classList.add('open');return;}
     r.innerHTML=results.slice(0,8).map(m=>{
       const yr=m.first_air_date?m.first_air_date.slice(0,4):'?';
@@ -1348,14 +1354,14 @@ function buildCard(m,i){
   const binge=getBingeTime(m);
   const clickFn=`selectionMode?toggleSelectShow(${jsAttr(m.id)}):openDetail(${jsAttr(m.id)})`;
   const exemptPip=(currentFilter==='categories'&&m.detachExempt&&categorySettings[m.category]?.detached)?`<div class="detach-exempt-pip">Visible</div>`:'';
-  return`<div class="card${stale}${graveyardCls}${finishedCls}${selectedCls}" onclick="${clickFn}" data-id="${esc(m.id)}" data-tooltip="${tooltip}" style="animation-delay:${i*0.03}s">${ph}${ov}${exemptPip}<div class="card-body"><div class="card-title">${esc(m.title)}</div><div class="card-meta">${[m.year,m.genre].filter(Boolean).map(esc).join(' &middot; ')}</div>${binge?`<div class="card-meta" style="color:var(--text-muted);font-size:0.68rem;margin-top:1px;">⏱ ${binge}</div>`:''}<div class="card-services">${buildBadges(m,true)}</div></div></div>`;
+  return`<div class="card${stale}${graveyardCls}${finishedCls}${selectedCls}" role="button" tabindex="0" onkeydown="if(event.target===this&&(event.key==='Enter'||event.key===' ')){event.preventDefault();event.stopPropagation();this.click()}" onclick="${clickFn}" data-id="${esc(m.id)}" data-tooltip="${tooltip}" style="animation-delay:${i*0.03}s">${ph}${ov}${exemptPip}<div class="card-body"><div class="card-title">${esc(m.title)}</div><div class="card-meta">${[m.year,m.genre].filter(Boolean).map(esc).join(' &middot; ')}</div>${binge?`<div class="card-meta" style="color:var(--text-muted);font-size:0.68rem;margin-top:1px;">⏱ ${binge}</div>`:''}<div class="card-services">${buildBadges(m,true)}</div></div></div>`;
 }
 
 function buildWatchingCard(m,i){
   const img=m.poster
     ?`<img class="watching-card-poster" src="${esc(m.poster)}" alt="${esc(m.title)}" loading="lazy" onerror="this.style.display='none';this.nextSibling.style.display='flex'"><div class="watching-card-placeholder" style="display:none">📺</div>`
     :`<div class="watching-card-placeholder">📺</div>`;
-  return`<div class="watching-card" onclick="openDetail(${jsAttr(m.id)})" style="animation-delay:${i*0.04}s"><div class="watching-pip"></div>${img}<div class="watching-card-body"><div class="watching-card-title">${esc(m.title)}</div>${m.year?`<div class="watching-card-year">${esc(m.year)}</div>`:''}</div></div>`;
+  return`<div class="watching-card" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();event.stopPropagation();this.click()}" onclick="openDetail(${jsAttr(m.id)})" style="animation-delay:${i*0.04}s"><div class="watching-pip"></div>${img}<div class="watching-card-body"><div class="watching-card-title">${esc(m.title)}</div>${m.year?`<div class="watching-card-year">${esc(m.year)}</div>`:''}</div></div>`;
 }
 
 function getOtherShort(name){
@@ -1578,6 +1584,7 @@ function render(){
 }
 
 function setFilter(f,btn){
+  exitSelectMode(false);
   if(currentFilter===f&&f!=='all'){
     currentFilter='all';currentCategory=null;
     document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
@@ -1859,7 +1866,7 @@ document.addEventListener('keydown',e=>{
   }
   // / focuses the search bar (when not in a text field and no modal open)
   if(e.key==='/'&&!e.metaKey&&!e.ctrlKey&&!e.altKey){
-    const inField=document.activeElement.tagName==='INPUT'||document.activeElement.tagName==='TEXTAREA';
+    const inField=!!document.activeElement.closest('input,textarea,select,[contenteditable]:not([contenteditable="false"])');
     const noModal=!document.getElementById('addModal').classList.contains('open')&&!document.getElementById('detailModal').classList.contains('open');
     if(!inField&&noModal){
       e.preventDefault();
@@ -1996,11 +2003,12 @@ function formatBingeTime(totalMins){
   if(h===0)return`${m}m`;
   if(h<24)return m>0?`${h}h ${m}m`:`${h}h`;
   const d=Math.floor(h/24),rh=h%24;
-  return rh>0?`${d}d ${rh}h`:`${d}d`;
+  return [`${d}d`,rh?`${rh}h`:'',m?`${m}m`:''].filter(Boolean).join(' ');
 }
 function getBingeTime(m){
-  if(!m.episodeRuntime||!m.episodeCount)return null;
-  return formatBingeTime(m.episodeRuntime*m.episodeCount);
+  const runtime=positiveInteger(m.episodeRuntime), count=positiveInteger(m.episodeCount);
+  if(!runtime||!count)return null;
+  return formatBingeTime(runtime*count);
 }
 
 async function backfillBingeData(){
@@ -2103,7 +2111,7 @@ function buildListRow(m,i){
   const selectedCls=selectedIds.has(m.id)?' selected':'';
   const rowClass=`list-row${m.graveyard?' list-row-graveyard':''}${staleClass?staleClass.replace('card-stale','list-stale'):''}${selectedCls}`;
   const clickFn=`selectionMode?toggleSelectShow(${jsAttr(m.id)}):openDetail(${jsAttr(m.id)})`;
-  return`<div class="${rowClass}" onclick="${clickFn}" data-id="${esc(m.id)}" style="animation-delay:${i*0.02}s">
+  return`<div class="${rowClass}" role="button" tabindex="0" onkeydown="if(event.target===this&&(event.key==='Enter'||event.key===' ')){event.preventDefault();event.stopPropagation();this.click()}" onclick="${clickFn}" data-id="${esc(m.id)}" style="animation-delay:${i*0.02}s">
     <div class="list-thumb-wrap">${thumb}${watchingPip}</div>
     <div class="list-info">
       <div class="list-title">${esc(m.title)}</div>
@@ -2153,7 +2161,7 @@ function openDetail(id){
   const jw=`https://www.justwatch.com/au/search?q=${encodeURIComponent(m.title)}`;
 
   // Meta line: year · genre · creator, then rating and seasons on new lines
-  const metaTop=[m.year,m.genre,m.creator].filter(Boolean).join(' · ');
+  const metaTop=[m.year,m.genre,m.creator].filter(Boolean).map(esc).join(' · ');
   const metaRating=m.rating?`<br>★ ${esc(m.rating)}`:'';
   const metaSeasons=m.seasons?`<br>${esc(m.seasons)} season${parseInt(m.seasons)!==1?'s':''}`:'';
   const binge=getBingeTime(m);
@@ -2305,7 +2313,7 @@ function editDateWatched(id){
 function saveDateWatched(id){
   const m=shows.find(x=>x.id===id);if(!m)return;
   const val=document.getElementById('dateWatchedPicker')?.value;
-  if(val){m.dateWatched=new Date(val+'T12:00:00').toISOString();save();render();}
+  if(val && document.getElementById('dateWatchedPicker').checkValidity()){m.dateWatched=new Date(val+'T12:00:00').toISOString();save();render();}
   openDetail(id);
 }
 function editDateAdded(id){
@@ -2323,7 +2331,7 @@ function editDateAdded(id){
 function saveDateAdded(id){
   const m=shows.find(x=>x.id===id);if(!m)return;
   const val=document.getElementById('dateAddedPicker')?.value;
-  if(val){m.dateAdded=new Date(val+'T12:00:00').toISOString();save();render();}
+  if(val && document.getElementById('dateAddedPicker').checkValidity()){m.dateAdded=new Date(val+'T12:00:00').toISOString();save();render();}
   openDetail(id);
 }
 
@@ -2349,12 +2357,12 @@ function openEditModal(id){
 }
 
 function clearForm(){
-  resetShowSearch();
+  resetShowSearch(); hideCategorySuggestions();
   delete document.getElementById('fNotes').dataset.tmdbOverview;
   ['fTitle','fYear','fGenre','fCreator','fRating','fSeasons','fEpisodeRuntime','fEpisodeCount','fPoster','fNotes','fOtherName','fCategory','searchInput'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''});
   const uw=document.querySelector('input[name="showStatus"][value="unwatched"]');
   if(uw)uw.checked=true;
-  document.querySelectorAll('.streaming-tile').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.streaming-tile').forEach(t=>{t.classList.remove('active');t.setAttribute('aria-pressed','false');});
   document.getElementById('fOtherName').classList.remove('visible');
   document.getElementById('posterThumb').innerHTML='📺';
   document.getElementById('searchResults').classList.remove('open');
@@ -2383,16 +2391,18 @@ function populateForm(m){
   const radio=document.querySelector(`input[name="showStatus"][value="${statusVal}"]`);
   if(radio)radio.checked=true;
   // Streaming tiles
-  document.querySelectorAll('.streaming-tile').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.streaming-tile').forEach(t=>{t.classList.remove('active');t.setAttribute('aria-pressed','false');});
   const s=m.streaming||{};
   for(const k of SERVICES){
     if(s[k]?.direct) document.querySelector(`.streaming-tile[data-service="${k}"]`)?.classList.add('active');
   }
+  document.querySelectorAll('.streaming-tile').forEach(t=>t.setAttribute('aria-pressed',String(t.classList.contains('active'))));
   document.getElementById('fOtherName').classList.toggle('visible',!!(s.other?.direct));
 }
 
 function toggleTile(tile){
   tile.classList.toggle('active');
+  tile.setAttribute('aria-pressed',String(tile.classList.contains('active')));
   if(tile.dataset.service==='other'){
     document.getElementById('fOtherName').classList.toggle('visible',tile.classList.contains('active'));
   }
@@ -2443,7 +2453,7 @@ function deleteCurrentShow(){
   const m=shows.find(x=>x.id===editingId);if(!m)return;
   undoStack.push(JSON.parse(JSON.stringify(shows)));redoStack=[];
   shows=shows.filter(x=>x.id!==editingId);
-  save();closeAddModal();render();
+  save(true);closeAddModal();render();
   showDeleteToast(m.title);
 }
 
@@ -2459,13 +2469,13 @@ function dismissToast(t){clearTimeout(t._timer);t.classList.add('out');setTimeou
 function undoDelete(toast){
   if(!undoStack.length)return;
   redoStack.push(JSON.parse(JSON.stringify(shows)));
-  shows=undoStack.pop();save();render();dismissToast(toast);
+  shows=undoStack.pop();save(true);render();dismissToast(toast);
   showInfoToast('Deletion undone.',3000);
 }
 function redoDelete(){
   if(!redoStack.length)return;
   undoStack.push(JSON.parse(JSON.stringify(shows)));
-  shows=redoStack.pop();save();render();
+  shows=redoStack.pop();save(true);render();
   showInfoToast('Deletion redone.',3000);
 }
 function showInfoToast(msg,dur=3000){
@@ -2476,7 +2486,9 @@ function showInfoToast(msg,dur=3000){
 }
 
 // ── Save ──
-function save(){
+function invalidateDeletionHistory(){undoStack=[];redoStack=[];}
+function save(preserveDeletionHistory=false){
+  if(!preserveDeletionHistory)invalidateDeletionHistory();
   tvStorageSet('tvshows_v1',JSON.stringify(shows));
   // Belt-and-suspenders: also trigger sync directly in case the monkey-patch
   // doesn't fire (e.g. if localStorage.setItem throws before reaching it).
@@ -2523,7 +2535,7 @@ document.addEventListener('keydown',e=>{
       saveShow();
     }
   }
-  const inField=document.activeElement.tagName==='INPUT'||document.activeElement.tagName==='TEXTAREA';
+  const inField=!!document.activeElement.closest('input,textarea,select,[contenteditable]:not([contenteditable="false"])');
   // ── Detail modal shortcuts ──
   if(document.getElementById('detailModal').classList.contains('open')&&!document.getElementById('addModal').classList.contains('open')){
     if(!inField&&!e.metaKey&&!e.ctrlKey&&!e.altKey){
@@ -2584,7 +2596,7 @@ document.addEventListener('keydown',e=>{
   }
   if(e.key.toLowerCase()==='z'&&(e.metaKey||e.ctrlKey)&&!e.shiftKey&&!inField){
     e.preventDefault();
-    if(undoStack.length){redoStack.push(JSON.parse(JSON.stringify(shows)));shows=undoStack.pop();save();render();document.querySelectorAll('.toast').forEach(t=>dismissToast(t));showInfoToast('Deletion undone.',3000);}
+    if(undoStack.length){redoStack.push(JSON.parse(JSON.stringify(shows)));shows=undoStack.pop();save(true);render();document.querySelectorAll('.toast').forEach(t=>dismissToast(t));showInfoToast('Deletion undone.',3000);}
   }
   if(e.key.toLowerCase()==='z'&&(e.metaKey||e.ctrlKey)&&e.shiftKey&&!inField){e.preventDefault();redoDelete();}
 });

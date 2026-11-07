@@ -14,10 +14,12 @@ async function _sbRun() {
     return;
   }
 
+  const pendingKey='_sb_pending_watchlist';
+  if(readStorage(pendingKey)===null&&readStorage('_sb_pending')==='1'){writeStorage(pendingKey,'1');removeStorage('_sb_pending');}
   const K = { url: '_sb_url', key: '_sb_key', email: '_sb_email', dismissed: '_sb_dismissed' };
   let _sb = null,
     _user = null,
-    _pendingSync = readStorage('_sb_pending') === '1';
+    _pendingSync = readStorage(pendingKey) === '1';
   let _syncPromise = null,
     _syncRequested = false,
     _pullRetryTimer = null,
@@ -192,7 +194,7 @@ async function _sbRun() {
     try {
       const j = JSON.parse(text.trim());
       const pick = (ps) => {
-        for (const k of Object.keys(j)) {
+        for (const k of Object.keys(j).filter(key=>!/service[_-]?role|secret/i.test(key))) {
           if (ps.some((p) => k.toLowerCase().includes(p))) return String(j[k]);
         }
         return '';
@@ -211,7 +213,7 @@ async function _sbRun() {
     });
     if (Object.keys(kv).length) {
       const pick = (ps) => {
-        for (const k of Object.keys(kv)) {
+        for (const k of Object.keys(kv).filter(key=>!/service[_-]?role|secret/i.test(key))) {
           if (ps.some((p) => k.includes(p))) return kv[k];
         }
         return '';
@@ -326,7 +328,7 @@ async function _sbRun() {
   function _setPending(on) {
     _pendingSync = on;
     try {
-      on ? writeStorage('_sb_pending', '1') : removeStorage('_sb_pending');
+      on ? writeStorage(pendingKey, '1') : removeStorage(pendingKey);
     } catch (e) {}
   }
 
@@ -439,7 +441,7 @@ async function _sbRun() {
   async function _loadCloud() {
     const client = _sb,
       user = _user;
-    const persistedPending = _lsGet('_sb_pending') === '1';
+    const persistedPending = _lsGet(pendingKey) === '1';
     const before = window._sbGetData ? JSON.stringify(window._sbGetData()) : null;
     try {
       const row = await _fetchRow();
@@ -647,6 +649,7 @@ function isSettingsObject(value) {
 function readStoredJSON(key, fallback, validate) {
   try {
     const value = JSON.parse(readStorage(key));
+    if(validate===isMovieList && Array.isArray(value)) return value.filter(m=>m && typeof m.id==='string' && typeof m.title==='string');
     return validate(value) ? value : fallback;
   } catch {
     return fallback;
@@ -678,7 +681,7 @@ function saveCategorySettings() {
 function save(target = 'active', preserveRedo = false) {
   if (!preserveRedo) state.redoStack = [];
   // Persist this even before the async SDK has initialized.
-  writeStorage('_sb_pending', '1');
+  writeStorage('_sb_pending_watchlist', '1');
   if (target === 'lists' || target === 'normal' || (target === 'active' && !state.christmasMode)) {
     writeStorage('watchlist_v2', JSON.stringify(getNormalList()));
   }

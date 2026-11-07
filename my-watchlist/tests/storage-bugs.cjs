@@ -169,7 +169,7 @@ test('cloud writes are serialized and queued saves use the newest state', async 
   assert.equal(app.writes[1].row.data.watchlist[0].title, 'Second edit');
   app.writes[1].completion.resolve({});
   await settle();
-  assert.equal(app.storage.has('_sb_pending'), false);
+  assert.equal(app.storage.has('_sb_pending_watchlist'), false);
 });
 
 test('an older save cannot clear the pending marker for a newer edit', async () => {
@@ -180,10 +180,10 @@ test('an older save cannot clear the pending marker for a newer edit', async () 
   app.edit('Second edit');
   app.writes[0].completion.resolve({});
   await settle();
-  assert.equal(app.storage.get('_sb_pending'), '1');
+  assert.equal(app.storage.get('_sb_pending_watchlist'), '1');
   app.writes[1].completion.resolve({});
   await settle();
-  assert.equal(app.storage.has('_sb_pending'), false);
+  assert.equal(app.storage.has('_sb_pending_watchlist'), false);
 });
 
 test('manual reconnect preserves pending local edits over older cloud data', async () => {

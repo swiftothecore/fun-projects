@@ -560,7 +560,8 @@ function yearEquationParts(day, month, year) {
 
 function getSpecialFridays(year) {
   const out = [];
-  const d   = new Date(year, 0, 1);
+  const d   = new Date(0);
+  d.setFullYear(year,0,1);d.setHours(0,0,0,0);
   while (d.getDay() !== 5) d.setDate(d.getDate() + 1);
   while (d.getFullYear() === year) {
     const day = d.getDate(), month = d.getMonth() + 1;
@@ -608,6 +609,7 @@ function cardIsVisible(cardType) {
 }
 
 function applyFilter() {
+  document.querySelectorAll('.filter-btn').forEach(btn=>btn.setAttribute('aria-pressed',String(activeFilters.has(btn.dataset.filter))));
   let visible = 0;
   document.querySelectorAll('#date-grid .card').forEach(card => {
     const show = cardIsVisible(card.dataset.type);
@@ -690,8 +692,15 @@ let sel = new Date().getFullYear();
 const modal = document.getElementById('modal');
 const taglineBtn = document.getElementById('tagline-btn');
 const closeBtn = document.getElementById('modal-close');
-function openModal()  { modal.classList.remove('hidden'); }
-function closeModal() { modal.classList.add('hidden'); }
+let modalReturnFocus=null;
+function openModal()  { modalReturnFocus=document.activeElement;modal.classList.remove('hidden');closeBtn.focus({preventScroll:true}); }
+function closeModal() { if(modal.classList.contains('hidden'))return;modal.classList.add('hidden');modalReturnFocus?.focus({preventScroll:true}); }
+modal.addEventListener('keydown',e=>{
+  if(e.key!=='Tab')return;
+  const controls=[...modal.querySelectorAll('button,a[href],input,[tabindex="0"]')];
+  const first=controls[0],last=controls.at(-1);
+  if((e.shiftKey&&document.activeElement===first)||(!e.shiftKey&&document.activeElement===last)){e.preventDefault();(e.shiftKey?last:first)?.focus();}
+});
 taglineBtn.addEventListener('click', openModal);
 taglineBtn.addEventListener('keydown', e => { if(e.key==='Enter'||e.key===' '){e.preventDefault();openModal();} });
 closeBtn.addEventListener('click', closeModal);

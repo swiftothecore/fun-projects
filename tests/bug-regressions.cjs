@@ -288,7 +288,7 @@ test(74,'album-atlas','cloud writes are serialized',async()=>{
 },cloudStorage,{cloud:true});
 test(75,'album-atlas','an older completed write cannot clear newer pending changes',async()=>{
   cloudFixture.manualWrites=true;state.listen=[{id:'a',title:'A'}];window._sbSyncNow();state.listen.push({id:'b',title:'B'});window._sbSyncNow();
-  cloudFixture.waitingWrites.shift()();await new Promise(r=>setTimeout(r,0));return localStorage.getItem('_sb_pending')==='1';
+  cloudFixture.waitingWrites.shift()();await new Promise(r=>setTimeout(r,0));return localStorage.getItem('_sb_pending_albums')==='1';
 },cloudStorage,{cloud:true});
 test(76,'album-atlas','manual reconnect preserves existing unsynced local edits',async()=>{
   state.listen=[{id:'local',title:'Local'}];window._sbSyncNow();cloudFixture.remote={listen:[{id:'remote',title:'Remote'}]};
@@ -305,7 +305,7 @@ test(78,'album-atlas','a restored session with no cloud row uploads its local li
 test(79,'album-atlas','a failed cloud read never triggers an upload over unknown remote data',async()=>{window._sbOpenPanel();document.getElementById('_sb_pass_in').value='fixture-password';await document.getElementById('_sb_save_btn').onclick();return cloudFixture.writes.length===0;},
   {...cloudStorage,_sb_pending:'1'},{cloud:true,readError:true,noRow:true});
 test(80,'album-atlas','offline saves persist a pending marker without the SDK',()=>{
-  state.listen=[{id:'local',title:'Local'}];saveState();return localStorage.getItem('_sb_pending')==='1';
+  state.listen=[{id:'local',title:'Local'}];saveState();return localStorage.getItem('_sb_pending_albums')==='1';
 });
 test(81,'album-atlas','failed auth storage writes override stale persisted tokens',()=>{
   const original=Object.getOwnPropertyDescriptor(window,'localStorage');Object.defineProperty(window,'localStorage',{configurable:true,value:{getItem:()=> 'old',setItem(){throw new Error('quota');}}});

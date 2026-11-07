@@ -119,7 +119,7 @@ function buildListRow(m, i) {
       : '';
   const dateLabel = m.watched ? formatDateWatched(m.dateWatched) : formatDateAdded(m.dateAdded);
   const rowClass = `list-row${m.watched ? ' list-row-watched' : ''}${m.graveyard ? ' list-row-graveyard' : ''}${staleClass ? staleClass.replace('card-stale', 'list-stale') : ''}`;
-  return `<div class="${rowClass}" data-id="${esc(m.id)}" data-render-hash="${esc(_cardHash(m))}" onclick="openDetail(${jsAttr(m.id)})" style="animation-delay:${i * 0.02}s">
+  return `<div class="${rowClass}" role="button" tabindex="0" onkeydown="if(event.target===this&&(event.key==='Enter'||event.key===' ')){event.preventDefault();event.stopPropagation();this.click()}" data-id="${esc(m.id)}" data-render-hash="${esc(_cardHash(m))}" onclick="openDetail(${jsAttr(m.id)})" style="animation-delay:${i * 0.02}s">
     <div class="list-thumb-wrap">${thumb}${soonPip}</div>
     <div class="list-info">
       <div class="list-title">${esc(m.title)}</div>
@@ -947,7 +947,7 @@ function buildSoonCard(m, i) {
   const img = src
     ? `<img class="soon-card-poster" data-src="${esc(src)}" alt="${esc(m.title)}" onerror="this.style.display='none';this.nextSibling.style.display='flex'"><div class="soon-card-placeholder" style="display:none">&#127917;</div>`
     : `<div class="soon-card-placeholder">&#127917;</div>`;
-  return `<div class="soon-card" data-id="${esc(m.id)}" onclick="openDetail(${jsAttr(m.id)})" style="animation-delay:${i * 0.04}s"><div class="soon-pip"></div>${img}<div class="soon-card-body"><div class="soon-card-title">${esc(m.title)}</div>${m.year ? `<div class="soon-card-year">${esc(m.year)}</div>` : ''}</div></div>`;
+  return `<div class="soon-card" role="button" tabindex="0" onkeydown="if(event.target===this&&(event.key==='Enter'||event.key===' ')){event.preventDefault();event.stopPropagation();this.click()}" data-id="${esc(m.id)}" onclick="openDetail(${jsAttr(m.id)})" style="animation-delay:${i * 0.04}s"><div class="soon-pip"></div>${img}<div class="soon-card-body"><div class="soon-card-title">${esc(m.title)}</div>${m.year ? `<div class="soon-card-year">${esc(m.year)}</div>` : ''}</div></div>`;
 }
 
 function buildRewatchSoonCard(m, i) {
@@ -955,7 +955,7 @@ function buildRewatchSoonCard(m, i) {
   const img = src
     ? `<img class="rewatch-soon-card-poster" data-src="${esc(src)}" alt="${esc(m.title)}" onerror="this.style.display='none';this.nextSibling.style.display='flex'"><div class="rewatch-soon-card-placeholder" style="display:none">&#127917;</div>`
     : `<div class="rewatch-soon-card-placeholder">&#127917;</div>`;
-  return `<div class="rewatch-soon-card" data-id="${esc(m.id)}" onclick="openDetail(${jsAttr(m.id)})" style="animation-delay:${i * 0.04}s"><div class="rewatch-soon-pip"></div>${img}<div class="rewatch-soon-card-body"><div class="rewatch-soon-card-title">${esc(m.title)}</div>${m.year ? `<div class="rewatch-soon-card-year">${esc(m.year)}</div>` : ''}</div></div>`;
+  return `<div class="rewatch-soon-card" role="button" tabindex="0" onkeydown="if(event.target===this&&(event.key==='Enter'||event.key===' ')){event.preventDefault();event.stopPropagation();this.click()}" data-id="${esc(m.id)}" onclick="openDetail(${jsAttr(m.id)})" style="animation-delay:${i * 0.04}s"><div class="rewatch-soon-pip"></div>${img}<div class="rewatch-soon-card-body"><div class="rewatch-soon-card-title">${esc(m.title)}</div>${m.year ? `<div class="rewatch-soon-card-year">${esc(m.year)}</div>` : ''}</div></div>`;
 }
 
 function buildCard(m, i) {
@@ -978,7 +978,7 @@ function buildCard(m, i) {
     state.categorySettings[m.category]?.detached
       ? `<div class="detach-exempt-pip">Visible</div>`
       : '';
-  return `<div class="card${stale}${graveyardCls}" data-id="${esc(m.id)}" data-render-hash="${esc(_cardHash(m))}" onclick="openDetail(${jsAttr(m.id)})" style="animation-delay:${i * 0.03}s">${ph}${ov}${exemptPip}<div class="card-body"><div class="card-title">${esc(m.title)}</div><div class="card-meta" data-year="${esc(m.year || '')}" data-genre="${esc(m.genre || '')}" data-runtime="${esc(formatRuntime(m.runtime) || '')}">${[m.year, m.genre, formatRuntime(m.runtime)].filter(Boolean).map(esc).join(' &middot; ')}</div><div class="card-services">${buildBadges(m, true)}</div></div></div>`;
+  return `<div class="card${stale}${graveyardCls}" role="button" tabindex="0" onkeydown="if(event.target===this&&(event.key==='Enter'||event.key===' ')){event.preventDefault();event.stopPropagation();this.click()}" data-id="${esc(m.id)}" data-render-hash="${esc(_cardHash(m))}" onclick="openDetail(${jsAttr(m.id)})" style="animation-delay:${i * 0.03}s">${ph}${ov}${exemptPip}<div class="card-body"><div class="card-title">${esc(m.title)}</div><div class="card-meta" data-year="${esc(m.year || '')}" data-genre="${esc(m.genre || '')}" data-runtime="${esc(formatRuntime(m.runtime) || '')}">${[m.year, m.genre, formatRuntime(m.runtime)].filter(Boolean).map(esc).join(' &middot; ')}</div><div class="card-services">${buildBadges(m, true)}</div></div></div>`;
 }
 
 function trimCardMetas() {

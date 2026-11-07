@@ -1828,6 +1828,9 @@
     .compare-body-divider { width: auto; height: 1px; }
     .compare-preview { height: 120px; }
   }
+button.compare-swatch { color: inherit; font: inherit; text-align: left; border: 0; background: transparent; padding: 0; }
+.gallery-item:focus-visible,.compare-swatch:focus-visible,.collection-tab:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.gallery-item:focus-within .gallery-overlay { opacity: 1; }
 </style>
 </head>
 <body data-theme="dark">
@@ -2407,7 +2410,7 @@ Crystal Rose — #D94B87`;
       if (type === 'png' && lower.endsWith('.png')) {
         return cleaned;
       }
-      const base = cleaned.replace(/\.(svg|png)$/i, '');
+      const base = cleaned.replace(/\.(svg|png)$/i, '') || defaultBase;
       return `${base}.${type}`;
     }
 
@@ -2517,7 +2520,7 @@ Crystal Rose — #D94B87`;
         return new Blob([bytes], { type: mime });
       }
 
-      return new Blob([decodeURIComponent(data || '')], { type: mime });
+      return new Blob([decodeURIComponent((data || '').replace(/%(?![0-9a-f]{2})/gi,'%25'))], { type: mime });
     }
 
     const ZIP_ENCODER = new TextEncoder();
@@ -2594,7 +2597,7 @@ Crystal Rose — #D94B87`;
 
         writeUint32(localView, 0, 0x04034b50);
         writeUint16(localView, 4, 20);
-        writeUint16(localView, 6, 0);
+        writeUint16(localView, 6, 0x800);
         writeUint16(localView, 8, 0);
         writeUint16(localView, 10, dosTime);
         writeUint16(localView, 12, dosDate);
@@ -2613,7 +2616,7 @@ Crystal Rose — #D94B87`;
         writeUint32(centralView, 0, 0x02014b50);
         writeUint16(centralView, 4, 20);
         writeUint16(centralView, 6, 20);
-        writeUint16(centralView, 8, 0);
+        writeUint16(centralView, 8, 0x800);
         writeUint16(centralView, 10, 0);
         writeUint16(centralView, 12, dosTime);
         writeUint16(centralView, 14, dosDate);
@@ -2736,6 +2739,10 @@ Crystal Rose — #D94B87`;
       filenameSaveBtn.classList.toggle('download-ready', filenameInput.value.trim().length > 0);
     }
 
+    function paletteCodes(record) {
+      return (Array.isArray(record?.codes) ? record.codes : []).filter(code=>typeof code==='string' && /^#[0-9a-f]{6}$/i.test(code)).map(code=>code.toUpperCase());
+    }
+
     function loadPaletteIntoInput(record) {
       if (!record) return;
       const codes = Array.isArray(record.codes) && record.codes.length
@@ -2746,6 +2753,8 @@ Crystal Rose — #D94B87`;
 
       const originalInput=input.value;
       input.value = codes.join('\n');
+      isFlipped=record.flipped===true;
+      flipBtn.setAttribute('aria-pressed',String(isFlipped)); flipBtn.classList.toggle('active',isFlipped);
       setFilenameInputFromRecord(record);
       input.focus();
       input.setSelectionRange(input.value.length, input.value.length);
@@ -2756,19 +2765,20 @@ Crystal Rose — #D94B87`;
       });
     }
 
-    function saveDownloadRecord(type, filename, codes, svgString, previewDataUrl = '') {
+    function saveDownloadRecord(type, filename, codes, svgString, previewDataUrl = '', flipped = isFlipped) {
       deletionRedoStack.length=0;
       const record = {
         id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
         type,
         filename,
-        codes,
+        codes: codes.slice(),
+        flipped,
         svgString: type === 'svg' ? svgString : '',
         previewDataUrl,
         createdAt: new Date().toISOString(),
       };
 
-      const items = normalizeSavedDownloads([...safeParseSavedDownloads(), record]);
+      const items = normalizeSavedDownloads([record, ...safeParseSavedDownloads()], true);
       persistSavedDownloads(items);
       renderGallery();
       renderCollections();
@@ -2779,9 +2789,9 @@ Crystal Rose — #D94B87`;
       const items=safeParseSavedDownloads();
       if(!items.some(item=>item.id===entry.record.id))items.splice(Math.min(entry.index,items.length),0,entry.record);
       persistSavedDownloads(items);
-      if(entry.favourite)persistFavouriteIds(normalizeFavouriteIds([...safeParseFavouriteIds(),entry.record.id]));
+      if(entry.favourite){const ids=safeParseFavouriteIds();if(!ids.includes(entry.record.id))ids.splice(Math.min(entry.favouriteIndex??ids.length,ids.length),0,entry.record.id);persistFavouriteIds(normalizeFavouriteIds(ids));}
       const collections=safeParseCollections();
-      for(const c of collections)if(entry.collectionIds.includes(c.id)&&!c.itemIds.includes(entry.record.id))c.itemIds.push(entry.record.id);
+      for(const c of collections)if(entry.collectionIds.includes(c.id)&&!c.itemIds.includes(entry.record.id))c.itemIds.splice(Math.min(entry.collectionPositions?.[c.id]??c.itemIds.length,c.itemIds.length),0,entry.record.id);
       persistCollections(collections);
       deletionRedoStack.push(entry);renderGallery();renderCollections();hideDeletionToast();
     }
@@ -2792,7 +2802,7 @@ Crystal Rose — #D94B87`;
       const index=items.findIndex(item=>item.id===entry.record.id);
       if(index===-1)return;
       entry.record=items[index];entry.index=index;
-      entry.favourite=isFavourite(entry.record.id);entry.collectionIds=getCustomCollectionsForItem(entry.record.id).map(c=>c.id);
+      entry.favourite=isFavourite(entry.record.id);entry.favouriteIndex=safeParseFavouriteIds().indexOf(entry.record.id);entry.collectionPositions=Object.fromEntries(getCustomCollectionsForItem(entry.record.id).map(c=>[c.id,c.itemIds.indexOf(entry.record.id)]));entry.collectionIds=getCustomCollectionsForItem(entry.record.id).map(c=>c.id);
       deletionUndoStack.push(entry);
       persistSavedDownloads(items.filter(item=>item.id!==entry.record.id));renderGallery();renderCollections();
     }
@@ -2846,7 +2856,7 @@ Crystal Rose — #D94B87`;
       const currentItems = normalizeSavedDownloads(safeParseSavedDownloads(), true);
       const deleted = currentItems.find((item) => item.id === id);
       if (deleted) {
-        deletionUndoStack.push({ record:deleted,index:currentItems.findIndex(item=>item.id===id),favourite:isFavourite(id),collectionIds:getCustomCollectionsForItem(id).map(c=>c.id) });
+        deletionUndoStack.push({ record:deleted,index:currentItems.findIndex(item=>item.id===id),favourite:isFavourite(id),favouriteIndex:safeParseFavouriteIds().indexOf(id),collectionIds:getCustomCollectionsForItem(id).map(c=>c.id),collectionPositions:Object.fromEntries(getCustomCollectionsForItem(id).map(c=>[c.id,c.itemIds.indexOf(id)])) });
         if (deletionUndoStack.length > MAX_DELETION_HISTORY) deletionUndoStack.shift();
         deletionRedoStack.length = 0;
         showDeletionToast(deleted.filename);
@@ -3002,6 +3012,13 @@ Crystal Rose — #D94B87`;
       card.className = 'gallery-item';
       card.title = 'Double click to load palette';
       card.draggable = true;
+      card.tabIndex=0; card.setAttribute('aria-label',record.filename);
+      card.addEventListener('keydown',event=>{
+        if(event.target!==card || !['Enter',' '].includes(event.key))return;
+        event.preventDefault();
+        if(card.closest('.is-selecting'))toggleCardSelection(card,record.id,collection);
+        else loadPaletteIntoInput(record);
+      });
       card.setAttribute('aria-grabbed', 'false');
       card.dataset.recordId = record.id;
       card.dataset.collection = collection;
@@ -3092,6 +3109,8 @@ Crystal Rose — #D94B87`;
         card.classList.remove('is-editing');
         filenameEdit.value = record.filename;
       };
+
+      filenameDisplay.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key==='F2'){event.preventDefault();event.stopPropagation();startEditingFilename();}});
 
       filenameDisplay.addEventListener('dblclick', (event) => {
         event.preventDefault();
@@ -3264,8 +3283,9 @@ Crystal Rose — #D94B87`;
       const selectedIds = collection === 'collections' ? collectionsSelectedIds : gallerySelectedIds;
       if (!selectedIds.size) return;
       const allItems = normalizeSavedDownloads(safeParseSavedDownloads(), true);
-      const items = allItems.filter((item) => selectedIds.has(item.id));
       const col = getCollectionById(activeCollectionId);
+      const byId=new Map(allItems.map(item=>[item.id,item]));
+      const items = collection==='collections' && col ? col.itemIds.filter(id=>selectedIds.has(id)).map(id=>byId.get(id)).filter(Boolean) : allItems.filter((item) => selectedIds.has(item.id));
       const colName = collection === 'collections' && col ? col.name : 'downloads';
       const zipName = collection === 'collections'
         ? collectionZipFilename(`selected-${colName}`)
@@ -3285,14 +3305,21 @@ Crystal Rose — #D94B87`;
       return el;
     })();
 
+    let compareReturnFocus=null;
     function closeCompareModal() {
       compareOverlay.classList.remove('is-open');
       document.removeEventListener('keydown', _compareEscHandler);
       exitSelectMode('gallery');
+      compareReturnFocus?.focus({preventScroll:true});
     }
 
     function _compareEscHandler(e) {
-      if (e.key === 'Escape') closeCompareModal();
+      if (e.key === 'Escape') {e.preventDefault();closeCompareModal();}
+      if(e.key==='Tab'){
+        const controls=[...compareOverlay.querySelectorAll('button,[tabindex="0"]')].filter(el=>!el.disabled&&el.getClientRects().length);
+        const first=controls[0],last=controls.at(-1);
+        if((e.shiftKey&&document.activeElement===first)||(!e.shiftKey&&document.activeElement===last)){e.preventDefault();(e.shiftKey?last:first)?.focus();}
+      }
     }
 
     function _generateComparisonSvg(recordA, recordB, sharedSet, sharedCodes) {
@@ -3302,8 +3329,8 @@ Crystal Rose — #D94B87`;
       const TEXT = '#f5f0e6', MUTED = 'rgba(245,240,230,0.55)', FAINT = 'rgba(245,240,230,0.32)';
       const ACCENT = '#e8a020', ACCENT_DIM = 'rgba(232,160,32,0.15)';
 
-      const codesA = Array.isArray(recordA.codes) ? recordA.codes : [];
-      const codesB = Array.isArray(recordB.codes) ? recordB.codes : [];
+      const codesA = paletteCodes(recordA);
+      const codesB = paletteCodes(recordB);
 
       function escapeSvgText(str) {
         return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -3395,11 +3422,11 @@ Crystal Rose — #D94B87`;
     }
 
     function _normaliseHex(hex) {
-      return (hex || '').toUpperCase().trim();
+      return String(hex || '').toUpperCase().trim();
     }
 
     function _buildPanelHTML(record, label, sharedSet) {
-      const codes = Array.isArray(record.codes) ? record.codes : [];
+      const codes = paletteCodes(record);
       const previewUrl = record.previewDataUrl || (record.type === 'svg' && record.svgString
         ? `data:image/svg+xml;charset=utf-8,${encodeURIComponent(record.svgString)}`
         : '');
@@ -3412,10 +3439,10 @@ Crystal Rose — #D94B87`;
         ? codes.map(hex => {
             const norm = _normaliseHex(hex);
             const isShared = sharedSet.has(norm);
-            return `<div class="compare-swatch" data-hex="${htmlText(norm)}" title="${htmlText(norm)}">
+            return `<button type="button" class="compare-swatch" data-hex="${htmlText(norm)}" title="${htmlText(norm)}">
               <div class="compare-swatch-dot${isShared ? ' is-shared' : ' is-unique'}" style="background:${htmlText(hex)};"></div>
               <span class="compare-swatch-hex">${htmlText(norm)}</span>
-            </div>`;
+            </button>`;
           }).join('')
         : `<span style="color:var(--faint);font-size:13px;font-style:italic;">No colour data</span>`;
 
@@ -3474,8 +3501,9 @@ Crystal Rose — #D94B87`;
     }
 
     function openCompareModal(recordA, recordB) {
-      const codesA = (Array.isArray(recordA.codes) ? recordA.codes : []).map(_normaliseHex);
-      const codesB = (Array.isArray(recordB.codes) ? recordB.codes : []).map(_normaliseHex);
+      compareReturnFocus=document.activeElement;
+      const codesA = (paletteCodes(recordA)).map(_normaliseHex);
+      const codesB = (paletteCodes(recordB)).map(_normaliseHex);
       const setA = new Set(codesA);
       const setB = new Set(codesB);
       const sharedCodes = [...setA].filter(h => setB.has(h));
@@ -3628,6 +3656,7 @@ Crystal Rose — #D94B87`;
       // Animate open
       requestAnimationFrame(() => {
         compareOverlay.classList.add('is-open');
+        compareOverlay.querySelector('.compare-close-btn').focus({preventScroll:true});
       });
 
       document.addEventListener('keydown', _compareEscHandler);
@@ -3644,7 +3673,7 @@ Crystal Rose — #D94B87`;
     });
 
     function renderGallery() {
-      exitSelectMode('gallery');
+      const selecting=galleryGrid.closest('.gallery-section').classList.contains('is-selecting');
       const items = normalizeSavedDownloads(safeParseSavedDownloads(), true);
       syncFavouriteIds(items);
 
@@ -3654,9 +3683,14 @@ Crystal Rose — #D94B87`;
       downloadAllBtn.disabled = !items.length;
       downloadAllBtn.classList.toggle('download-ready', items.length > 0);
 
+      const valid=new Set(items.map(item=>item.id));
+      for(const id of gallerySelectedIds)if(!valid.has(id))gallerySelectedIds.delete(id);
       items.forEach((record) => {
-        galleryGrid.appendChild(createRecordCard(record, { collection: 'gallery' }));
+        const card=createRecordCard(record, { collection: 'gallery' });
+        card.classList.toggle('is-selected',gallerySelectedIds.has(record.id));
+        card.draggable=!selecting; galleryGrid.appendChild(card);
       });
+      updateDownloadSelectedBtn('gallery');
     }
 
     // ── Collections storage functions ─────────────────────────────
@@ -3741,7 +3775,7 @@ Crystal Rose — #D94B87`;
     }
 
     function persistCollectionOrder() {
-      const currentIds = [...collectionsGrid.querySelectorAll('.gallery-item')].map((item) => item.dataset.recordId);
+      const currentIds = [...collectionsGrid.querySelectorAll('.gallery-item:not(.is-favourite-leaving)')].map((item) => item.dataset.recordId);
       if (activeCollectionId === 'favourites') {
         const normalized = normalizeFavouriteIds(currentIds);
         persistFavouriteIds(normalized);
@@ -3768,6 +3802,7 @@ Crystal Rose — #D94B87`;
     })();
 
     let popoverTargetId = null;
+    document.addEventListener('keydown',event=>{if(event.key==='Escape'&&collectionPopover.classList.contains('is-open')){event.preventDefault();event.stopImmediatePropagation();closeCollectionPopover();}});
 
     function openCollectionPopover(anchorBtn, recordId) {
       popoverTargetId = recordId;
@@ -3812,7 +3847,7 @@ Crystal Rose — #D94B87`;
           const nowIn = isInCollection(col.id, recordId);
           checkSvg.classList.toggle('is-checked', nowIn);
           // Refresh gallery card states
-          document.querySelectorAll(`.gallery-item[data-record-id="${recordId}"]`).forEach((card) => {
+          document.querySelectorAll(`.gallery-item[data-record-id="${CSS.escape(recordId)}"]`).forEach((card) => {
             const saved = safeParseSavedDownloads().find((s) => s.id === recordId);
             if (saved) updateRecordCard(card, saved);
           });
@@ -3955,8 +3990,10 @@ Crystal Rose — #D94B87`;
           ? syncFavouriteIds(savedItems).length
           : col.itemIds.filter((id) => validIds.has(id)).length;
 
-        const tab = document.createElement('button');
-        tab.type = 'button';
+        const tab = document.createElement('div');
+        tab.setAttribute('role','tab'); tab.tabIndex=0;
+        tab.setAttribute('aria-selected',String(col.id===activeCollectionId));
+        tab.addEventListener('keydown',e=>{if(e.target===tab&&(e.key==='Enter'||e.key===' ')){e.preventDefault();tab.click();}});
         tab.className = `collection-tab${col.id === activeCollectionId ? ' is-active' : ''}`;
         tab.dataset.collectionId = col.id;
 
@@ -3988,6 +4025,7 @@ Crystal Rose — #D94B87`;
 
         tab.addEventListener('click', (e) => {
           if (e.target.closest('.collection-tab-delete')) return;
+          exitSelectMode('collections');
           activeCollectionId = col.id;
           renderCollections();
           closeNewCollectionInput();
@@ -3998,7 +4036,7 @@ Crystal Rose — #D94B87`;
     }
 
     function renderCollections() {
-      exitSelectMode('collections');
+      const selecting=collectionsSection.classList.contains('is-selecting');
       renderCollectionsTabBar();
 
       const savedItems = normalizeSavedDownloads(safeParseSavedDownloads(), true);
@@ -4025,6 +4063,9 @@ Crystal Rose — #D94B87`;
         activeItems = prunedIds.map((id) => itemsById.get(id)).filter(Boolean);
       }
 
+      const activeIds=new Set(activeItems.map(item=>item.id));
+      for(const id of collectionsSelectedIds)if(!activeIds.has(id))collectionsSelectedIds.delete(id);
+      updateDownloadSelectedBtn('collections');
       collectionsBadge.textContent = `${activeItems.length} item${activeItems.length === 1 ? '' : 's'}`;
       downloadCollectionBtn.disabled = !activeItems.length;
       downloadCollectionBtn.classList.toggle('download-ready', activeItems.length > 0);
@@ -4064,6 +4105,7 @@ Crystal Rose — #D94B87`;
             card.addEventListener('animationend', () => card.classList.remove('is-favourite-entering'), { once: true });
           }
         }
+        card.classList.toggle('is-selected',collectionsSelectedIds.has(record.id)); card.draggable=!selecting;
         const currentChild = collectionsGrid.children[index];
         if (currentChild !== card) collectionsGrid.insertBefore(card, currentChild || null);
       });
@@ -4141,7 +4183,10 @@ Crystal Rose — #D94B87`;
         image.src = url;
       });
     }
+    let copyingPng=false;
     async function copyPngToClipboard() {
+      if(copyingPng)return;
+      copyingPng=true; copyPngBtn.disabled=true;
       const svgString = getSvgString();
       const filename = resolveDownloadFilename('png');
       const originalContent = copyPngBtn.innerHTML;
@@ -4174,7 +4219,8 @@ Crystal Rose — #D94B87`;
         }, 1100);
       } catch (error) {
         console.error('Failed to copy PNG:', error);
-      }
+        copyPngBtn.disabled=!extractHexCodes(input.value).length;
+      } finally { copyingPng=false; }
     }
 
     function saveToGallery() {
@@ -4195,7 +4241,7 @@ Crystal Rose — #D94B87`;
         filenameSaveBtn.innerHTML = originalContent;
         filenameSaveBtn.style.borderColor = '';
         filenameSaveBtn.style.background = '';
-        filenameSaveBtn.disabled = false;
+        filenameSaveBtn.disabled = !extractHexCodes(input.value).length;
       }, 1200);
     }
 
@@ -4218,13 +4264,14 @@ Crystal Rose — #D94B87`;
       try {
         const svgString = getSvgString();
         const filename = resolveDownloadFilename('png');
+        const codes=extractHexCodes(input.value), flipped=isFlipped;
         const pngBlob = await svgToPngBlob(svgString);
 
         downloadFile(pngBlob, filename, () => {
           const reader = new FileReader();
           reader.onload = () => {
             const dataUrl = String(reader.result || '');
-            saveDownloadRecord('png', filename, extractHexCodes(input.value), svgString, dataUrl);
+            saveDownloadRecord('png', filename, codes, svgString, dataUrl, flipped);
           };
           reader.readAsDataURL(pngBlob);
         });
@@ -4491,6 +4538,7 @@ window._sbOnLoad = function(data) {
   paletteSet(STORAGE_KEY,JSON.stringify(data.gallery));
   paletteSet(FAVOURITES_KEY,JSON.stringify(data.favourites));
   paletteSet(COLLECTIONS_KEY,JSON.stringify(data.collections));
+  exitSelectMode('gallery');exitSelectMode('collections');
   deletionUndoStack.length=deletionRedoStack.length=0;
   previousText=redoText=null;
   renderGallery();renderCollections();

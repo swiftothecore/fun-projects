@@ -110,6 +110,7 @@ function onSearchInput(val) {
   if (state._searchAbort) state._searchAbort.abort();
   const r = document.getElementById('searchResults'),
     h = document.getElementById('searchHint');
+  r.classList.remove('open');r.innerHTML='';state.searchHighlightIndex=-1;h.classList.remove('visible');
   if (!val.trim()) {
     state._searchSeq++;
     r.classList.remove('open');
@@ -138,7 +139,7 @@ async function searchTMDB(q) {
   // the normalised form ("wall e") and a fully-stripped form ("walle").
   const aliasKey = normalisedQ.toLowerCase();
   const aliasKeyStripped = aliasKey.replace(/\s+/g, '');
-  const aliasId = TMDB_SEARCH_ALIASES[aliasKey] || TMDB_SEARCH_ALIASES[aliasKeyStripped] || null;
+  const aliasId = (Object.hasOwn(TMDB_SEARCH_ALIASES,aliasKey)?TMDB_SEARCH_ALIASES[aliasKey]:null) || (Object.hasOwn(TMDB_SEARCH_ALIASES,aliasKeyStripped)?TMDB_SEARCH_ALIASES[aliasKeyStripped]:null);
   const cacheKey = `${state.tmdbKey}|${normalisedQ.toLowerCase()}|${aliasId || ''}`;
   try {
     let results = _searchCache.get(cacheKey);
@@ -360,7 +361,7 @@ async function backfillRuntimes() {
   if (!state.tmdbKey) return;
   const list = state.movies;
   const target = state.christmasMode ? 'christmas' : 'normal';
-  const needsFill = list.filter((m) => m.runtime === undefined || m.runtime === null);
+  const needsFill = list.filter((m) => !(m.runtime > 0));
   if (!needsFill.length) return;
   let changed = false;
   await runPool(needsFill, 4, async (m) => {
@@ -399,8 +400,10 @@ async function backfillRuntimes() {
           if (!m.tmdbId) m.tmdbId = best.id;
         }
       }
-      m.runtime = runtime;
-      changed = true;
+      if (!(m.runtime > 0) && Number.isFinite(runtime) && runtime > 0 && list.includes(m)) {
+        m.runtime = runtime;
+        changed = true;
+      }
     } catch (e) {}
   });
   if (changed && (list === getNormalList() || list === getChristmasList())) {

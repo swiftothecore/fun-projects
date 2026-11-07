@@ -1222,7 +1222,12 @@
       width: 100%;
       height: 100%;
     }
-  </style>
+  @media (prefers-reduced-motion: reduce) {
+  *,*::before,*::after { animation: none !important; transition: none !important; }
+  #particles,#ambient-canvas { display: none; }
+  .hero,.card,.ds-card { opacity: 1 !important; transform: none !important; }
+}
+</style>
 
 </head>
 <body>
@@ -1711,6 +1716,7 @@
     const particles = Array.from({ length: COUNT }, () => new Particle(true));
 
     function loop() {
+      if(!ctx || window.matchMedia('(prefers-reduced-motion: reduce)').matches)return;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       particles.forEach(p => { p.update(); p.draw(); });
       requestAnimationFrame(loop);
@@ -1812,18 +1818,18 @@
           link.click();
           showToast('Downloaded');
         } else {
-          padded.toBlob(async (blob) => {
-            try {
-              await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
-              showToast('Copied to clipboard');
-            } catch {
-              const link = document.createElement('a');
-              link.download = isDarkSide ? 'apple-music-dark.png' : 'apple-music.png';
-              link.href = padded.toDataURL('image/png');
-              link.click();
-              showToast('Downloaded (clipboard unavailable)');
-            }
-          });
+          const blob=await new Promise(resolve=>padded.toBlob(resolve,'image/png'));
+          if(!blob)throw new Error('Screenshot encoding failed');
+          try {
+            await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+            showToast('Copied to clipboard');
+          } catch {
+            const link = document.createElement('a');
+            link.download = isDarkSide ? 'apple-music-dark.png' : 'apple-music.png';
+            link.href = padded.toDataURL('image/png');
+            link.click();
+            showToast('Downloaded (clipboard unavailable)');
+          }
         }
       } catch (err) {
         zone.querySelector('.hero').style.paddingTop = '';
@@ -1891,7 +1897,7 @@
 
     // ── Main transition ──────────────────────────────────────────
     function triggerDarkSide() {
-      if(window.matchMedia('(prefers-reduced-motion: reduce)').matches){revealDarkSide();return;}
+      if(!lgCtx || window.matchMedia('(prefers-reduced-motion: reduce)').matches){revealDarkSide();return;}
       lgCanvas.width  = window.innerWidth;
       lgCanvas.height = window.innerHeight;
       lgOverlay.classList.add('visible');
@@ -1986,7 +1992,8 @@
       // animation: !important which would otherwise override inline animationDelay.
       dsSection.querySelectorAll('.ds-card').forEach((c, i) => {
         const delay = 0.45 + i * 0.15;
-        c.style.setProperty('animation', `fadeUp 0.55s ${delay}s ease-out forwards`, 'important');
+        c.style.setProperty('animation', window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'none' : `fadeUp 0.55s ${delay}s ease-out forwards`, 'important');
+        if(window.matchMedia('(prefers-reduced-motion: reduce)').matches)c.style.opacity='1';
         c.classList.add('appear');
       });
 
@@ -1999,7 +2006,8 @@
 
       // Ambient lightning every 13 seconds
       clearInterval(window._dsLightningInterval);
-      window._dsLightningInterval = setInterval(ambientLightning, 13000);
+      window._dsLightningInterval = null;
+      if(!window.matchMedia('(prefers-reduced-motion: reduce)').matches)window._dsLightningInterval = setInterval(ambientLightning, 13000);
     }
 
     function returnToLight() {
@@ -2027,8 +2035,10 @@
     // Draws on a background canvas (z-index 0) so bolts appear
     // behind the cards rather than covering them.
     function ambientLightning() {
+      if(window.matchMedia('(prefers-reduced-motion: reduce)').matches)return;
       const ambCanvas = document.getElementById('ambient-canvas');
       const ambCtx    = ambCanvas.getContext('2d');
+      if(!ambCtx)return;
       ambCanvas.width  = window.innerWidth;
       ambCanvas.height = window.innerHeight;
       const W = ambCanvas.width, H = ambCanvas.height;
@@ -2091,6 +2101,7 @@
       haloCanvas.width  = window.innerWidth;
       haloCanvas.height = window.innerHeight;
       const hCtx = haloCanvas.getContext('2d');
+      if(!hCtx){returnToLight();return;}
 
       const W = haloCanvas.width, H = haloCanvas.height;
       const cx = W / 2, cy = H / 2;

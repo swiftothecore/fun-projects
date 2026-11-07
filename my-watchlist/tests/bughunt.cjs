@@ -50,7 +50,7 @@ test('06 cloud hydration invalidates stale undo snapshots', () => {
 });
 test('07 local saves mark pending before cloud SDK is ready', () => {
   save();
-  return localStorage.getItem('_sb_pending') === '1';
+  return localStorage.getItem('_sb_pending_watchlist') === '1';
 });
 test('08 reserved category names appear in the category strip', () => {
   state.movies = [

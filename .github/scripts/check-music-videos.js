@@ -34,7 +34,7 @@ const RSS_PATH = path.join(process.cwd(), 'music-videos', 'rss.xml');
 
 // Mirrors the isMusicVideo filter in music-videos.html exactly.
 function isMusicVideo(title) {
-  const t = title.toLowerCase();
+  const t = String(title || '').toLowerCase().replace(/\[/g,'(').replace(/\]/g,')');
   const exclude = [
     '(official lyric video)', '(lyric video)',
     '(official audio)',        '(audio)',

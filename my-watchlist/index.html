@@ -440,7 +440,7 @@
           <div id="movieDetailsCollapsible">
             <div class="form-grid">
               <div class="field full">
-                <label>Title <span class="text-danger">*</span></label>
+                <label for="fTitle">Title <span class="text-danger">*</span></label>
                 <input
                   type="text"
                   id="fTitle"
@@ -450,7 +450,7 @@
               </div>
               <div class="field-pair">
                 <div class="field"
-                  ><label>Year</label
+                  ><label for="fYear">Year</label
                   ><input
                     type="number"
                     id="fYear"
@@ -460,12 +460,12 @@
                     oninput="syncCollapsedTitle()"
                 /></div>
                 <div class="field"
-                  ><label>Release Date</label
+                  ><label for="fReleaseDate">Release Date</label
                   ><input type="text" id="fReleaseDate" placeholder="YYYY-MM-DD"
                 /></div>
               </div>
               <div class="field"
-                ><label>Genre</label
+                ><label for="fGenre">Genre</label
                 ><input
                   type="text"
                   id="fGenre"
@@ -473,20 +473,20 @@
                   oninput="syncCollapsedTitle()"
               /></div>
               <div class="field"
-                ><label>Director</label
+                ><label for="fDirector">Director</label
                 ><input type="text" id="fDirector" placeholder="Director name"
               /></div>
               <div class="field-pair">
                 <div class="field"
-                  ><label>Rating</label><input type="text" id="fRating" placeholder="e.g. 8.5/10"
+                  ><label for="fRating">Rating</label><input type="text" id="fRating" placeholder="e.g. 8.5/10"
                 /></div>
                 <div class="field"
-                  ><label>Runtime (mins)</label
+                  ><label for="fRuntime">Runtime (mins)</label
                   ><input type="number" id="fRuntime" placeholder="e.g. 120" min="1" max="999"
                 /></div>
               </div>
               <div class="field full">
-                <label>Poster Image URL</label>
+                <label for="fPoster">Poster Image URL</label>
                 <div class="poster-preview-row">
                   <div class="poster-preview-thumb" id="posterThumb">&#127917;</div>
                   <input
@@ -499,7 +499,7 @@
                 </div>
               </div>
               <div class="field full"
-                ><label>Notes</label
+                ><label for="fNotes">Notes</label
                 ><textarea
                   id="fNotes"
                   placeholder="Why you want to watch it, who recommended it, etc."
@@ -509,7 +509,7 @@
           </div>
           <div class="form-grid collection-fields" id="collectionFields">
             <div class="field relative-field">
-              <label>Collection</label>
+              <label for="fCollection">Collection</label>
               <input
                 type="text"
                 id="fCollection"
@@ -523,7 +523,7 @@
               <div class="suggestion-dropdown" id="collectionDropdown" style="display: none"></div>
             </div>
             <div class="field relative-field">
-              <label>Category</label>
+              <label for="fCategory">Category</label>
               <input
                 type="text"
                 id="fCategory"
@@ -537,7 +537,7 @@
               <div class="suggestion-dropdown" id="categoryDropdown" style="display: none"></div>
             </div>
             <div class="field relative-field">
-              <label>Watching With</label>
+              <label for="fWatchWith">Watching With</label>
               <input
                 type="text"
                 id="fWatchWith"

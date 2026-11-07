@@ -236,7 +236,12 @@
             .sep { display: none; }
             .sep-spacer { display: none; }
         }
-    </style>
+    @media (prefers-reduced-motion: reduce) {
+  *,*::before,*::after { animation: none !important; transition: none !important; }
+  .petal { display: none; }
+  .artist,.album-svg,.countdown,.release-date { opacity: 1 !important; transform: none !important; }
+}
+</style>
 </head>
 <body>
 

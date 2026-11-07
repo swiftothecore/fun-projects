@@ -90,7 +90,8 @@ const COUNTRY_CODES = {
 
 function countryFlag(name) {
   if (!name) return '🔒';
-  const code = COUNTRY_CODES[name.trim().toLowerCase()];
+  const country=String(name).trim().toLowerCase();
+  const code = Object.hasOwn(COUNTRY_CODES,country) ? COUNTRY_CODES[country] : null;
   if (!code) return '🔒';
   return String.fromCodePoint(code.charCodeAt(0) + 0x1f1a5, code.charCodeAt(1) + 0x1f1a5);
 }
@@ -255,6 +256,7 @@ const USER_TZ = (() => {
 
 // Returns a YYYY-MM-DD string in the user's local timezone
 function localDateStr(date) {
+  if(!Number.isFinite(date.getTime()))date=new Date();
   return new Intl.DateTimeFormat('en-CA', {
     timeZone: USER_TZ,
     year: 'numeric',

@@ -118,6 +118,10 @@
       border-color: var(--pink);
     }
 
+    .project-name { align-self: flex-start; margin: 12px; padding: 5px 10px; border-radius: 6px; background: rgba(0,0,0,0.8); color: #fff; font-size: 0.78rem; font-weight: 500; }
+    .project-card:focus-visible { outline: 3px solid var(--pink-soft); outline-offset: 3px; }
+    @media (prefers-reduced-motion: reduce) { *,*::before,*::after { animation: none !important; transition: none !important; } }
+
     /* ── ANIMATIONS ── */
     @keyframes fadeUp {
       from { opacity: 0; transform: translateY(20px); }
@@ -141,18 +145,19 @@
   <main>
     <div class="projects-grid">
 
-      <a href="album-atlas" aria-label="Album Atlas" class="project-card" style="background-image: url('album-atlas/preview.svg');"></a>
-      <a href="my-watchlist" aria-label="My Watchlist" class="project-card" style="background-image: url('my-watchlist/preview.svg');"></a>
-      <a href="tv-reverie" aria-label="Tv Reverie" class="project-card" style="background-image: url('tv-reverie/preview.svg');"></a>
-      <a href="palette-painter" aria-label="Palette Painter" class="project-card" style="background-image: url('palette-painter/preview.svg');"></a>
-      <a href="reading-room" aria-label="Reading Room" class="project-card" style="background-image: url('reading-room/preview.svg');"></a>
-      <a href="music-videos" aria-label="Music Videos" class="project-card" style="background-image: url('music-videos/preview.svg');"></a>
-      <a href="apple-music" aria-label="Apple Music" class="project-card" style="background-image: url('apple-music/preview.svg');"></a>
-      <a href="thirteen" aria-label="Thirteen" class="project-card" style="background-image: url('thirteen/preview.svg');"></a>
-      <a href="sotr-countdown" aria-label="Sunrise on the Reaping countdown" class="project-card" style="background-image: url('sotr-countdown/preview.png');"></a>
-      <a href="olivia-countdown" aria-label="Olivia Countdown" class="project-card" style="background-image: url('olivia-countdown/preview.png');"></a>
-      <a href="petal-countdown" aria-label="Petal Countdown" class="project-card" style="background-image: url('petal-countdown/preview.png');"></a>
+      <a href="album-atlas" aria-label="Album Atlas" class="project-card" style="background-image: url('album-atlas/preview.svg');"><span class="project-name">Album Atlas</span></a>
+      <a href="my-watchlist" aria-label="My Watchlist" class="project-card" style="background-image: url('my-watchlist/preview.svg');"><span class="project-name">My Watchlist</span></a>
+      <a href="tv-reverie" aria-label="Tv Reverie" class="project-card" style="background-image: url('tv-reverie/preview.svg');"><span class="project-name">Tv Reverie</span></a>
+      <a href="palette-painter" aria-label="Palette Painter" class="project-card" style="background-image: url('palette-painter/preview.svg');"><span class="project-name">Palette Painter</span></a>
+      <a href="reading-room" aria-label="Reading Room" class="project-card" style="background-image: url('reading-room/preview.svg');"><span class="project-name">Reading Room</span></a>
+      <a href="music-videos" aria-label="Music Videos" class="project-card" style="background-image: url('music-videos/preview.svg');"><span class="project-name">Music Videos</span></a>
+      <a href="apple-music" aria-label="Apple Music" class="project-card" style="background-image: url('apple-music/preview.svg');"><span class="project-name">Apple Music</span></a>
+      <a href="thirteen" aria-label="Thirteen" class="project-card" style="background-image: url('thirteen/preview.svg');"><span class="project-name">Thirteen</span></a>
+      <a href="sotr-countdown" aria-label="Sunrise on the Reaping countdown" class="project-card" style="background-image: url('sotr-countdown/preview.png');"><span class="project-name">Sunrise on the Reaping countdown</span></a>
+      <a href="olivia-countdown" aria-label="Olivia Countdown" class="project-card" style="background-image: url('olivia-countdown/preview.png');"><span class="project-name">Olivia Countdown</span></a>
+      <a href="petal-countdown" aria-label="Petal Countdown" class="project-card" style="background-image: url('petal-countdown/preview.png');"><span class="project-name">Petal Countdown</span></a>
 
+      <a href="tech-acronyms" aria-label="Tech Acronyms" class="project-card" style="background-image:linear-gradient(135deg,#142c36,#19172b)"><span class="project-name">Tech Acronyms</span></a>
     </div>
   </main>
 

@@ -985,6 +985,8 @@
     cursor: default;
   }
 
+  button.menu-item, button.menu-remove, button.menu-set-date { display: flex; width: 100%; background: transparent; border: 0; text-align: left; font-family: inherit; }
+  button.menu-item:focus-visible, button.menu-remove:focus-visible, button.menu-set-date:focus-visible { outline: 2px solid #C8922A; outline-offset: -2px; }
 </style>
 </head>
 <body>
@@ -1054,11 +1056,11 @@
   <div id="search-area">
     <div id="search-inputs">
       <div class="search-field">
-        <label>Album</label>
+        <label for="input-album">Album</label>
         <input type="text" id="input-album" placeholder="e.g. 1989" autocomplete="off">
       </div>
       <div class="search-field">
-        <label>Artist</label>
+        <label for="input-artist">Artist</label>
         <input type="text" id="input-artist" placeholder="e.g. Taylor Swift" autocomplete="off">
       </div>
       <div id="search-spinner">Searching...</div>
@@ -1217,10 +1219,10 @@ function applyViewState() {
   } else {
     // On desktop: toggle between kanban and grid
     if (currentView === "grid") {
-      vtIconGrid.style.display = "flex";
+      vtIconKanban.style.display = "flex";
       vtLabelText.textContent  = "Kanban";
     } else {
-      vtIconKanban.style.display = "flex";
+      vtIconGrid.style.display = "flex";
       vtLabelText.textContent    = "Grid";
     }
   }
@@ -1303,7 +1305,8 @@ async function fetchAndCacheCover(mbid) {
 }
 
 function cachedCover(album) {
-  return coverCache[album.mbid] || coverUrl(album.mbid);
+  const cached = coverCache[album.mbid];
+  return typeof cached === 'string' && /^(data:image\/|https?:\/\/)/.test(cached) ? cached : coverUrl(album.mbid);
 }
 
 /* Cache covers for any existing albums that aren't yet stored */
@@ -1525,8 +1528,8 @@ let highlightedIndex = -1;
 let searchSequence = 0;
 
 function scheduleSearch() {
-  const sequence = ++searchSequence;
-  clearTimeout(searchTimer);
+  closeResults();
+  const sequence = searchSequence;
   const album  = inputAlbum.value.trim();
   const artist = inputArtist.value.trim();
   if (!album && !artist) { closeResults(); return; }
@@ -1628,10 +1631,10 @@ function renderResults(results) {
     const row = document.createElement("div");
     row.className = `result-row${already ? " already" : ""}`;
     row.innerHTML = `
-      <div class="result-thumb"><img src="${coverUrl(rg.id, 100)}" alt="" onerror="this.parentElement.innerHTML='&#9834;'"></div>
+      <div class="result-thumb"><img src="${esc(coverUrl(rg.id, 100))}" alt="" onerror="this.parentElement.innerHTML='&#9834;'"></div>
       <div class="result-info">
         <div class="result-title">${esc(rg.title)}</div>
-        <div class="result-meta">${esc(artistName)}${year ? ` &middot; ${year}` : ""}</div>
+        <div class="result-meta">${esc(artistName)}${year ? ` &middot; ${esc(year)}` : ""}</div>
       </div>
       ${already ? `<span class="result-badge">Added</span>` : ""}
     `;
@@ -1728,9 +1731,13 @@ function renderAll() {
   const sortBtn = document.getElementById("sort-age-btn");
   if (sortBtn) {
     sortBtn.classList.toggle("active", listenSortOldest);
+    sortBtn.textContent = listenSortOldest ? "↑ Oldest" : "↓ Newest";
+    sortBtn.title = `Sort by date added (${listenSortOldest ? "oldest" : "newest"} first)`;
     sortBtn.addEventListener("click", () => {
       listenSortOldest = !listenSortOldest;
       sortBtn.classList.toggle("active", listenSortOldest);
+      sortBtn.textContent = listenSortOldest ? "↑ Oldest" : "↓ Newest";
+      sortBtn.title = `Sort by date added (${listenSortOldest ? "oldest" : "newest"} first)`;
       renderSectionBody("listen");
     });
   }
@@ -1798,7 +1805,7 @@ function createCard(album, sectionId) {
 
   const others   = SECTIONS.filter(s => s.id !== sectionId);
   const moveItems = others.map(s =>
-    `<div class="menu-item" data-move="${s.id}"><span class="menu-dot" style="background:${s.accent}"></span>${s.label}</div>`
+    `<button type="button" class="menu-item" data-move="${s.id}"><span class="menu-dot" style="background:${s.accent}"></span>${s.label}</button>`
   ).join("");
 
   card.innerHTML = `
@@ -1816,8 +1823,8 @@ function createCard(album, sectionId) {
       <div class="menu-header">Move to</div>
       ${moveItems}
       <div class="menu-divider">
-        ${sectionId === "listen" ? `<div class="menu-set-date"><span>&#128337;</span> Set date added…</div><div class="date-pick-panel"><span class="date-pick-label">Date added</span><input type="date" class="date-pick-input"><button class="date-pick-confirm">Set</button></div>` : ""}
-        <div class="menu-remove">Remove</div>
+        ${sectionId === "listen" ? `<button type="button" class="menu-set-date"><span>&#128337;</span> Set date added…</button><div class="date-pick-panel"><span class="date-pick-label">Date added</span><input type="date" class="date-pick-input"><button class="date-pick-confirm">Set</button></div>` : ""}
+        <button type="button" class="menu-remove">Remove</button>
       </div>
     </div>
   `;
@@ -2087,7 +2094,8 @@ function removeAlbum(albumId, sectionId) {
 
 /* ---------- Keyboard shortcuts ---------- */
 document.addEventListener("keydown", e => {
-  const inEditable = document.activeElement.matches("input, textarea, [contenteditable]");
+  const inEditable = !!document.activeElement.closest("input, textarea, select, [contenteditable]:not([contenteditable='false'])");
+  if (e.key === "Escape") { closeResults(); closeAllMenus(); return; }
 
   /* Undo / redo ─────────────────────────────────────────────────────────────
      When an input is focused, let the browser handle Cmd+Z so native
@@ -2101,7 +2109,7 @@ document.addEventListener("keydown", e => {
   }
 
   // If "/" is pressed and we're not already typing in an input
-  if (e.key === "/" && !document.activeElement.matches("input")) {
+  if (e.key === "/" && !inEditable) {
     e.preventDefault();
     // Focus the album search input (first input in #search-inputs)
     const albumInput = document.querySelector("#search-inputs input");
@@ -2181,6 +2189,7 @@ window._sbOnLoad = function(data) {
   const next = validatedAlbums(data);
   if (!next) return false;
   undoStack.length = redoStack.length = 0;
+  closeResults(); closeAllMenus();
   state = next;
   __sbOrigSet(STORAGE_KEY, JSON.stringify(state));
   document.documentElement.classList.add('preload');

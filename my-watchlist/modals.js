@@ -93,7 +93,7 @@ function saveDateWatched(id) {
   const m = state.movies.find((x) => x.id === id);
   if (!m) return;
   const val = document.getElementById('dateWatchedPicker')?.value;
-  if (val) {
+  if (val && document.getElementById('dateWatchedPicker').checkValidity()) {
     m.dateWatched = new Date(val + 'T12:00:00').toISOString();
     save();
     render();
@@ -120,7 +120,7 @@ function saveDateAdded(id) {
   const m = state.movies.find((x) => x.id === id);
   if (!m) return;
   const val = document.getElementById('dateAddedPicker')?.value;
-  if (val) {
+  if (val && document.getElementById('dateAddedPicker').checkValidity()) {
     m.dateAdded = new Date(val + 'T12:00:00').toISOString();
     save();
     render();
