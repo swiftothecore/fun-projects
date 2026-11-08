@@ -5,7 +5,7 @@
     <link>https://swiftothecore.github.io/fun-projects/music-videos</link>
     <description>Official music videos from your tracked artists</description>
     <webfeeds:icon>https://swiftothecore.github.io/fun-projects/music-videos/icon.svg</webfeeds:icon>
-    <lastBuildDate>Sat, 07 Nov 2026 01:37:30 GMT</lastBuildDate>
+    <lastBuildDate>Sun, 08 Nov 2026 01:05:34 GMT</lastBuildDate>
     <item>
       <title>Olivia Rodrigo - Olivia Rodrigo - take me home (4 christmas) (Official Music Video)</title>
       <link>https://www.youtube.com/watch?v=uXymCnWk9LI</link>
@@ -64,6 +64,18 @@
           <img src="https://i.ytimg.com/vi/DPEodkHzH-s/maxresdefault.jpg" alt="Tate McRae - Housewife (Official Video)" style="max-width:100%;border-radius:4px;">
         </a>
         <p style="margin:8px 0 0;font-family:sans-serif;">Tate McRae</p>
+      ]]></description>
+    </item>
+    <item>
+      <title>Miley Cyrus - MILEY - Different Religion (feat. Model/Actriz) [Official Video]</title>
+      <link>https://www.youtube.com/watch?v=966zTPOgf7c</link>
+      <guid isPermaLink="false">966zTPOgf7c</guid>
+      <pubDate>Wed, 30 Sep 2026 16:00:04 GMT</pubDate>
+      <description><![CDATA[
+        <a href="https://www.youtube.com/watch?v=966zTPOgf7c">
+          <img src="https://i.ytimg.com/vi/966zTPOgf7c/maxresdefault.jpg" alt="MILEY - Different Religion (feat. Model/Actriz) [Official Video]" style="max-width:100%;border-radius:4px;">
+        </a>
+        <p style="margin:8px 0 0;font-family:sans-serif;">Miley Cyrus</p>
       ]]></description>
     </item>
     <item>
