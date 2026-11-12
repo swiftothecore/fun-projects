@@ -2476,12 +2476,15 @@ body.compact-cards .collection-group {
   #addModal {
     align-items: flex-end;
     padding: 0;
+    top: var(--add-viewport-top, 0px);
+    bottom: auto;
+    height: var(--add-viewport-height, 100%);
   }
   #addModal .modal {
     border-radius: 22px 22px 0 0;
     max-width: 100%;
     width: 100%;
-    max-height: 92vh;
+    max-height: 85%;
     border-bottom: none;
     border-left: none;
     border-right: none;
@@ -2506,6 +2509,7 @@ body.compact-cards .collection-group {
     margin-bottom: 12px;
   }
   #addModal .modal-body {
+    min-height: 0;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
     flex: 1;

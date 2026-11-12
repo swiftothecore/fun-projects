@@ -340,6 +340,41 @@ function unlockScroll() {
   }
 }
 
+const addModalMobile = window.matchMedia('(max-width: 640px)');
+
+function syncAddModalViewport(keepFocusVisible = false) {
+  const viewport = window.visualViewport;
+  const overlay = document.getElementById('addModal');
+  if (!viewport || !overlay.classList.contains('open')) return;
+
+  // The on-screen keyboard can shrink and pan the visual viewport without resizing the page.
+  overlay.style.setProperty('--add-viewport-top', `${viewport.offsetTop}px`);
+  overlay.style.setProperty('--add-viewport-height', `${viewport.height}px`);
+
+  if (!keepFocusVisible || !addModalMobile.matches) return;
+  const body = overlay.querySelector('.modal-body');
+  const field = document.activeElement;
+  if (!body.contains(field)) return;
+
+  const visible = body.getBoundingClientRect();
+  const bounds = field.getBoundingClientRect();
+  // Scroll inside the sheet to avoid panning the page again.
+  if (bounds.top < visible.top) body.scrollTop += bounds.top - visible.top;
+  else if (bounds.bottom > visible.bottom) body.scrollTop += bounds.bottom - visible.bottom;
+}
+
+window.visualViewport?.addEventListener('resize', () => syncAddModalViewport(true));
+window.visualViewport?.addEventListener('scroll', () => syncAddModalViewport());
+
+function showAddEditModal() {
+  const overlay = document.getElementById('addModal');
+  if (overlay.classList.contains('open')) return;
+  overlay.classList.add('open');
+  lockScroll();
+  syncAddModalViewport();
+  overlay.querySelector('.modal-body').scrollTop = 0;
+}
+
 function openAddModal() {
   if (document.getElementById('addModal').classList.contains('open')) return;
   state.editingId = null;
@@ -348,18 +383,18 @@ function openAddModal() {
     : 'Add Film';
   clearForm();
   document.getElementById('deleteRow').style.display = 'none';
-  if (!document.getElementById('addModal').classList.contains('open')) {
-    document.getElementById('addModal').classList.add('open');
-    lockScroll();
-  }
+  showAddEditModal();
   updateModalJustWatch();
   updateModalLetterboxd();
   populateCollectionSuggestions();
   populateCategorySuggestions();
   populateWatchWithSuggestions();
   expandMovieDetails();
-  if (state.tmdbKey) setTimeout(() => document.getElementById('searchInput').focus(), 80);
-  else document.getElementById('fTitle').focus();
+  if (addModalMobile.matches) {
+    document.getElementById('modalTitle').focus({ preventScroll: true });
+  } else {
+    document.getElementById(state.tmdbKey ? 'searchInput' : 'fTitle').focus();
+  }
 }
 
 function populateCollectionSuggestions() {
@@ -583,10 +618,7 @@ function openEditModal(id) {
     : 'Edit Film';
   document.getElementById('deleteRow').style.display = 'flex';
   populateForm(m);
-  if (!document.getElementById('addModal').classList.contains('open')) {
-    document.getElementById('addModal').classList.add('open');
-    lockScroll();
-  }
+  showAddEditModal();
   updateModalJustWatch();
   updateModalLetterboxd();
   populateCollectionSuggestions();

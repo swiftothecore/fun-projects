@@ -133,6 +133,49 @@ for (const shortcut of ['Control+k', '/']) {
   }, 390);
 }
 
+for (const fieldId of ['searchInput', 'fTitle']) {
+  test(`mobile Add Film keeps ${fieldId} visible when the keyboard opens`, async (page) => {
+    await page.setViewportSize({ width: 390, height: 700 });
+    await page.addStyleTag({ content: '#addModal .modal { animation: none; }' });
+    await page.evaluate((useTmdb) => {
+      state.tmdbKey = useTmdb ? 'fixture-key' : '';
+      updateSearchSection();
+    }, fieldId === 'searchInput');
+    const add = page.getByRole('button', { name: 'Add Film', exact: true });
+    await add.click();
+    assert.equal(await page.evaluate(() => document.activeElement.id), 'modalTitle');
+
+    const field = page.locator('#' + fieldId);
+    await field.click();
+    const visible = await page.evaluate((id) => {
+      // Mobile keyboards can resize and pan the visual viewport alone.
+      const viewport = window.visualViewport;
+      Object.defineProperty(viewport, 'height', { value: 250, configurable: true });
+      viewport.dispatchEvent(new Event('resize'));
+      Object.defineProperty(viewport, 'offsetTop', { value: 120, configurable: true });
+      viewport.dispatchEvent(new Event('scroll'));
+      const sheet = document.querySelector('#addModal .modal').getBoundingClientRect();
+      const body = document.querySelector('#addModal .modal-body').getBoundingClientRect();
+      const input = document.getElementById(id).getBoundingClientRect();
+      return Math.abs(sheet.bottom - 370) < 1 && input.top >= body.top - 1 && input.bottom <= body.bottom + 1;
+    }, fieldId);
+    assert.ok(visible);
+    await page.keyboard.type('Film title');
+    assert.equal(await field.inputValue(), 'Film title');
+
+    await page.evaluate(() => {
+      delete window.visualViewport.height;
+      delete window.visualViewport.offsetTop;
+      window.visualViewport.dispatchEvent(new Event('resize'));
+      const body = document.querySelector('#addModal .modal-body');
+      body.scrollTop = body.scrollHeight;
+    });
+    await page.keyboard.press('Escape');
+    await add.click();
+    assert.equal(await page.locator('#addModal .modal-body').evaluate((body) => body.scrollTop), 0);
+  }, 390);
+}
+
 (async () => {
   const browser = await chromium.launch({
     headless: true,
