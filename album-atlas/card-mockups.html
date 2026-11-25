@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Album Atlas Cards</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  :root{--pink:#D6336C;--pink-soft:#FF6B9D;--border:#2A2A2A;--text:#F0EDE8;--muted:#888;--cream:#e6ddcf;--ink:#141210}
+  body{background:radial-gradient(ellipse at 15% 100%,#1f0813 0%,transparent 50%),radial-gradient(ellipse at 85% 0%,#061510 0%,transparent 45%),#0D0D0D;color:var(--text);font-family:'Outfit',sans-serif;min-height:100vh;padding:32px 24px 64px}
+  h1{font-family:'DM Serif Display',serif;font-weight:400;font-size:1.8rem}
+  h1 em{color:var(--pink-soft)}
+  .intro{color:var(--muted);margin:6px 0 28px;max-width:60ch;line-height:1.5}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,420px),1fr));gap:28px 20px}
+  figure{display:flex;flex-direction:column;gap:10px}
+  figcaption b{display:block;font-weight:600;font-size:.95rem}
+  figcaption span{color:var(--muted);font-size:.82rem;line-height:1.45}
+  .card{aspect-ratio:5/2;border-radius:20px;position:relative;overflow:hidden;border:1px solid var(--border);display:flex;flex-direction:column;justify-content:flex-end;text-decoration:none;color:inherit;background:#1a1a1a;transition:transform .26s cubic-bezier(.34,1.56,.64,1),box-shadow .2s ease}
+  .card:hover{transform:scale(1.025);box-shadow:0 20px 60px rgba(0,0,0,.6);border-color:var(--pink)}
+  .card svg{position:absolute;inset:0;width:100%;height:100%}
+  .pill{position:relative;align-self:flex-start;margin:12px;padding:5px 10px;border-radius:6px;background:rgba(0,0,0,.8);color:#fff;font-size:.78rem;font-weight:500}
+  .serif{font-family:Georgia,'Times New Roman',serif}
+  .sans{font-family:'Helvetica Neue',Helvetica,Arial,sans-serif}
+  .mono{font-family:ui-monospace,Menlo,monospace}
+  /* hover flourishes */
+  .spin{transform-origin:390px 100px;transition:transform .9s cubic-bezier(.34,1.3,.64,1)}
+  .card:hover .spin{transform:rotate(200deg)}
+  .needle{transform-origin:390px 100px;transition:transform .7s cubic-bezier(.34,1.56,.64,1)}
+  .card:hover .needle{transform:rotate(-25deg)}
+  .pin{transition:transform .3s cubic-bezier(.34,1.56,.64,1)}
+  .card:hover .pin{transform:translateY(-6px)}
+  .tilt{transform-box:fill-box;transform-origin:bottom left;transition:transform .35s cubic-bezier(.34,1.56,.64,1)}
+  .card:hover .tilt{transform:rotate(-14deg)}
+  .route{stroke-dasharray:4 5;transition:stroke-dashoffset 1.2s linear}
+  .card:hover .route{stroke-dashoffset:-60}
+  .section{font-family:'DM Serif Display',serif;font-weight:400;font-size:1.4rem;margin:44px 0 18px}
+  .badge{display:inline-block;font-size:.68rem;letter-spacing:.06em;text-transform:uppercase;color:var(--pink-soft);margin-left:6px}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<h1>Album Atlas<em>.</em> card mockups</h1>
+<p class="intro">Alternatives for the home-page tile, shown at the real 5:2 size with the same hover lift and pink border. Hover each one; several have a small motion on hover.</p>
+
+<h2 class="section">More colour</h2>
+<div class="grid">
+
+<!-- 7. Sunset record -->
+<figure>
+  <a class="card" href="#">
+    <svg viewBox="0 0 500 200" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+      <defs>
+        <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#2b1140"/><stop offset=".55" stop-color="#8e2a5a"/><stop offset="1" stop-color="#f06a4a"/>
+        </linearGradient>
+        <linearGradient id="sun" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#ffd46b"/><stop offset="1" stop-color="#ff7a59"/>
+        </linearGradient>
+        <clipPath id="above"><rect width="500" height="150"/></clipPath>
+      </defs>
+      <rect width="500" height="200" fill="url(#sky)"/>
+      <g clip-path="url(#above)">
+        <circle class="spin" cx="390" cy="150" r="90" fill="url(#sun)" style="transform-origin:390px 150px"/>
+        <g fill="none" stroke="#8e2a5a" stroke-opacity=".35" stroke-width="2">
+          <circle cx="390" cy="150" r="75"/><circle cx="390" cy="150" r="60"/><circle cx="390" cy="150" r="45"/>
+        </g>
+        <circle cx="390" cy="150" r="18" fill="#2b1140"/>
+      </g>
+      <rect y="150" width="500" height="50" fill="#1b0a29"/>
+      <g stroke="#ff7a59" stroke-opacity=".45">
+        <path d="M0 158H500M0 168H500M0 182H500"/>
+        <path d="M390 150 L250 200 M390 150 L330 200 M390 150 L450 200 M390 150 L530 200"/>
+      </g>
+      <text class="serif" x="28" y="80" font-size="44" fill="#fff4e6">Album Atlas</text>
+      <text class="sans" x="30" y="104" font-size="11.5" fill="#ffc8b0">Losing track of albums has never been harder</text>
+    </svg>
+  </a>
+  <figcaption><b>7 · Sunset record</b><span>A record setting over a gridded horizon, in plum, magenta and amber. Warm and loud; the record turns on hover.</span></figcaption>
+</figure>
+
+<!-- 8. Patchwork map -->
+<figure>
+  <a class="card" href="#">
+    <svg viewBox="0 0 500 200" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+      <rect width="500" height="200" fill="#f3ead9"/>
+      <g stroke="#f3ead9" stroke-width="3" stroke-linejoin="round" transform="translate(50 0)">
+        <path d="M270 20 L340 10 L360 60 L310 85 L265 65 Z" fill="#2f9e8f"/>
+        <path d="M340 10 L430 15 L440 55 L360 60 Z" fill="#f2b134"/>
+        <path d="M430 15 L500 5 L500 80 L440 55 Z" fill="#e4572e"/>
+        <path d="M310 85 L360 60 L400 95 L380 140 L320 130 Z" fill="#d6336c"/>
+        <path d="M360 60 L440 55 L500 80 L470 120 L400 95 Z" fill="#3b6fd8"/>
+        <path d="M265 65 L310 85 L320 130 L280 170 L255 120 Z" fill="#8f5bd6"/>
+        <path d="M320 130 L380 140 L400 200 L290 200 L280 170 Z" fill="#f2b134"/>
+        <path d="M400 95 L470 120 L500 120 L500 200 L400 200 L380 140 Z" fill="#2f9e8f"/>
+      </g>
+      <g transform="translate(50 0)"><g class="pin">
+        <path d="M400 112 L388 92 A16 16 0 1 1 412 92 Z" fill="#141210"/>
+        <circle cx="400" cy="82" r="12" fill="#141210"/>
+        <circle cx="400" cy="82" r="3.5" fill="#f3ead9"/>
+      </g></g>
+      <text class="serif" x="28" y="86" font-size="44" fill="#141210">Album Atlas</text>
+      <text class="sans" x="30" y="110" font-size="11.5" fill="#5b5248">Losing track of albums has never been harder</text>
+    </svg>
+  </a>
+  <figcaption><b>8 · Patchwork map</b><span>A map of brightly coloured "countries", like a wall of album covers. Cream paper keeps it friendly; the pin hops on hover.</span></figcaption>
+</figure>
+
+<!-- 9. Fanned covers -->
+<figure>
+  <a class="card" href="#">
+    <svg viewBox="0 0 500 200" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+      <rect width="500" height="200" fill="#16233a"/>
+      <g transform="translate(40 0)">
+      <g class="spin" style="transform-origin:420px 110px">
+        <circle cx="420" cy="110" r="70" fill="#0d0d0d"/>
+        <g fill="none" stroke="#fff" stroke-opacity=".12"><circle cx="420" cy="110" r="58"/><circle cx="420" cy="110" r="46"/><circle cx="420" cy="110" r="34"/></g>
+        <circle cx="420" cy="110" r="20" fill="#ff6b9d"/>
+        <circle cx="420" cy="110" r="3" fill="#0d0d0d"/>
+      </g>
+      <g transform="rotate(-14 330 150)"><rect x="275" y="60" width="110" height="110" rx="4" fill="#f2b134"/><circle cx="330" cy="115" r="30" fill="#e4572e"/></g>
+      <g transform="rotate(-4 345 150)"><rect x="290" y="55" width="110" height="110" rx="4" fill="#2f9e8f"/><path d="M290 140 L345 90 L400 140 V165 H290Z" fill="#a7e0c9"/></g>
+      <g transform="rotate(8 360 150)"><rect x="305" y="55" width="110" height="110" rx="4" fill="#d6336c"/><path d="M325 75 H395 M325 90 H380" stroke="#fff" stroke-width="6" stroke-linecap="round"/></g>
+      </g>
+      <text class="serif" x="28" y="86" font-size="44" fill="#fff4e6">Album Atlas</text>
+      <text class="sans" x="30" y="110" font-size="11.5" fill="#9fb3d1">Losing track of albums has never been harder</text>
+    </svg>
+  </a>
+  <figcaption><b>9 · Fanned sleeves</b><span>Three bold album sleeves fanned out with a pink-labelled record behind them, on deep navy. The most "music" of the set.</span></figcaption>
+</figure>
+
+<!-- 10. Risograph -->
+<figure>
+  <a class="card" href="#">
+    <svg viewBox="0 0 500 200" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+      <rect width="500" height="200" fill="#fbf4e8"/>
+      <g style="mix-blend-mode:multiply">
+        <circle cx="350" cy="110" r="70" fill="#ff6b9d"/>
+        <circle cx="410" cy="90" r="70" fill="#4ec3c9"/>
+        <circle cx="390" cy="150" r="60" fill="#ffd23f"/>
+      </g>
+      <g fill="none" stroke="#141210" stroke-width="1.5">
+        <circle cx="385" cy="110" r="52"/>
+        <ellipse cx="385" cy="110" rx="24" ry="52"/>
+        <path d="M333 110H437M341 84H429M341 136H429"/>
+      </g>
+      <circle cx="385" cy="110" r="5" fill="#141210"/>
+      <text class="serif" x="28" y="86" font-size="44" fill="#141210">Album Atlas</text>
+      <text class="sans" x="30" y="110" font-size="11.5" fill="#6b5f52">Losing track of albums has never been harder</text>
+    </svg>
+  </a>
+  <figcaption><b>10 · Risograph globe</b><span>Overlapping pink, teal and yellow circles printed over each other, with a thin globe drawn on top. Playful, poster-like.</span></figcaption>
+</figure>
+
+<!-- 11. Neon compass -->
+<figure>
+  <a class="card" href="#">
+    <svg viewBox="0 0 500 200" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+      <defs>
+        <radialGradient id="glow" cx="390" cy="100" r="150" gradientUnits="userSpaceOnUse">
+          <stop offset="0" stop-color="#d6336c" stop-opacity=".55"/><stop offset="1" stop-color="#d6336c" stop-opacity="0"/>
+        </radialGradient>
+        <linearGradient id="ring" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#ff6b9d"/><stop offset="1" stop-color="#4ec3c9"/>
+        </linearGradient>
+      </defs>
+      <rect width="500" height="200" fill="#0b1416"/>
+      <rect width="500" height="200" fill="url(#glow)"/>
+      <circle cx="390" cy="100" r="78" fill="none" stroke="url(#ring)" stroke-width="5"/>
+      <circle cx="390" cy="100" r="62" fill="none" stroke="url(#ring)" stroke-opacity=".4" stroke-width="1.5"/>
+      <circle cx="390" cy="100" r="46" fill="none" stroke="url(#ring)" stroke-opacity=".4" stroke-width="1.5"/>
+      <g class="needle">
+        <path d="M390 30 L399 100 L381 100 Z" fill="#ff6b9d"/>
+        <path d="M390 170 L399 100 L381 100 Z" fill="#4ec3c9"/>
+        <circle cx="390" cy="100" r="5" fill="#0b1416" stroke="#fff" stroke-width="2"/>
+      </g>
+      <text class="serif" x="28" y="86" font-size="44" fill="#fff">Album Atlas</text>
+      <text class="sans" x="30" y="110" font-size="11.5" fill="#7fb7bb">Losing track of albums has never been harder</text>
+    </svg>
+  </a>
+  <figcaption><b>11 · Neon compass</b><span>Record-compass idea in the site's own pink, paired with teal, glowing on near-black. Ties Album Atlas to the home page's accent colour.</span></figcaption>
+</figure>
+
+</div>
+
+<h2 class="section">Original palette</h2>
+<div class="grid">
+
+<!-- 0. Current -->
+<figure>
+  <a class="card" href="#" style="background:url('') #141210">
+    <svg viewBox="0 0 500 200" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+      <rect width="500" height="200" fill="#141210"/>
+      <g fill="#e6ddcf" transform="scale(.2)">
+        <path d="M2209.8,668.2c-73.8-78.1-162.8-139.3-262.7-175.8-64.7-23.6-130.8-38.5-199.4-42.3-78.4-4.3-156.2,1.8-233.3,21.4-162,41.2-310.1,130.3-421.3,251.1-15.4,16.8-56.9,68.3-64.3,82.6l-26.2,42.7c-29.3,52.4-52.8,105.8-69.1,164.6l-85.5-.4c47.7-192,165.1-359.1,325.6-471,90.4-64.5,190.7-113.4,298.1-144.2,246.5-67.8,509.8-25.1,710.7,135.6,121,96.8,211.4,225.3,260.6,372.7,12.3,34.7,21.2,70.3,29.2,106.8l-83.8-9.8c-29.700-125.2-90.1-240.7-178.5-334Z"/>
+        <path d="M2143,741.9c-10.4,14.6-23,26-36.5,37.7-68-68-151.8-115.4-243-143.2-159-48.5-331.1-32.6-479.3,41.9-54,27.1-103.7,61.5-147.3,104.5l-37.2-36.3c40.1-39.9,83.6-74,131.9-100.7,160.7-89.5,352.7-114.5,530.9-65,105.7,28.7,201.5,81.9,280.5,161.1Z"/>
+        <path d="M2020.9,868.2l-36.1,37.5c-167.9-162.5-454.1-162.9-625.9-5.1l-36.2-34.4c10.6-13.6,22.9-24.8,36.3-34.6,156.6-114.2,365.5-134.2,540.5-49.1,44.9,20.9,85.7,49.2,121.3,85.6Z"/>
+        <path d="M944.6,465.1l-50.5,39.9-101,78.9-136.9,106.5c-5.8,2-7,6.7-8.7,11.4-18.7,51.1-68.6,80.8-121.5,73.8l-147.5,32.2-124,26.5-128.6,26.5,81.1-59.3,60.3-44.4,166.4-125.8c16-53.3,69.6-88.9,125-80.9l63.3-14.2c93.9-19.4,187.2-39.9,280.5-62.4l42.3-8.7ZM474.7,650.4c-6.8,36.8,17.5,72.2,54.3,79.1,36.8,6.8,72.2-17.5,79.1-54.3,6.8-36.8-17.5-72.2-54.3-79.1-36.8-6.8-72.2,17.5-79.1,54.3Z"/>
+      </g>
+      <text class="serif" x="18.6" y="61.5" font-size="42.2" fill="#e6ddcf">Album Atlas</text>
+      <text class="sans" x="17.1" y="76.8" font-size="9.2" fill="#34302d">Losing track of albums has never been harder</text>
+    </svg>
+    <span class="pill">Album Atlas</span>
+  </a>
+  <figcaption><b>Current <span class="badge">for reference</span></b><span>Title appears twice, the pill sits on the compass needle, and the tagline is almost invisible.</span></figcaption>
+</figure>
+
+<!-- 1. Tidied -->
+<figure>
+  <a class="card" href="#">
+    <svg viewBox="0 0 500 200" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+      <rect width="500" height="200" fill="#141210"/>
+      <g fill="none" stroke="#e6ddcf" stroke-linecap="round">
+        <circle cx="395" cy="230" r="150" stroke-width="15"/>
+        <path d="M300 205 A120 120 0 0 1 490 205" stroke-width="9"/>
+        <path d="M330 222 A80 80 0 0 1 460 222" stroke-width="9"/>
+      </g>
+      <text class="serif" x="28" y="80" font-size="44" fill="#e6ddcf">Album Atlas</text>
+      <text class="sans" x="30" y="104" font-size="11.5" fill="#8f8577">Losing track of albums has never been harder</text>
+      <rect x="30" y="140" width="96" height="26" rx="13" fill="none" stroke="#e6ddcf" stroke-opacity=".35"/>
+      <text class="sans" x="44" y="157" font-size="10.5" fill="#e6ddcf" letter-spacing=".5">Open atlas →</text>
+    </svg>
+  </a>
+  <figcaption><b>1 · Tidied original</b><span>Same art, no pill. The tagline is readable, the needle is gone so the record has room, and a quiet "Open atlas →" shows it's clickable.</span></figcaption>
+</figure>
+
+<!-- 2. Record compass -->
+<figure>
+  <a class="card" href="#">
+    <svg viewBox="0 0 500 200" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+      <rect width="500" height="200" fill="#141210"/>
+      <g class="spin">
+        <circle cx="390" cy="100" r="82" fill="#1d1a17" stroke="#e6ddcf" stroke-width="3"/>
+        <g fill="none" stroke="#e6ddcf" stroke-opacity=".18">
+          <circle cx="390" cy="100" r="72"/><circle cx="390" cy="100" r="64"/><circle cx="390" cy="100" r="56"/>
+          <circle cx="390" cy="100" r="48"/><circle cx="390" cy="100" r="40"/>
+        </g>
+        <path d="M390 18 A82 82 0 0 1 462 60" fill="none" stroke="#e6ddcf" stroke-opacity=".5" stroke-width="2"/>
+        <circle cx="390" cy="100" r="26" fill="#e6ddcf"/>
+        <g class="mono" font-size="7" fill="#141210" text-anchor="middle"><text x="390" y="86">N</text><text x="390" y="119">S</text><text x="374" y="103">W</text><text x="406" y="103">E</text></g>
+      </g>
+      <g class="needle">
+        <path d="M390 32 L398 100 L390 168 L382 100 Z" fill="#e6ddcf"/>
+        <path d="M390 100 L398 100 L390 168 L382 100 Z" fill="#141210" stroke="#e6ddcf" stroke-width="2"/>
+        <circle cx="390" cy="100" r="4" fill="#141210" stroke="#e6ddcf" stroke-width="2"/>
+      </g>
+      <text class="serif" x="28" y="92" font-size="44" fill="#e6ddcf">Album Atlas</text>
+      <text class="sans" x="30" y="116" font-size="11.5" fill="#8f8577">Losing track of albums has never been harder</text>
+    </svg>
+  </a>
+  <figcaption><b>2 · Record compass</b><span>The vinyl and compass merge into one mark: a record whose label is a compass face. On hover the record spins and the needle swings.</span></figcaption>
+</figure>
+
+<!-- 3. Cream map -->
+<figure>
+  <a class="card" href="#">
+    <svg viewBox="0 0 500 200" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+      <rect width="500" height="200" fill="#e6ddcf"/>
+      <g stroke="#141210" stroke-opacity=".08">
+        <path d="M0 40H500M0 80H500M0 120H500M0 160H500M60 0V200M140 0V200M220 0V200M300 0V200M380 0V200M460 0V200"/>
+      </g>
+      <path class="route" d="M300 170 C330 120 360 160 390 120 S430 70 440 64" fill="none" stroke="#b2402f" stroke-width="2.2" stroke-linecap="round"/>
+      <circle cx="300" cy="170" r="4" fill="#141210"/>
+      <g class="pin">
+        <path d="M440 64 L428 44 A16 16 0 1 1 452 44 Z" fill="#141210"/>
+        <circle cx="440" cy="34" r="12" fill="#141210"/>
+        <circle cx="440" cy="34" r="8" fill="none" stroke="#e6ddcf" stroke-opacity=".35"/>
+        <circle cx="440" cy="34" r="3.5" fill="#e6ddcf"/>
+      </g>
+      <text class="serif" x="28" y="86" font-size="44" fill="#141210">Album Atlas</text>
+      <text class="sans" x="30" y="110" font-size="11.5" fill="#5b5248">Losing track of albums has never been harder</text>
+    </svg>
+  </a>
+  <figcaption><b>3 · Paper map</b><span>Inverted to cream so it stands out in the dark grid. A dashed route leads to a pin whose head is a record; the route marches on hover.</span></figcaption>
+</figure>
+
+<!-- 4. Coordinates -->
+<figure>
+  <a class="card" href="#">
+    <svg viewBox="0 0 500 200" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+      <rect width="500" height="200" fill="#141210"/>
+      <g fill="none" stroke="#e6ddcf" stroke-opacity=".12">
+        <ellipse cx="400" cy="100" rx="120" ry="120"/>
+        <ellipse cx="400" cy="100" rx="80" ry="120"/>
+        <ellipse cx="400" cy="100" rx="38" ry="120"/>
+        <path d="M400 -20V220M280 100H520M290 50H510M290 150H510"/>
+      </g>
+      <g stroke="#e6ddcf" stroke-width="1.5"><path d="M432 70 v24 M420 82 h24"/></g>
+      <circle cx="432" cy="82" r="6" fill="none" stroke="#e6ddcf" stroke-width="1.5"/>
+      <text class="mono" x="380" y="66" font-size="8" fill="#e6ddcf" fill-opacity=".7">YOU ARE HERE</text>
+      <text class="mono" x="30" y="44" font-size="9" fill="#c9a96b" letter-spacing="1.5">33⅓° N · 45° W</text>
+      <text class="serif" x="28" y="96" font-size="44" fill="#e6ddcf">Album Atlas</text>
+      <text class="sans" x="30" y="120" font-size="11.5" fill="#8f8577">Losing track of albums has never been harder</text>
+    </svg>
+  </a>
+  <figcaption><b>4 · Coordinates</b><span>A globe wireframe with a crosshair, plus a small pun as a kicker: record speeds (33⅓, 45) written as map coordinates.</span></figcaption>
+</figure>
+
+<!-- 5. Groove contours -->
+<figure>
+  <a class="card" href="#">
+    <svg viewBox="0 0 500 200" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+      <rect width="500" height="200" fill="#141210"/>
+      <g fill="none" stroke="#e6ddcf" stroke-width="1.3">
+        <path d="M250 200 C260 120 330 60 410 70 C480 78 520 130 520 200" stroke-opacity=".18"/>
+        <path d="M280 200 C290 135 340 90 405 95 C465 100 495 140 500 200" stroke-opacity=".26"/>
+        <path d="M310 200 C318 150 352 118 400 120 C448 122 470 155 474 200" stroke-opacity=".36"/>
+        <path d="M340 200 C346 168 365 145 398 146 C430 147 446 170 448 200" stroke-opacity=".5"/>
+        <path d="M368 200 C372 182 383 170 398 171 C414 172 421 185 422 200" stroke-opacity=".7"/>
+      </g>
+      <circle cx="397" cy="192" r="6" fill="#e6ddcf"/>
+      <path d="M290 30 l8 8 m0 -8 l-8 8" stroke="#c9a96b" stroke-width="2" stroke-linecap="round"/>
+      <text class="serif" x="28" y="86" font-size="44" fill="#e6ddcf">Album Atlas</text>
+      <text class="sans" x="30" y="110" font-size="11.5" fill="#8f8577">Losing track of albums has never been harder</text>
+    </svg>
+  </a>
+  <figcaption><b>5 · Groove contours</b><span>Topographic contour lines that double as record grooves rising from the bottom edge. Quietest of the set; lets the title lead.</span></figcaption>
+</figure>
+
+<!-- 6. Shelf -->
+<figure>
+  <a class="card" href="#">
+    <svg viewBox="0 0 500 200" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+      <rect width="500" height="200" fill="#141210"/>
+      <g>
+        <rect x="300" y="88"  width="16" height="98" fill="#e6ddcf"/>
+        <rect x="318" y="72"  width="22" height="114" fill="#bfb4a3"/>
+        <rect x="342" y="96"  width="12" height="90" fill="#e6ddcf"/>
+        <rect x="356" y="80"  width="26" height="106" fill="#8f8577"/>
+        <rect class="tilt" x="384" y="90" width="18" height="96" fill="#c9a96b"/>
+        <rect x="414" y="78"  width="20" height="108" fill="#e6ddcf"/>
+        <rect x="436" y="92"  width="14" height="94" fill="#bfb4a3"/>
+        <rect x="452" y="84"  width="24" height="102" fill="#8f8577"/>
+      </g>
+      <rect x="290" y="186" width="200" height="4" fill="#e6ddcf"/>
+      <text class="serif" x="28" y="86" font-size="44" fill="#e6ddcf">Album Atlas</text>
+      <text class="sans" x="30" y="110" font-size="11.5" fill="#8f8577">Losing track of albums has never been harder</text>
+    </svg>
+  </a>
+  <figcaption><b>6 · The shelf</b><span>A row of album spines in the cream palette with one gold one. On hover that spine tips out, as if you're pulling it from the shelf.</span></figcaption>
+</figure>
+
+</div>
+
+</body>
+</html>

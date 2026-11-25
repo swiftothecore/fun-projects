@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Album Atlas Cards v2</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  :root{--pink:#D6336C;--pink-soft:#FF6B9D;--border:#2A2A2A;--text:#F0EDE8;--muted:#888}
+  body{background:radial-gradient(ellipse at 15% 100%,#1f0813 0%,transparent 50%),radial-gradient(ellipse at 85% 0%,#061510 0%,transparent 45%),#0D0D0D;color:var(--text);font-family:'Outfit',sans-serif;min-height:100vh;padding:32px 24px 64px}
+  h1{font-family:'DM Serif Display',serif;font-weight:400;font-size:1.8rem}
+  h1 em{color:var(--pink-soft)}
+  .intro{color:var(--muted);margin:6px 0 28px;max-width:62ch;line-height:1.5}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,460px),1fr));gap:32px 20px}
+  figure{display:flex;flex-direction:column;gap:10px}
+  figcaption b{display:block;font-weight:600;font-size:1rem}
+  figcaption span{color:var(--muted);font-size:.85rem;line-height:1.5}
+  .card{aspect-ratio:5/2;border-radius:20px;position:relative;overflow:hidden;border:1px solid var(--border);display:block;background:#1a1a1a;transition:transform .26s cubic-bezier(.34,1.56,.64,1),box-shadow .2s ease}
+  .card:hover{transform:scale(1.025);box-shadow:0 20px 60px rgba(0,0,0,.6);border-color:var(--pink)}
+  .card svg{position:absolute;inset:0;width:100%;height:100%}
+  .dm{font-family:'DM Serif Display',Georgia,serif}
+  .out{font-family:'Outfit',system-ui,sans-serif}
+  .mono{font-family:ui-monospace,Menlo,monospace}
+
+  /* 1 transit: a train runs the pink line on hover */
+  .train{offset-path:path('M250 215 V150 L280 120 H520');offset-distance:0%;offset-rotate:auto;opacity:0}
+  .card:hover .train{animation:ride 2.4s linear infinite}
+  @keyframes ride{0%{offset-distance:0%;opacity:1}90%{opacity:1}100%{offset-distance:100%;opacity:0}}
+
+  /* 2 passport: a new stamp thumps down on hover */
+  .newstamp{transform-box:fill-box;transform-origin:center;opacity:0;transform:scale(1.8) rotate(-20deg)}
+  .card:hover .newstamp{animation:thump .35s cubic-bezier(.2,1.6,.4,1) forwards}
+  @keyframes thump{to{opacity:.9;transform:scale(1) rotate(-14deg)}}
+
+  /* 3 old chart: the serpent bobs */
+  .serpent{transition:transform .5s ease}
+  .card:hover .serpent{animation:bob 1.4s ease-in-out infinite}
+  @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+  .rose{transform-box:fill-box;transform-origin:center;transition:transform 1s cubic-bezier(.34,1.4,.64,1)}
+  .card:hover .rose{transform:rotate(360deg)}
+
+  /* 4 pinboard: the string re-threads */
+  .string{stroke-dasharray:420;stroke-dashoffset:0}
+  .card:hover .string{animation:thread 1.1s ease-out}
+  @keyframes thread{from{stroke-dashoffset:420}to{stroke-dashoffset:0}}
+  .sway{transform-box:fill-box;transform-origin:top center;transition:transform .35s cubic-bezier(.34,1.56,.64,1)}
+  .card:hover .sway.a{transform:rotate(3deg)}
+  .card:hover .sway.b{transform:rotate(-3deg)}
+
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<h1>Album Atlas<em>.</em> card mockups, round two</h1>
+<p class="intro">Each card commits to one idea and fills the whole tile, instead of putting a logo next to the title. Hover each one to see it move.</p>
+
+<div class="grid">
+
+<!-- 1. TRANSIT MAP -->
+<figure>
+  <a class="card" href="#" aria-label="Album Atlas">
+    <svg viewBox="0 0 500 200" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+      <rect width="500" height="200" fill="#f6f1e7"/>
+      <g fill="none" stroke-width="8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M-10 165 H330 L380 115 V-10" stroke="#1e9e8f"/>
+        <path d="M300 -10 V50 L340 90 H520" stroke="#f2b134"/>
+        <path d="M440 215 V170 L480 130 H520" stroke="#2f6fd8"/>
+        <path d="M250 215 V150 L280 120 H520" stroke="#d6336c"/>
+      </g>
+      <!-- train -->
+      <rect class="train" x="-9" y="-4" width="18" height="8" rx="4" fill="#141210"/>
+      <!-- stations -->
+      <g fill="#fff" stroke="#141210" stroke-width="2.5">
+        <circle cx="100" cy="165" r="5.5"/><circle cx="190" cy="165" r="5.5"/>
+        <circle cx="250" cy="185" r="5.5"/><circle cx="320" cy="120" r="5.5"/>
+        <circle cx="300" cy="30" r="5.5"/><circle cx="440" cy="190" r="5.5"/>
+        <circle cx="460" cy="90" r="5.5"/>
+        <rect x="372" y="82" width="16" height="46" rx="8"/>
+      </g>
+      <g class="out" font-size="8.5" font-weight="600" fill="#141210">
+        <text x="100" y="185" text-anchor="middle">Debut</text>
+        <text x="190" y="185" text-anchor="middle">Deluxe</text>
+        <text x="260" y="188">B-Sides</text>
+        <text x="320" y="108" text-anchor="middle">Vault</text>
+        <text x="310" y="33">Live</text>
+        <text x="430" y="193" text-anchor="end">Remaster</text>
+        <text x="460" y="108" text-anchor="middle">Demos</text>
+        <text x="394" y="78" font-weight="800">Atlas Central</text>
+      </g>
+      <text class="out" x="28" y="62" font-size="38" font-weight="800" fill="#141210" letter-spacing="-1">Album Atlas</text>
+      <text class="out" x="30" y="84" font-size="11.5" fill="#6b6257">Losing track of albums has never been harder</text>
+      <g>
+        <rect x="30" y="100" width="14" height="5" rx="2.5" fill="#d6336c"/>
+        <rect x="48" y="100" width="14" height="5" rx="2.5" fill="#1e9e8f"/>
+        <rect x="66" y="100" width="14" height="5" rx="2.5" fill="#f2b134"/>
+        <rect x="84" y="100" width="14" height="5" rx="2.5" fill="#2f6fd8"/>
+      </g>
+    </svg>
+  </a>
+  <figcaption><b>1 · The discography line</b><span>Your collection as a transit map: each colour is an artist's line, each stop an album or edition, all meeting at "Atlas Central". On hover a train runs the pink line.</span></figcaption>
+</figure>
+
+<!-- 2. PASSPORT -->
+<figure>
+  <a class="card" href="#" aria-label="Album Atlas">
+    <svg viewBox="0 0 500 200" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+      <defs>
+        <pattern id="guil" width="36" height="12" patternUnits="userSpaceOnUse">
+          <path d="M0 6 Q9 0 18 6 T36 6" fill="none" stroke="#2f6fd8" stroke-width=".7"/>
+        </pattern>
+        <filter id="ink" x="-10%" y="-10%" width="120%" height="120%">
+          <feTurbulence type="fractalNoise" baseFrequency=".8" numOctaves="2" seed="4"/>
+          <feDisplacementMap in="SourceGraphic" scale="2.2"/>
+        </filter>
+        <path id="ring1" d="M330 70 m-29 0 a29 29 0 1 1 58 0 a29 29 0 1 1 -58 0"/>
+      </defs>
+      <rect width="500" height="200" fill="#f4ecdc"/>
+      <rect width="500" height="200" fill="url(#guil)" opacity=".12"/>
+      <line x1="0" y1="168" x2="500" y2="168" stroke="#b89b6a" stroke-opacity=".35"/>
+
+      <g filter="url(#ink)" fill="none">
+        <!-- round stamp -->
+        <g transform="rotate(-12 330 70)" stroke="#c8323c" opacity=".88">
+          <circle cx="330" cy="70" r="36" stroke-width="2.5"/>
+          <circle cx="330" cy="70" r="22" stroke-width="1.2"/>
+          <text class="out" font-size="8" font-weight="700" fill="#c8323c" stroke="none" letter-spacing="2.2"><textPath href="#ring1">DEBUT ★ 2006 ★ TRACK ONE ★</textPath></text>
+          <text class="out" x="330" y="73" text-anchor="middle" font-size="9" font-weight="800" fill="#c8323c" stroke="none">ARRIVED</text>
+        </g>
+        <!-- rect stamp -->
+        <g transform="rotate(8 414 55)" stroke="#138a7e" opacity=".9">
+          <rect x="366" y="30" width="96" height="50" rx="3" stroke-width="2.5"/>
+          <rect x="371" y="35" width="86" height="40" rx="2" stroke-width="1"/>
+          <text class="out" x="414" y="52" text-anchor="middle" font-size="10" font-weight="800" fill="#138a7e" stroke="none" letter-spacing="1">DELUXE</text>
+          <text class="out" x="414" y="66" text-anchor="middle" font-size="7" font-weight="600" fill="#138a7e" stroke="none" letter-spacing="1.5">ENTRY · 19 TRACKS</text>
+        </g>
+        <!-- oval stamp -->
+        <g transform="rotate(-6 430 140)" stroke="#6a3fb5" opacity=".88">
+          <ellipse cx="430" cy="140" rx="52" ry="27" stroke-width="2.5"/>
+          <text class="out" x="430" y="134" text-anchor="middle" font-size="7" font-weight="600" fill="#6a3fb5" stroke="none" letter-spacing="2">FROM THE</text>
+          <text class="out" x="430" y="149" text-anchor="middle" font-size="13" font-weight="800" fill="#6a3fb5" stroke="none" letter-spacing="1">VAULT</text>
+        </g>
+        <!-- date stamp -->
+        <g transform="rotate(4 318 148)" stroke="#1b2a4a" opacity=".8">
+          <rect x="278" y="132" width="82" height="30" rx="15" stroke-width="2"/>
+          <text class="mono" x="319" y="151" text-anchor="middle" font-size="9" font-weight="700" fill="#1b2a4a" stroke="none">B-SIDES 09·NOV</text>
+        </g>
+        <!-- appears on hover -->
+        <g class="newstamp" stroke="#d6336c">
+          <rect x="350" y="88" width="78" height="34" rx="4" stroke-width="2.8"/>
+          <text class="out" x="389" y="110" text-anchor="middle" font-size="11" font-weight="800" fill="#d6336c" stroke="none" letter-spacing="1.5">REPLAYED</text>
+        </g>
+      </g>
+
+      <text class="out" x="30" y="44" font-size="8.5" font-weight="600" fill="#9a7b45" letter-spacing="3">PASSPORT · PASSEPORT</text>
+      <text class="dm" x="28" y="86" font-size="42" fill="#1b2a4a">Album Atlas</text>
+      <text class="out" x="30" y="106" font-size="11.5" fill="#6b5f52">Losing track of albums has never been harder</text>
+      <text class="mono" x="28" y="186" font-size="9" fill="#1b2a4a" fill-opacity=".45" letter-spacing="1.4">P&lt;ATLAS&lt;&lt;LOSING&lt;TRACK&lt;OF&lt;ALBUMS&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;</text>
+    </svg>
+  </a>
+  <figcaption><b>2 · Album passport</b><span>Every album you've visited gets an inked stamp: debut, deluxe, the vault, the B-sides. There's even a passport code line along the bottom. On hover a pink "REPLAYED" stamp thumps down.</span></figcaption>
+</figure>
+
+<!-- 3. OLD SEA CHART -->
+<figure>
+  <a class="card" href="#" aria-label="Album Atlas">
+    <svg viewBox="0 0 500 200" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+      <defs>
+        <radialGradient id="vig" cx="50%" cy="50%" r="75%">
+          <stop offset=".55" stop-color="#7a4a1e" stop-opacity="0"/><stop offset="1" stop-color="#7a4a1e" stop-opacity=".45"/>
+        </radialGradient>
+        <path id="motto" d="M285 112 Q345 88 405 108"/>
+      </defs>
+      <rect width="500" height="200" fill="#ecdcb8"/>
+      <!-- rhumb lines from the rose -->
+      <g stroke="#7a2e22" stroke-opacity=".16" stroke-width=".8">
+        <path d="M440 58 L-60 58 M440 58 L560 58 M440 58 L440 -60 M440 58 L440 260 M440 58 L-60 -150 M440 58 L-60 266 M440 58 L180 -60 M440 58 L180 260 M440 58 L560 -60 M440 58 L560 176 M440 58 L-60 -40 M440 58 L-60 156"/>
+      </g>
+      <!-- waves -->
+      <g fill="none" stroke="#2e6f6a" stroke-opacity=".45" stroke-width="1.2" stroke-linecap="round">
+        <path d="M260 180 q5 -4 10 0 t10 0"/><path d="M455 160 q5 -4 10 0 t10 0"/>
+        <path d="M215 125 q5 -4 10 0 t10 0"/><path d="M330 30 q5 -4 10 0 t10 0"/>
+        <path d="M60 160 q5 -4 10 0 t10 0"/><path d="M150 178 q5 -4 10 0 t10 0"/>
+      </g>
+      <!-- record island with dotted coast -->
+      <g>
+        <circle cx="110" cy="200" r="70" fill="#d8c08c" stroke="#3b2a1a" stroke-width="1.4"/>
+        <circle cx="110" cy="200" r="76" fill="none" stroke="#3b2a1a" stroke-opacity=".35" stroke-dasharray="1 4" stroke-linecap="round"/>
+        <g fill="none" stroke="#3b2a1a" stroke-opacity=".3"><circle cx="110" cy="200" r="55"/><circle cx="110" cy="200" r="40"/></g>
+        <circle cx="110" cy="200" r="22" fill="#a8432f" stroke="#3b2a1a" stroke-width="1.2"/>
+      </g>
+      <!-- serpent -->
+      <g class="serpent">
+        <path d="M296 140 q12 -26 24 0 M330 140 q12 -24 24 0 M364 140 q9 -16 18 0" fill="none" stroke="#2e6f6a" stroke-width="7" stroke-linecap="round"/>
+        <path d="M296 140 q12 -26 24 0 M330 140 q12 -24 24 0 M364 140 q9 -16 18 0" fill="none" stroke="#3b2a1a" stroke-width="1" stroke-linecap="round"/>
+        <path d="M290 142 C282 126 282 110 294 104 C304 100 310 108 304 112 C298 116 292 112 296 140" fill="#2e6f6a" stroke="#3b2a1a" stroke-width="1"/>
+        <circle cx="295" cy="108" r="1.4" fill="#ecdcb8"/>
+        <path d="M382 140 q8 -2 12 -10" fill="none" stroke="#2e6f6a" stroke-width="3" stroke-linecap="round"/>
+        <path d="M276 146 q8 -4 16 0 t16 0 t16 0 t16 0 t16 0 t16 0 t16 0" fill="none" stroke="#3b2a1a" stroke-opacity=".6"/>
+      </g>
+      <text class="dm" font-style="italic" font-size="13" fill="#7a2e22"><textPath href="#motto" startOffset="50%" text-anchor="middle">Here be B-sides</textPath></text>
+      <!-- dashed voyage -->
+      <path d="M180 170 C230 160 230 120 260 100" fill="none" stroke="#7a2e22" stroke-width="1.4" stroke-dasharray="3 4"/>
+      <!-- compass rose -->
+      <g transform="translate(440 58)">
+        <g class="rose">
+          <circle r="30" fill="none" stroke="#3b2a1a" stroke-width=".8"/>
+          <circle r="26" fill="none" stroke="#3b2a1a" stroke-width=".5"/>
+          <g fill="#a8432f" stroke="#3b2a1a" stroke-width=".5">
+            <path d="M0 0 L0 -5 L15.6 -15.6 L5 0Z"/><path d="M0 0 L5 0 L15.6 15.6 L0 5Z"/>
+            <path d="M0 0 L0 5 L-15.6 15.6 L-5 0Z"/><path d="M0 0 L-5 0 L-15.6 -15.6 L0 -5Z"/>
+          </g>
+          <g fill="#3b2a1a">
+            <path d="M0 0 L0 -36 L4.95 -4.95Z"/><path d="M0 0 L36 0 L4.95 4.95Z"/>
+            <path d="M0 0 L0 36 L-4.95 4.95Z"/><path d="M0 0 L-36 0 L-4.95 -4.95Z"/>
+          </g>
+          <g fill="#f4e8cc" stroke="#3b2a1a" stroke-width=".6">
+            <path d="M0 0 L0 -36 L-4.95 -4.95Z"/><path d="M0 0 L36 0 L4.95 -4.95Z"/>
+            <path d="M0 0 L0 36 L4.95 4.95Z"/><path d="M0 0 L-36 0 L-4.95 4.95Z"/>
+          </g>
+          <circle r="2.5" fill="#a8432f" stroke="#3b2a1a" stroke-width=".6"/>
+        </g>
+        <text class="dm" y="-40" text-anchor="middle" font-size="10" fill="#3b2a1a">N</text>
+      </g>
+      <rect width="500" height="200" fill="url(#vig)"/>
+      <text class="dm" x="28" y="62" font-size="42" fill="#3b2a1a">Album Atlas</text>
+      <text class="dm" x="30" y="82" font-size="12" font-style="italic" fill="#7a2e22">Losing track of albums has never been harder</text>
+    </svg>
+  </a>
+  <figcaption><b>3 · Here be B-sides</b><span>An old sea chart. The island is a record, there's a sea serpent, and the warning reads "Here be B-sides". On hover the compass rose spins and the serpent bobs.</span></figcaption>
+</figure>
+
+<!-- 4. PINBOARD -->
+<figure>
+  <a class="card" href="#" aria-label="Album Atlas">
+    <svg viewBox="0 0 500 200" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+      <defs>
+        <filter id="drop" x="-20%" y="-20%" width="140%" height="150%"><feDropShadow dx="1.5" dy="3" stdDeviation="2.2" flood-opacity=".35"/></filter>
+        <linearGradient id="c1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff6b9d"/><stop offset="1" stop-color="#ff9a3c"/></linearGradient>
+        <linearGradient id="c4" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5b2a9e"/><stop offset="1" stop-color="#e0457b"/></linearGradient>
+      </defs>
+      <!-- map underneath -->
+      <rect width="500" height="200" fill="#a9d6d0"/>
+      <path d="M-10 120 C40 100 80 130 130 110 C190 85 210 40 270 50 C330 60 330 0 400 10 C450 18 470 60 520 50 V210 H-10Z" fill="#f1e3c4" stroke="#8c7a55" stroke-width="1"/>
+      <path d="M200 210 C230 170 290 175 320 150 C350 125 420 140 520 120" fill="none" stroke="#e9c46a" stroke-width="3"/>
+      <path d="M260 60 C300 90 340 100 360 210" fill="none" stroke="#fff" stroke-width="2.4"/>
+      <path d="M380 30 C400 60 470 70 520 90" fill="none" stroke="#fff" stroke-width="2.4"/>
+      <g fill="none" stroke="#8c7a55" stroke-opacity=".35"><path d="M120 150 C160 140 180 170 230 160"/><path d="M420 160 C440 150 470 170 500 165"/></g>
+
+      <!-- covers -->
+      <g filter="url(#drop)">
+        <g transform="rotate(-6 300 58)"><g class="sway a">
+          <rect x="268" y="26" width="64" height="64" fill="#fff"/>
+          <rect x="272" y="30" width="56" height="56" fill="url(#c1)"/>
+          <circle cx="300" cy="64" r="14" fill="#ffd23f"/>
+          <rect x="272" y="66" width="56" height="20" fill="#7a1f45" opacity=".5"/>
+        </g></g>
+        <g transform="rotate(5 410 52)"><g class="sway b">
+          <rect x="378" y="18" width="64" height="64" fill="#fff"/>
+          <rect x="382" y="22" width="56" height="56" fill="#1d3b8f"/>
+          <path d="M382 34 H438 M382 44 H438 M382 54 H438" stroke="#ffd23f" stroke-width="4"/>
+        </g></g>
+        <g transform="rotate(3 352 142)"><g class="sway a">
+          <rect x="320" y="108" width="64" height="64" fill="#fff"/>
+          <rect x="324" y="112" width="56" height="56" fill="#1e9e8f"/>
+          <circle cx="352" cy="140" r="20" fill="#141210"/><circle cx="352" cy="140" r="6" fill="#f2b134"/>
+        </g></g>
+        <g transform="rotate(-8 455 140)"><g class="sway b">
+          <rect x="423" y="106" width="64" height="64" fill="#fff"/>
+          <rect x="427" y="110" width="56" height="56" fill="url(#c4)"/>
+          <path d="M455 120 L475 156 H435Z" fill="#fff" opacity=".9"/>
+        </g></g>
+      </g>
+      <!-- string -->
+      <path class="string" d="M299 32 Q355 58 410 24 Q392 90 352 112 Q400 132 455 110" fill="none" stroke="#c8102e" stroke-width="1.6"/>
+      <!-- pins -->
+      <g stroke="#00000055" stroke-width=".6">
+        <circle cx="299" cy="32" r="5.5" fill="#e63946"/><circle cx="410" cy="24" r="5.5" fill="#ffd23f"/>
+        <circle cx="352" cy="112" r="5.5" fill="#3a86ff"/><circle cx="455" cy="110" r="5.5" fill="#2a9d8f"/>
+      </g>
+      <g fill="#fff" opacity=".8"><circle cx="297.5" cy="30.5" r="1.6"/><circle cx="408.5" cy="22.5" r="1.6"/><circle cx="350.5" cy="110.5" r="1.6"/><circle cx="453.5" cy="108.5" r="1.6"/></g>
+
+      <!-- paper label -->
+      <g transform="rotate(-2.5 130 90)" filter="url(#drop)">
+        <rect x="20" y="42" width="226" height="88" fill="#fffaf0"/>
+      </g>
+      <g transform="rotate(-2.5 130 90)">
+        <rect x="40" y="35" width="44" height="14" fill="#ffd23f" opacity=".55" transform="rotate(-8 62 42)"/>
+        <rect x="190" y="34" width="44" height="14" fill="#ffd23f" opacity=".55" transform="rotate(7 212 41)"/>
+        <text class="dm" x="34" y="94" font-size="36" fill="#141210">Album Atlas</text>
+        <text class="out" x="36" y="114" font-size="9.8" fill="#6b5f52">Losing track of albums has never been harder</text>
+      </g>
+    </svg>
+  </a>
+  <figcaption><b>4 · The pinboard</b><span>Album covers pinned to a map with red string between them, like a travel wall (or a detective's). The title is a taped-on paper label. On hover the string re-threads and the covers sway.</span></figcaption>
+</figure>
+
+</div>
+</body>
+</html>
