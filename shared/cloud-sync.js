@@ -11,6 +11,8 @@
   const wrap = el('wrap'), form = el('form_row'), status = el('status');
   let client = null, user = null, loading = true, readReady = false, revision = 0, running = null;
   const pendingKey='_sb_pending_'+window._SB_TABLE;
+  const mergeLibrary = window._sbMergeLibrary;
+  let activeProject, mergeBaseKey, mergeBase;
   // Claim a legacy marker once; future edits stay isolated to their table.
   if(get(pendingKey)===null && get('_sb_pending')==='1'){put(pendingKey,'1');remove('_sb_pending');}
   let pending = get(pendingKey) === '1', retry = null, connecting = false;
@@ -47,6 +49,7 @@
     retry=setTimeout(() => { retry=null; if (pending) window._sbForceSync(); }, 5000);
   }
   async function drain() {
+    if (mergeLibrary) return syncMergedLibrary();
     if (loading || !readReady || !client || !user || !pending) return;
     if (running) return running;
     running=(async () => {
@@ -85,7 +88,98 @@
     authClient=supabase.createClient(url,key,{auth:{storage:authStorage,persistSession:true,autoRefreshToken:true}});
     return authClient;
   }
+  // Collection apps with a merge policy pull before every write and keep a
+  // last-synced snapshot for each project and account.
+  async function syncMergedLibrary(refresh = false) {
+    if (loading || !client || !user || (!pending && !refresh)) return;
+    if (running) {
+      const owner = client, userId = user.id;
+      await running;
+      if (owner === client && userId === user?.id && !loading && !retry && pending) return syncMergedLibrary();
+      return;
+    }
+    const owner = client, userId = user.id;
+    const isCurrent = () => owner === client && userId === user?.id;
+    const table = () => owner.from(window._SB_TABLE);
+    const baseKey = `_sb_base_${window._SB_TABLE}_${activeProject}_${userId}`;
+    const clone = data => JSON.parse(JSON.stringify(data));
+    if (baseKey !== mergeBaseKey) {
+      mergeBaseKey = baseKey;
+      try { mergeBase = mergeLibrary.normalize(JSON.parse(get(baseKey))); }
+      catch { mergeBase = null; }
+    }
+    running = (async () => {
+      let conflicts = 0;
+      try {
+        do {
+          const {data: row, error} = await table().select('data,updated_at').eq('user_id', userId).maybeSingle();
+          if (!isCurrent()) return;
+          if (error) throw error;
+          const remote = row ? mergeLibrary.normalize(row.data) : null;
+          if (row && !remote) throw new Error('Invalid cloud data; local data retained');
+
+          const currentRevision = revision;
+          const local = clone(window._sbGetData());
+          const localWins = pending || !!mergeBase;
+          const merged = !remote ? local : localWins
+            ? mergeLibrary.merge(mergeBase, local, remote)
+            : mergeLibrary.merge(null, remote, local);
+          const needsWrite = !row || !mergeLibrary.same(merged, remote);
+
+          if (needsWrite) {
+            indicator('Syncing…');
+            let updatedAt = Date.now();
+            if (row && Date.parse(row.updated_at) >= updatedAt) updatedAt = Date.parse(row.updated_at) + 1;
+            const update = { data: merged, updated_at: new Date(updatedAt).toISOString() };
+            if (row) {
+              let query = table().update(update).eq('user_id', userId);
+              query = row.updated_at == null ? query.is('updated_at', null) : query.eq('updated_at', row.updated_at);
+              const result = await query.select('updated_at');
+              if (result.error) throw result.error;
+              if (!result.data?.length) {
+                if (++conflicts < 4) continue;
+                throw new Error('Cloud library changed during sync');
+              }
+            } else {
+              const result = await table().insert({user_id: userId, ...update});
+              if (result.error?.code === '23505' && ++conflicts < 4) continue;
+              if (result.error) throw result.error;
+            }
+            if (!isCurrent()) return;
+          }
+
+          const latest = clone(window._sbGetData());
+          const next = currentRevision === revision ? merged : mergeLibrary.merge(local, latest, merged);
+          if (!mergeLibrary.same(latest, next)) {
+            window._sbPaused = true;
+            try {
+              if (window._sbOnLoad(next) === false) throw new Error('Invalid cloud merge; local data retained');
+            } finally { window._sbPaused = false; }
+          }
+          mergeBase = clone(merged);
+          put(baseKey, JSON.stringify(mergeBase));
+          markPending(!mergeLibrary.same(next, merged));
+          indicator(needsWrite ? 'Saved to cloud ✓' : 'Loaded from cloud', '#5a9e7a');
+          if (refresh) { setStatus('Connected!'); wrap.style.display = 'none'; }
+          conflicts = 0;
+          if (!pending) break;
+        } while (isCurrent());
+      } catch (error) {
+        if (!isCurrent()) return;
+        setStatus('Cloud sync failed: ' + error.message, true);
+        indicator('Cloud sync failed: ' + error.message, '#c0392b');
+        if (!retry) retry = setTimeout(() => { retry = null; window._sbForceSync(); }, 5000);
+      }
+    })();
+    try { await running; } finally { running = null; }
+    // A new account's hydrate may have arrived while the previous request was in flight.
+    if (!isCurrent() && client && user && !loading) return syncMergedLibrary(true);
+  }
   async function hydrate() {
+    if (mergeLibrary) {
+      loading = false;
+      return syncMergedLibrary(true);
+    }
     loading=true; readReady=false;
     const before=JSON.stringify(window._sbGetData()), startRevision=revision;
     try {
@@ -130,7 +224,7 @@
       const {data,error}=await owner.auth.getSession();
       if(error||!data?.session?.user)return false;
       if(client&&client!==owner)client.auth.stopAutoRefresh?.();
-      client=owner;user=data.session.user;subscribe(owner);updatePasswordField();
+      client=owner;user=data.session.user;activeProject=url;subscribe(owner);updatePasswordField();
       await hydrate();return true;
     } catch(error) { setStatus(error.message,true); return false; }
   }
@@ -166,7 +260,7 @@
       }
       if(!session?.user)throw new Error('Authentication returned no user');
       if(client&&client!==owner)client.auth.stopAutoRefresh?.();
-      client=owner;user=session.user;subscribe(owner);
+      client=owner;user=session.user;activeProject=url;subscribe(owner);
       for(const [field,value] of Object.entries({url,key,email}))put('_sb_'+field,value);
       el('pass_in').value='';remove('_sb_pass');updatePasswordField();
       await hydrate();
@@ -196,8 +290,12 @@
     try {await navigator.clipboard.writeText(snippet);el('copy_cfg').textContent='Copied ✓';}
     catch {window.prompt('Copy this config:',snippet);}
   };
-  document.addEventListener('visibilitychange',()=>{if(pending)drain();});
-  window.addEventListener('online',()=>{if(pending)window._sbForceSync();});
+  document.addEventListener('visibilitychange',()=>{
+    if (mergeLibrary && document.visibilityState === 'visible' && client && user) window._sbForceSync();
+    else if(pending)drain();
+  });
+  if (mergeLibrary) window.addEventListener('focus',()=>{if(client&&user)window._sbForceSync();});
+  window.addEventListener('online',()=>{if(pending || (mergeLibrary && client && user))window._sbForceSync();});
   (async()=>{
     if(!await restore()) {
       loading=false;indicator('Not connected — tap to set up','#4a4440');
